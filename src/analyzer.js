@@ -489,7 +489,11 @@ function analyze(prompt, options) {
     disclaimer: "Diagnostic aid for AWS prompts. Findings are advisory, not a guarantee - verify before deploying.",
     confidence: confidence.label,
     confidenceScore: confidence.score,
-    needsDeepScan: confidence.needsDeepScan,
+    // Deep scan is suggested when the rule engine is unsure (low confidence)
+    // OR when the prompt leaves a large part of the security surface unstated
+    // (coverage < 50%). The second condition also covers the case where a
+    // resource IS recognised but a control is paraphrased and missed.
+    needsDeepScan: confidence.needsDeepScan || coverageScore < 50,
     standards: STANDARDS.sources,
     dimensions: DIMENSIONS,
     stats: {

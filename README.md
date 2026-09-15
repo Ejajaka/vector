@@ -47,8 +47,9 @@ Every analysis returns a rule-engine confidence (0-100):
 - `medium` (45-74).
 - `low` (<50): baseline mode, very short prompt, or nothing matched.
 
-If **Auto deep scan** is on and confidence is low, the popup runs a deep scan
-automatically (on-device first).
+If **Auto deep scan** is on, the popup runs a deep scan automatically when either
+confidence is low **or** coverage is below 50% (so a recognised-but-thin prompt,
+where a paraphrased control may have been missed, still gets the AI pass).
 
 ## Coverage score
 
