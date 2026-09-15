@@ -99,6 +99,21 @@
     );
   }
 
+  // Non-AWS warning (the engine targets AWS only).
+  function bannerHtml(r) {
+    if (!r.nonAwsLikely) return "";
+    return (
+      '<div class="v-banner warn">This looks like a non-AWS cloud prompt. ' +
+      "Vector is AWS-specific, so treat these findings as generic security advice, not AWS guidance.</div>"
+    );
+  }
+
+  // Advisory footer: findings are not a guarantee.
+  function disclaimerHtml(r) {
+    if (!r.disclaimer) return "";
+    return '<p class="v-disclaimer">' + escapeHtml(r.disclaimer) + "</p>";
+  }
+
   function detectedHtml(r) {
     if (!r.resources.length && !r.mentioned.length) return "";
     let html = "";
@@ -174,12 +189,14 @@
     handlers = handlers || {};
     const accepted = (state && state.accepted) || {};
     container.innerHTML =
+      bannerHtml(report) +
       riskHtml(report, coverage(report, state)) +
       feedbackHtml(report) +
       relatedHtml(report) +
       detectedHtml(report) +
       findingsHtml(report, accepted) +
-      missingHtml(report, accepted);
+      missingHtml(report, accepted) +
+      disclaimerHtml(report);
 
     container.querySelectorAll("[data-toggle]").forEach((btn) => {
       btn.addEventListener("click", () => {

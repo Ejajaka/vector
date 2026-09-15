@@ -278,6 +278,50 @@ test("semantic: related controls are reported for a prompt", () => {
   assert.ok(r.semanticRelated.length > 0, "should report at least one related control");
 });
 
+// ---- Paraphrase lexicon ----
+test("paraphrase: 'data scrambled on disk' satisfies encryption at rest", () => {
+  const r = analyze("Make sure the data is scrambled on disk");
+  assert.ok(!r.missing.some((m) => m.id === "encryption_at_rest"), "should be treated as stated");
+});
+
+test("paraphrase: 'trail / who did what' satisfies audit logging", () => {
+  const r = analyze("Turn on the trail so we can see who did what");
+  assert.ok(!r.missing.some((m) => m.id === "audit_logging"), "should be treated as stated");
+});
+
+test("paraphrase: 'locked down' satisfies network restriction", () => {
+  const r = analyze("Keep the network locked down");
+  assert.ok(!r.missing.some((m) => m.id === "network_restricted"), "should be treated as stated");
+});
+
+test("paraphrase: 'second factor' satisfies MFA", () => {
+  const r = analyze("Require a second factor for all users");
+  assert.ok(!r.missing.some((m) => m.id === "mfa"), "should be treated as stated");
+});
+
+test("risky: 'world-readable' flags public storage", () => {
+  const r = analyze("Make the bucket world-readable");
+  assert.ok(r.riskyFindings.some((f) => f.id === "public_bucket"));
+});
+
+// ---- Non-AWS guard ----
+test("non-AWS: an Azure prompt is flagged as non-AWS", () => {
+  const r = analyze("Create an Azure Blob Storage account for documents");
+  assert.strictEqual(r.nonAwsLikely, true);
+  assert.ok(!r.resources.some((x) => x.id === "s3"), "must not be mistaken for S3");
+});
+
+test("non-AWS: an AWS prompt is not flagged", () => {
+  const r = analyze("Create an S3 bucket");
+  assert.strictEqual(r.nonAwsLikely, false);
+});
+
+// ---- Disclaimer ----
+test("report carries an advisory disclaimer", () => {
+  const r = analyze("Create an S3 bucket");
+  assert.ok(/advisory/i.test(r.disclaimer));
+});
+
 (async function run() {
   for (const t of queue) {
     try {

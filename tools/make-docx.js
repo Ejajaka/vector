@@ -174,6 +174,9 @@ const FEATURES = [
   LI("Baseline mode - unrecognised prompts still receive baseline AWS controls; never returns an empty result."),
   LI("Prompt Security Coverage Score - the share of required controls the prompt already states, shown before and after hardening."),
   LI("TF-IDF semantic relevance - a classic NLP / information-retrieval pass that reports topically related controls (offline, no model)."),
+  LI("Paraphrase lexicon - a curated, polarity-safe list of alternative phrasings per control (for example \"scrambled on disk\" -> encryption at rest, \"who did what\" -> audit logging)."),
+  LI("Non-AWS guard - warns when a prompt targets Azure or GCP instead of silently applying AWS rules."),
+  LI("Advisory disclaimer - results are presented as a diagnostic aid, not a guarantee, and the prompt stays AWS-scoped."),
   LI("Targeted recommendations - each finding explained in plain language, with standards references and the resource it applies to."),
   LI("One-click \"Add clause\" - every missing control becomes a ready-to-add clause."),
   LI("Fillable / improved prompt - builds the hardened prompt live as clauses are accepted."),
@@ -245,6 +248,14 @@ const PIPELINE = [
   H2("Step 4 - Intent detection"),
   P("Verb groups are matched: create, deploy, store, allow, restrict, secure, connect, backup, monitor. Intents are reported for context."),
 
+  H2("Step 4b - Control paraphrase lexicon"),
+  P("Each control also carries a curated, polarity-safe paraphrase lexicon that extends its regex patterns. This improves recall on alternative phrasings that a rule list would miss."),
+  C("\"scrambled on disk\"   -> encryption_at_rest"),
+  C("\"who did what\"       -> audit_logging"),
+  C("\"locked down\"        -> network_restricted"),
+  C("\"second factor\"      -> mfa"),
+  P("Ambiguous or opposite phrasings (\"reachable from the internet\", \"world-readable\") are deliberately excluded and belong to risky statements instead."),
+
   H2("Step 5 - Resource detection"),
   P("Each of the 59 AWS resources has a list of aliases. An alias is matched either as a plain phrase (word-boundary aware) or as a regular expression, chosen automatically by whether it contains regex metacharacters."),
   C("plain phrase : \"s3 bucket\"       (word-boundary match)"),
@@ -252,7 +263,7 @@ const PIPELINE = [
   P("This distinction matters: escaping a regex alias would make it never match (a bug the evaluation caught)."),
 
   H2("Step 6 - Policy merge (applyPolicy)"),
-  P("Before detection, any custom organisation policy is merged into the built-in rules."),
+  P("Before detection, any custom organisation policy is merged into the built-in rules. A non-AWS guard also checks for Azure/GCP terms and warns instead of silently applying AWS baseline controls."),
   LI("Custom requirements are appended and every requirement with alwaysRequired=true is treated as relevant regardless of resources."),
   LI("Custom risky patterns are appended to the risky list."),
 

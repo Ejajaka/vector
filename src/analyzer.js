@@ -35,6 +35,7 @@ const {
   RESOURCES,
   SYNONYMS,
   NEGATION_WORDS,
+  NON_AWS_TERMS,
   RISKY_PATTERNS,
   STANDARDS
 } = _VectorTaxonomy;
@@ -329,6 +330,11 @@ function analyze(prompt, options) {
 
   const resources = detectResources(expanded);
 
+  // Non-AWS guard: warn instead of silently applying AWS baseline to an
+  // Azure/GCP prompt (which would be misleading).
+  const nonAwsTerm = NON_AWS_TERMS.find((t) => new RegExp(t, "i").test(normalized)) || null;
+  const nonAwsLikely = !!nonAwsTerm;
+
   const relevantIds = new Set();
   const appliesTo = new Map();
 
@@ -441,6 +447,11 @@ function analyze(prompt, options) {
   const coverageScore = totalControls ? Math.round((100 * mentioned.length) / totalControls) : 100;
 
   const feedback = [];
+  if (nonAwsLikely) {
+    feedback.push(
+      'This prompt appears to target a non-AWS cloud ("' + nonAwsTerm + '"). Vector is AWS-specific, so the findings below are generic security advice, not AWS guidance.'
+    );
+  }
   if (baselineOnly) {
     feedback.push(
       "No specific cloud resource was recognised, so Vector applied baseline AWS controls. Name the resources (for example S3, EC2, RDS, Lambda) for targeted analysis."
@@ -474,6 +485,8 @@ function analyze(prompt, options) {
     coverage: baselineOnly ? "baseline" : "targeted",
     coverageScore: coverageScore,
     semanticRelated: semanticRelated,
+    nonAwsLikely: nonAwsLikely,
+    disclaimer: "Diagnostic aid for AWS prompts. Findings are advisory, not a guarantee - verify before deploying.",
     confidence: confidence.label,
     confidenceScore: confidence.score,
     needsDeepScan: confidence.needsDeepScan,

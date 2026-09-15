@@ -446,6 +446,42 @@ const REQUIREMENTS = [
   }
 ];
 
+/**
+ * Curated paraphrase lexicon (polarity-safe). Extends the regex patterns with
+ * common alternative phrasings that would otherwise be missed. Deliberately
+ * excludes ambiguous/opposite phrasings ("reachable from the internet",
+ * "world-readable") which belong to risky statements, not to a control.
+ */
+const PARAPHRASES = {
+  encryption_at_rest: ["scrambled", "\\bcipher\\b", "obfuscated"],
+  audit_logging: ["who did what", "record(s)? (of )?(activity|actions)", "activity record", "log (of )?(who|actions)"],
+  public_access_block: ["block (anonymous|external)", "deny (anonymous|external)", "no anonymous", "restrict(ed)? (public|external) (access|exposure)"],
+  network_restricted: ["locked down", "closed (ports|to the world)", "firewalled", "deny (inbound|ingress) by default", "no inbound"],
+  backup_recovery: ["restore point", "recovery point", "automated snapshot"],
+  least_privilege_iam: ["minimal (permissions|access)", "just enough", "only what (it|the app) needs"],
+  secrets_management: ["secrets? (kept )?(out of|not in) (the )?code"],
+  mfa: ["second factor", "two[- ]step", "2[- ]step"],
+  data_classification: ["\\bpii\\b", "sensitive data", "confidential"],
+  monitoring_alerting: ["\\balarms?\\b", "notify (me|on)", "alerting"],
+  versioning: ["keep (old )?versions", "\\bimmutable\\b", "object lock"],
+  data_residency: ["(data|it) (must|should) not leave (the )?country", "stay in the country"],
+  regional_restriction: ["only in (the )?region", "single[- ]region"]
+};
+
+for (const req of REQUIREMENTS) {
+  if (PARAPHRASES[req.id]) req.patterns = req.patterns.concat(PARAPHRASES[req.id]);
+}
+
+/**
+ * Terms that indicate a NON-AWS cloud. Used to warn instead of silently
+ * applying AWS baseline controls to an Azure/GCP prompt.
+ */
+const NON_AWS_TERMS = [
+  "azure", "microsoft cloud", "\\bgcp\\b", "google cloud", "google cloud platform",
+  "\\bgke\\b", "\\baks\\b", "bigquery", "cosmos ?db", "cloud armor", "cloud run",
+  "alibaba cloud", "oracle cloud", "\\boci\\b", "digitalocean", "\\bblob storage\\b"
+];
+
 /** Baseline controls that apply to most AWS resources. */
 const DEFAULT_REQUIRED = [
   "encryption_at_rest",
@@ -541,7 +577,7 @@ const RESOURCES = RAW_RESOURCES.map(function (r) {
  * resource detector fires even when the user avoids product names.
  */
 const SYNONYMS = [
-  { test: /\b(bucket|object storage|blob|file(s)? in the cloud)\b/i, add: " s3 " },
+  { test: /\b(bucket|object storage|files? in the cloud)\b/i, add: " s3 " },
   { test: /\b(virtual machine|virtual server|server instance|\bvm\b|compute instance|cloud server)\b/i, add: " ec2 " },
   { test: /\b(relational database|\bsql\b|db server|database server)\b/i, add: " rds database " },
   { test: /\b(no\.?sql|key.?value|document store)\b/i, add: " dynamodb " },
@@ -587,7 +623,7 @@ const RISKY_PATTERNS = [
   },
   {
     id: "public_bucket",
-    pattern: "public\\s+(?:s3\\s+|aws\\s+|amazon\\s+)?(?:bucket|blob|storage|files?|object)|public(ly)? (bucket|blob|readable|writable)|make\\s+(?:it|the|this|a|my)?\\s*(?:s3|aws|amazon|the)?\\s*(?:bucket|blob|storage|files?|object)?\\s*public|public[- ]read|public[- ]write|anonymous (access|read)",
+    pattern: "public\\s+(?:s3\\s+|aws\\s+|amazon\\s+)?(?:bucket|blob|storage|files?|object)|public(ly)? (bucket|blob|readable|writable)|world[- ]readable|world[- ]writable|make\\s+(?:it|the|this|a|my)?\\s*(?:s3|aws|amazon|the)?\\s*(?:bucket|blob|storage|files?|object)?\\s*public|public[- ]read|public[- ]write|anonymous (access|read)",
     label: "Publicly exposed storage",
     severity: "high",
     description: "The prompt explicitly asks for public storage access, which risks a data breach.",
@@ -665,6 +701,8 @@ const VectorTaxonomy = {
   DIMENSIONS,
   SEVERITY_WEIGHT,
   REQUIREMENTS,
+  PARAPHRASES,
+  NON_AWS_TERMS,
   DEFAULT_REQUIRED,
   RESOURCES,
   SYNONYMS,
