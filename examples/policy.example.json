@@ -1,0 +1,25 @@
+{
+  "requirements": [
+    {
+      "id": "org_tagging",
+      "label": "Mandatory resource tagging",
+      "dimension": "access_control",
+      "severity": "medium",
+      "description": "Organisation policy requires every resource to carry Owner, Environment and CostCenter tags for accountability.",
+      "clause": "Tag every resource with Owner, Environment and CostCenter.",
+      "standards": ["Organisation policy"],
+      "patterns": ["tagged", "tag ", "tags", "cost center", "owner tag"],
+      "alwaysRequired": true
+    }
+  ],
+  "riskyPatterns": [
+    {
+      "id": "banned_region",
+      "pattern": "us-east-1|us-west-2",
+      "label": "Banned region",
+      "severity": "high",
+      "description": "Organisation policy forbids deploying to us-east-1 or us-west-2.",
+      "fix": "Deploy only to approved regions (eu-west-1 or ap-south-1)."
+    }
+  ]
+}

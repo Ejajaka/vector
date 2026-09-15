@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "note": "Hand-labelled AWS prompts. mustFlag = controls a reviewer would want flagged as MISSING. mustNotFlag = controls that are stated or not applicable and must NOT be flagged. risky/notRisky apply to risky-statement detection. Labels are intentionally conservative (only unambiguous controls) so metrics are not rigged in the engine's favour.",
+  "cases": [
+    { "id": "s3-plain", "category": "storage", "prompt": "Create an S3 bucket to store user documents.",
+      "mustFlag": ["public_access_block", "encryption_at_rest", "audit_logging", "data_residency", "versioning", "data_classification"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_bucket", "no_encryption"] },
+
+    { "id": "s3-secure", "category": "storage", "prompt": "Create a private S3 bucket encrypted at rest with a KMS key and TLS in transit. Block all public access, enable versioning, backups and CloudTrail audit logging, classify the data, set a retention policy, and deploy only in eu-west-1 with least privilege IAM scoped to read-only.",
+      "mustFlag": [],
+      "mustNotFlag": ["public_access_block", "encryption_at_rest", "encryption_in_transit", "audit_logging", "regional_restriction", "least_privilege_iam", "versioning", "backup_recovery", "data_classification", "retention_deletion"],
+      "risky": [], "notRisky": ["public_bucket", "no_encryption"] },
+
+    { "id": "s3-public", "category": "storage", "prompt": "Create an S3 bucket and make it public for hosting static files.",
+      "mustFlag": ["public_access_block", "encryption_at_rest", "audit_logging"],
+      "mustNotFlag": [], "risky": ["public_bucket"], "notRisky": ["open_ssh"] },
+
+    { "id": "s3-negation", "category": "negation", "prompt": "Create an S3 bucket but do not make it public.",
+      "mustFlag": ["encryption_at_rest", "audit_logging"],
+      "mustNotFlag": ["public_access_block"], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "s3-unencrypted", "category": "negation", "prompt": "Store user data unencrypted in an S3 bucket.",
+      "mustFlag": ["encryption_at_rest", "public_access_block"],
+      "mustNotFlag": [], "risky": ["no_encryption"], "notRisky": ["public_bucket"] },
+
+    { "id": "s3-no-public-access", "category": "storage", "prompt": "Create an S3 bucket with no public access and server-side encryption enabled.",
+      "mustFlag": ["audit_logging", "data_residency"],
+      "mustNotFlag": ["public_access_block", "encryption_at_rest"], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "ec2-plain", "category": "compute", "prompt": "Launch an EC2 instance to run a web server.",
+      "mustFlag": ["network_restricted", "network_isolation", "secrets_management", "imdsv2", "audit_logging", "encryption_at_rest"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "ec2-open-ssh", "category": "network", "prompt": "Create an EC2 instance with a security group that allows SSH from 0.0.0.0/0.",
+      "mustFlag": ["network_restricted", "audit_logging", "encryption_at_rest"],
+      "mustNotFlag": [], "risky": ["open_ssh"], "notRisky": ["public_bucket"] },
+
+    { "id": "ec2-admin-role", "category": "identity", "prompt": "Give the EC2 instance an IAM role with admin access.",
+      "mustFlag": ["least_privilege_iam", "no_wildcard_policy"],
+      "mustNotFlag": [], "risky": ["wildcard_iam"], "notRisky": ["public_bucket"] },
+
+    { "id": "ec2-secure", "category": "compute", "prompt": "Deploy an EC2 instance in a private subnet with a security group restricted to a specific CIDR, IMDSv2 required, EBS encrypted at rest with KMS, TLS in transit, least privilege scoped IAM, Secrets Manager for credentials, vulnerability scanning, and CloudTrail audit logging in ap-south-1.",
+      "mustFlag": [],
+      "mustNotFlag": ["network_restricted", "imdsv2", "encryption_at_rest", "least_privilege_iam", "secrets_management", "vulnerability_scanning", "audit_logging", "regional_restriction"],
+      "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "ec2-open-all", "category": "network", "prompt": "Create an EC2 instance with a security group open to the internet on all ports.",
+      "mustFlag": ["network_restricted", "audit_logging"],
+      "mustNotFlag": [], "risky": ["open_ssh"], "notRisky": ["public_bucket"] },
+
+    { "id": "rds-plain", "category": "database", "prompt": "Create an RDS MySQL database for the application.",
+      "mustFlag": ["public_access_block", "network_restricted", "secrets_management", "backup_recovery", "key_rotation", "encryption_at_rest", "audit_logging"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_database"] },
+
+    { "id": "rds-public", "category": "database", "prompt": "Create an RDS database that is publicly accessible from the internet.",
+      "mustFlag": ["public_access_block", "network_restricted", "encryption_at_rest"],
+      "mustNotFlag": [], "risky": ["public_database"], "notRisky": ["open_ssh"] },
+
+    { "id": "rds-secure", "category": "database", "prompt": "Create an RDS database in a private subnet, encrypted at rest with KMS, TLS in transit, not public, using Secrets Manager credentials and automated backups, with CloudTrail logging in eu-west-1.",
+      "mustFlag": ["key_rotation"],
+      "mustNotFlag": ["encryption_at_rest", "network_restricted", "secrets_management", "backup_recovery", "audit_logging", "public_access_block"],
+      "risky": [], "notRisky": ["public_database"] },
+
+    { "id": "lambda-plain", "category": "serverless", "prompt": "Create a Lambda function triggered by S3.",
+      "mustFlag": ["no_wildcard_policy", "secrets_management", "monitoring_alerting", "least_privilege_iam"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "lambda-wildcard", "category": "serverless", "prompt": "Create a Lambda function with a role that has wildcard permissions.",
+      "mustFlag": ["no_wildcard_policy", "secrets_management"],
+      "mustNotFlag": [], "risky": ["wildcard_iam"], "notRisky": ["public_bucket"] },
+
+    { "id": "website", "category": "compute", "prompt": "Set up a website for our customers.",
+      "mustFlag": ["encryption_in_transit", "audit_logging", "certificate_management"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "vague", "category": "baseline", "prompt": "Build an internal tool for the team.",
+      "mustFlag": ["encryption_at_rest", "audit_logging", "least_privilege_iam"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "dynamodb-plain", "category": "database", "prompt": "Create a DynamoDB table for user sessions.",
+      "mustFlag": ["backup_recovery", "encryption_at_rest", "audit_logging", "data_residency"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_database"] },
+
+    { "id": "sqs-plain", "category": "messaging", "prompt": "Create an SQS queue for background jobs.",
+      "mustFlag": ["encryption_at_rest", "key_rotation", "audit_logging"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "eks-plain", "category": "containers", "prompt": "Deploy a Kubernetes cluster on AWS for the payment service.",
+      "mustFlag": ["network_isolation", "secrets_management", "vulnerability_scanning", "audit_logging", "key_rotation"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "cloudfront-s3", "category": "network", "prompt": "Set up CloudFront in front of an S3 bucket.",
+      "mustFlag": ["public_access_block", "certificate_management", "waf_protection"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "waf-lb", "category": "network", "prompt": "Add a WAF and Shield to the public load balancer.",
+      "mustFlag": ["network_restricted", "certificate_management", "monitoring_alerting"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "iam-users", "category": "identity", "prompt": "Create IAM users for the engineering team.",
+      "mustFlag": ["mfa", "password_policy", "session_management", "scp_permission_boundary", "audit_logging"],
+      "mustNotFlag": ["encryption_at_rest"], "risky": [], "notRisky": ["weak_auth"] },
+
+    { "id": "iam-no-mfa", "category": "identity", "prompt": "Create an admin user without MFA.",
+      "mustFlag": ["mfa", "password_policy", "session_management"],
+      "mustNotFlag": [], "risky": ["weak_auth"], "notRisky": ["wildcard_iam"] },
+
+    { "id": "hardcoded", "category": "secrets", "prompt": "Deploy an application with the database password hard-coded in the config file.",
+      "mustFlag": ["secrets_management"],
+      "mustNotFlag": [], "risky": ["hardcoded_secret"], "notRisky": ["public_bucket"] },
+
+    { "id": "logging-disabled", "category": "logging", "prompt": "Create an S3 bucket with logging disabled.",
+      "mustFlag": ["audit_logging"],
+      "mustNotFlag": [], "risky": ["disabled_logging"], "notRisky": ["public_bucket"] },
+
+    { "id": "no-backup", "category": "backup", "prompt": "Create an RDS database with no backups.",
+      "mustFlag": ["backup_recovery"],
+      "mustNotFlag": [], "risky": ["no_backup"], "notRisky": ["public_database"] },
+
+    { "id": "eu-customer-data", "category": "compliance", "prompt": "Store EU customer data in an S3 bucket.",
+      "mustFlag": ["encryption_at_rest", "public_access_block", "data_classification"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "region-stated", "category": "compliance", "prompt": "Create an S3 bucket in ap-south-1 only, keep the data private and encrypt it with KMS.",
+      "mustFlag": ["audit_logging"],
+      "mustNotFlag": ["regional_restriction", "public_access_block", "encryption_at_rest"], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "mixed-secure", "category": "comprehensive", "prompt": "Create a private, encrypted S3 bucket in eu-west-1 with KMS key rotation, block all public access, enable CloudTrail audit logging, versioning, backups, and least privilege IAM scoped to read-only, classify the data and set a retention policy, and enable AWS Config compliance.",
+      "mustFlag": [],
+      "mustNotFlag": ["public_access_block", "encryption_at_rest", "audit_logging", "regional_restriction", "least_privilege_iam", "versioning", "backup_recovery", "data_classification", "retention_deletion", "key_rotation", "config_compliance"],
+      "risky": [], "notRisky": ["public_bucket", "no_encryption"] },
+
+    { "id": "rds-secure2", "category": "database", "prompt": "Create an RDS MySQL database in a private subnet with encryption at rest using KMS, TLS in transit, least privilege IAM, Secrets Manager credentials, automated backups, CloudTrail audit logging, restricted security groups, monitoring alerts, and deploy only in ap-south-1.",
+      "mustFlag": ["key_rotation"],
+      "mustNotFlag": ["encryption_at_rest", "network_restricted", "secrets_management", "backup_recovery", "audit_logging", "least_privilege_iam", "monitoring_alerting", "regional_restriction"],
+      "risky": [], "notRisky": ["public_database"] },
+
+    { "id": "sagemaker-plain", "category": "ml", "prompt": "Deploy a SageMaker endpoint for our recommendation model.",
+      "mustFlag": ["network_restricted", "data_classification", "secrets_management", "key_rotation", "data_residency"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "apigw-plain", "category": "network", "prompt": "Create an API Gateway endpoint for the mobile app.",
+      "mustFlag": ["waf_protection", "certificate_management", "secrets_management", "monitoring_alerting"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "transfer-plain", "category": "storage", "prompt": "Set up an SFTP server using Transfer Family to receive partner files.",
+      "mustFlag": ["network_restricted", "public_access_block", "encryption_in_transit"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "cross-account", "category": "identity", "prompt": "Allow a partner AWS account to assume our IAM role.",
+      "mustFlag": ["least_privilege_iam", "no_wildcard_policy", "audit_logging"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "backup-plain", "category": "backup", "prompt": "Configure AWS Backup for our volumes.",
+      "mustFlag": ["encryption_at_rest", "key_rotation", "audit_logging", "data_residency"],
+      "mustNotFlag": ["backup_recovery"], "risky": [], "notRisky": ["no_backup"] },
+
+    { "id": "negation-multi", "category": "negation", "prompt": "Create an S3 bucket that is not public and is not unencrypted.",
+      "mustFlag": ["audit_logging"],
+      "mustNotFlag": ["public_access_block", "encryption_at_rest"], "risky": [], "notRisky": ["public_bucket", "no_encryption"] },
+
+    { "id": "short-s3", "category": "storage", "prompt": "S3 bucket for logs.",
+      "mustFlag": ["public_access_block", "encryption_at_rest", "audit_logging"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["public_bucket"] }
+  ]
+}

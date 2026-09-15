@@ -1,0 +1,250 @@
+"use strict";
+
+const assert = require("assert");
+const { analyze, buildImprovedPrompt, tokenize } = require("../src/analyzer");
+
+let passed = 0;
+let failed = 0;
+const queue = [];
+
+function test(name, fn) {
+  queue.push({ name, fn });
+}
+
+console.log("\nVector core analysis tests\n");
+
+test("tokenization removes stopwords", () => {
+  const tokens = tokenize("Create an S3 bucket and the EC2 instance");
+  assert.ok(tokens.includes("s3"), "expected s3 token");
+  assert.ok(tokens.includes("ec2"), "expected ec2 token");
+  assert.ok(!tokens.includes("the"), "stopwords should be removed");
+});
+
+test("detects S3 and EC2 resources", () => {
+  const r = analyze("Create an S3 bucket and an EC2 instance running a web server.");
+  const ids = r.resources.map((x) => x.id);
+  assert.ok(ids.includes("s3"), "s3 not detected");
+  assert.ok(ids.includes("ec2"), "ec2 not detected");
+});
+
+test("flags missing encryption for an S3 bucket", () => {
+  const r = analyze("Create an S3 bucket for user documents.");
+  const missing = r.missing.map((m) => m.id);
+  assert.ok(missing.includes("encryption_at_rest"), "encryption_at_rest should be missing");
+  assert.ok(missing.includes("public_access_block"), "public_access_block should be missing");
+});
+
+test("does not flag a constraint that is stated", () => {
+  const r = analyze("Create an S3 bucket encrypted at rest with a KMS key and block all public access.");
+  const missing = r.missing.map((m) => m.id);
+  assert.ok(!missing.includes("encryption_at_rest"), "encryption should be considered present");
+  assert.ok(!missing.includes("public_access_block"), "public access should be considered present");
+});
+
+test("flags risky 0.0.0.0/0 exposure", () => {
+  const r = analyze("Create an EC2 instance with a security group allowing SSH from 0.0.0.0/0.");
+  const ids = r.riskyFindings.map((f) => f.id);
+  assert.ok(ids.includes("open_ssh"), "open_ssh risky pattern not detected");
+});
+
+test("flags wildcard/admin IAM", () => {
+  const r = analyze("Give the instance an IAM role with admin access.");
+  const ids = r.riskyFindings.map((f) => f.id);
+  assert.ok(ids.includes("wildcard_iam"), "wildcard_iam not detected");
+});
+
+test("detects missing least-privilege IAM", () => {
+  const r = analyze("Create a lambda function that reads from S3.");
+  const missing = r.missing.map((m) => m.id);
+  assert.ok(missing.includes("least_privilege_iam"), "least privilege should be missing");
+});
+
+test("risk score increases with omissions", () => {
+  const safe = analyze(
+    "Create a private S3 bucket encrypted at rest with KMS and TLS in transit, block all public access, enable CloudTrail audit logging, versioning and backups, scoped least privilege IAM in eu-west-1."
+  );
+  const risky = analyze("Create an S3 bucket and make it public.");
+  assert.ok(risky.riskScore > safe.riskScore, "risky prompt should score higher");
+  assert.ok(["HIGH", "CRITICAL"].includes(risky.riskLevel), "public prompt should be high/critical");
+});
+
+test("fallback assessment when no resource recognised", () => {
+  const r = analyze("Build an internal tool for the team.");
+  assert.strictEqual(r.resources.length, 0);
+  assert.ok(r.missing.length > 0, "fallback should still produce findings");
+  assert.ok(r.riskScore > 0, "fallback should have a non-zero risk score");
+  assert.strictEqual(r.coverage, "baseline");
+});
+
+test("synonym expansion detects a web server as compute + endpoint", () => {
+  const r = analyze("Set up a website for our customers.");
+  const ids = r.resources.map((x) => x.id);
+  assert.ok(ids.includes("ec2") || ids.includes("load_balancer"), "website should map to AWS resources");
+});
+
+test("negation guard ignores 'do not make it public'", () => {
+  const r = analyze("Create an S3 bucket but do not make it public.");
+  const risky = r.riskyFindings.map((f) => f.id);
+  assert.ok(!risky.includes("public_bucket"), "negated public statement should not be flagged risky");
+});
+
+test("negation guard treats 'do not encrypt' as a missing control", () => {
+  const r = analyze("Create an S3 bucket and do not encrypt it.");
+  const missing = r.missing.map((m) => m.id);
+  assert.ok(missing.includes("encryption_at_rest"), "negated encryption should count as missing");
+});
+
+test("unencrypted is normalised and flagged", () => {
+  const r = analyze("Store the data unencrypted in an S3 bucket.");
+  assert.ok(r.riskyFindings.some((f) => f.id === "no_encryption"), "unencrypted should be risky");
+});
+
+test("mergeFindings adds external deep-scan findings without duplicates", () => {
+  const base = analyze("Create an S3 bucket.");
+  const merged = require("../src/analyzer").mergeFindings(base, {
+    missing: [{ label: "Object Lock / WORM", severity: "low", clause: "Enable S3 Object Lock." }],
+    risky: [{ label: "Cross-account access", severity: "high", fix: "Remove cross-account trust." }]
+  });
+  assert.ok(merged.missing.some((m) => m.source === "ai"), "ai missing finding should be merged");
+  assert.ok(merged.riskyFindings.some((f) => f.source === "ai"), "ai risky finding should be merged");
+  assert.ok(merged.missing.some((m) => m.label === "Encryption at rest"), "original findings preserved");
+});
+
+test("buildImprovedPrompt appends clauses", () => {
+  const out = buildImprovedPrompt("Create an S3 bucket.", [
+    "Encrypt data at rest.",
+    "Block public access."
+  ]);
+  assert.ok(out.includes("Create an S3 bucket."));
+  assert.ok(out.includes("Security requirements:"));
+  assert.ok(out.includes("- Encrypt data at rest."));
+  assert.ok(out.includes("- Block public access."));
+});
+
+test("custom policy adds an always-required rule", () => {
+  const policy = {
+    requirements: [
+      {
+        id: "org_tagging",
+        label: "Mandatory tagging",
+        severity: "medium",
+        description: "Tag all resources.",
+        clause: "Tag every resource with Owner and Environment.",
+        patterns: ["tagged", "tags"]
+      }
+    ]
+  };
+  const r = analyze("Create an S3 bucket encrypted at rest.", { policy });
+  const missing = r.missing.map((m) => m.id);
+  assert.ok(missing.includes("org_tagging"), "custom policy requirement should be missing");
+});
+
+test("custom policy risky pattern is honoured", () => {
+  const policy = {
+    riskyPatterns: [
+      { id: "banned_region", pattern: "us-east-1", label: "Banned region", severity: "high", fix: "Use eu-west-1." }
+    ]
+  };
+  const r = analyze("Deploy an S3 bucket in us-east-1.", { policy });
+  const ids = r.riskyFindings.map((f) => f.id);
+  assert.ok(ids.includes("banned_region"), "custom risky pattern not detected");
+});
+
+test("every missing constraint carries a fillable clause", () => {
+  const r = analyze("Create an RDS database and an EC2 instance.");
+  for (const m of r.missing) {
+    assert.ok(typeof m.clause === "string" && m.clause.length > 5, "missing clause for " + m.id);
+  }
+});
+
+// ---- UI renderer tests (src/ui.js) ----
+const VectorUI = require("../src/ui");
+
+test("UI: buildImprovedPrompt appends clauses", () => {
+  const out = VectorUI.buildImprovedPrompt("Create a bucket.", ["Encrypt it."]);
+  assert.ok(out.includes("Security requirements:"));
+  assert.ok(out.includes("- Encrypt it."));
+});
+
+test("UI: acceptedClauses reads state", () => {
+  const r = analyze("Create an S3 bucket.");
+  const first = r.missing[0];
+  const clauses = VectorUI.acceptedClauses(r, { accepted: { [first.id]: true } });
+  assert.strictEqual(clauses.length, 1);
+  assert.strictEqual(clauses[0], first.clause);
+});
+
+test("UI: missingHtml renders an AI badge for deep-scan findings", () => {
+  const html = VectorUI.missingHtml(
+    { missing: [{ id: "x", label: "Test", severity: "low", dimension: "x", description: "d", clause: "c", standards: [], source: "ai" }] },
+    {}
+  );
+  assert.ok(html.includes("v-tag ai"), "AI badge should appear");
+});
+
+test("UI: escapeHtml neutralises tags", () => {
+  assert.strictEqual(VectorUI.escapeHtml("<b>"), "&lt;b&gt;");
+});
+
+// ---- LLM helper tests (src/llm.js) ----
+const VectorLLM = require("../src/llm");
+
+test("LLM: parseFindings normalises and caps results", () => {
+  const out = VectorLLM.parseFindings('{"missing":[{"label":"X","severity":"weird"}],"risky":[]}');
+  assert.strictEqual(out.missing.length, 1);
+  assert.strictEqual(out.missing[0].severity, "medium");
+  assert.strictEqual(out.missing[0].source, "ai");
+});
+
+test("LLM: parseFindings tolerates surrounding prose", () => {
+  const out = VectorLLM.parseFindings('Here you go:\n{"missing":[],"risky":[{"label":"Y"}]}\nThanks');
+  assert.strictEqual(out.risky.length, 1);
+  assert.strictEqual(out.risky[0].label, "Y");
+});
+
+test("LLM: parseFindings throws when no JSON", () => {
+  assert.throws(() => VectorLLM.parseFindings("no json here"), /JSON/);
+});
+
+test("LLM: hostedDeepScan calls the API and parses the reply", async () => {
+  const realFetch = global.fetch;
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => ({ choices: [{ message: { content: '{"missing":[{"label":"Z","severity":"high"}]}' } }] })
+  });
+  try {
+    const out = await VectorLLM.hostedDeepScan("prompt", { apiKey: "k" });
+    assert.strictEqual(out.missing[0].label, "Z");
+  } finally {
+    global.fetch = realFetch;
+  }
+});
+
+test("LLM: hostedDeepScan throws without a key", async () => {
+  await assert.rejects(() => VectorLLM.hostedDeepScan("p", {}), /API key/);
+});
+
+test("LLM: localAvailable is false when there is no browser model", () => {
+  assert.strictEqual(VectorLLM.localAvailable(), false);
+});
+
+test("analyzer exposes needsDeepScan for vague prompts", () => {
+  const r = analyze("Build an internal tool for the team.");
+  assert.strictEqual(r.needsDeepScan, true);
+});
+
+(async function run() {
+  for (const t of queue) {
+    try {
+      await t.fn();
+      passed++;
+      console.log("  PASS  " + t.name);
+    } catch (err) {
+      failed++;
+      console.log("  FAIL  " + t.name);
+      console.log("        " + err.message);
+    }
+  }
+  console.log("\n" + passed + " passed, " + failed + " failed\n");
+  process.exit(failed === 0 ? 0 : 1);
+})();

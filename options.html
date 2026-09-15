@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vector Settings</title>
+  <link rel="stylesheet" href="src/ui.css" />
+  <style>
+    body { max-width: 720px; margin: 0 auto; padding: 24px; font-size: 14px; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    .sub { color: var(--v-muted); margin: 0 0 20px; }
+    fieldset { border: 1px solid var(--v-border); border-radius: 8px; padding: 16px; margin: 0 0 18px; }
+    legend { font-weight: 600; padding: 0 6px; }
+    .field { display: block; margin-bottom: 12px; }
+    .field span { display: block; color: var(--v-muted); font-size: 12px; margin-bottom: 4px; }
+    .field input, .field textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--v-border);
+      border-radius: 6px; background: var(--v-bg); color: var(--v-fg); font-size: 13px;
+    }
+    .field textarea { min-height: 130px; font-family: ui-monospace, Consolas, monospace; }
+    .check { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+    .status { color: var(--v-muted); font-size: 12px; min-height: 16px; }
+    .hist { border-top: 1px solid var(--v-border); padding: 10px 0; display: flex; justify-content: space-between; gap: 12px; }
+    .hist .p { flex: 1; }
+    .hist .meta { color: var(--v-muted); font-size: 12px; white-space: nowrap; }
+    .row-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Vector Settings</h1>
+  <p class="sub">The rule engine runs fully offline. Deep scan is optional.</p>
+
+  <fieldset>
+    <legend>Analysis</legend>
+    <label class="check"><input id="strict" type="checkbox" /> Strict mode (treat medium-severity omissions as high)</label>
+    <label class="field">
+      <span>Organisation policy (JSON). Leave empty for none.</span>
+      <textarea id="policy" placeholder='{ "requirements": [ ... ], "riskyPatterns": [ ... ] }'></textarea>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Deep scan (optional AI)</legend>
+    <p class="sub" id="local-status">Checking on-device model...</p>
+    <label class="check"><input id="auto" type="checkbox" /> Auto deep scan when rule confidence is low</label>
+    <label class="field">
+      <span>API key (only needed if the on-device model is unavailable)</span>
+      <input id="key" type="password" placeholder="sk-..." autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>Base URL</span>
+      <input id="url" type="text" placeholder="https://api.openai.com/v1" />
+    </label>
+    <label class="field">
+      <span>Model</span>
+      <input id="model" type="text" placeholder="gpt-4o-mini" />
+    </label>
+  </fieldset>
+
+  <div class="row-actions">
+    <span class="status" id="status"></span>
+    <button class="v-btn primary" id="save" type="button">Save</button>
+  </div>
+
+  <fieldset style="margin-top:18px;">
+    <legend>History (last 20)</legend>
+    <div id="history"></div>
+  </fieldset>
+
+  <script src="src/taxonomy.js"></script>
+  <script src="src/analyzer.js"></script>
+  <script src="src/settings.js"></script>
+  <script src="src/llm.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

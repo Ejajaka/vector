@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "note": "HELD-OUT set. These prompts were written and labelled WITHOUT adapting the engine's patterns afterwards, so they give an honest estimate of generalisation. Do not tune patterns against this file; use dataset.json for that.",
+  "cases": [
+    { "id": "h-s3-public", "category": "storage", "prompt": "Create a public S3 bucket for the marketing team.",
+      "mustFlag": ["public_access_block", "encryption_at_rest", "audit_logging"],
+      "mustNotFlag": [], "risky": ["public_bucket"], "notRisky": ["open_ssh"] },
+
+    { "id": "h-neg-public", "category": "negation", "prompt": "Do not enable public access on the S3 bucket.",
+      "mustFlag": ["encryption_at_rest", "audit_logging"],
+      "mustNotFlag": ["public_access_block"], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "h-iam-full", "category": "identity", "prompt": "Create an IAM role for the Lambda function with full access.",
+      "mustFlag": ["no_wildcard_policy", "least_privilege_iam"],
+      "mustNotFlag": [], "risky": ["wildcard_iam"], "notRisky": ["public_bucket"] },
+
+    { "id": "h-rds-nobackup", "category": "backup", "prompt": "Store the customer records in an RDS database without backups.",
+      "mustFlag": ["backup_recovery", "encryption_at_rest"],
+      "mustNotFlag": [], "risky": ["no_backup"], "notRisky": ["public_database"] },
+
+    { "id": "h-s3-nocrypt", "category": "negation", "prompt": "Create an S3 bucket with encryption disabled.",
+      "mustFlag": ["encryption_at_rest", "public_access_block"],
+      "mustNotFlag": [], "risky": ["no_encryption"], "notRisky": ["public_bucket"] },
+
+    { "id": "h-ec2-world", "category": "network", "prompt": "Launch an EC2 instance with SSH open to the world.",
+      "mustFlag": ["network_restricted", "audit_logging"],
+      "mustNotFlag": [], "risky": ["open_ssh"], "notRisky": ["public_bucket"] },
+
+    { "id": "h-mfa-added", "category": "identity", "prompt": "Add MFA to all IAM users.",
+      "mustFlag": ["password_policy", "session_management"],
+      "mustNotFlag": ["mfa"], "risky": [], "notRisky": ["weak_auth"] },
+
+    { "id": "h-rds-public-ip", "category": "database", "prompt": "Create an RDS instance with a public IP address.",
+      "mustFlag": ["public_access_block", "network_restricted", "encryption_at_rest"],
+      "mustNotFlag": [], "risky": ["public_database"], "notRisky": ["open_ssh"] },
+
+    { "id": "h-ddb-pitr", "category": "database", "prompt": "Create a DynamoDB table and enable point-in-time recovery.",
+      "mustFlag": ["encryption_at_rest", "audit_logging", "data_residency"],
+      "mustNotFlag": ["backup_recovery"], "risky": [], "notRisky": ["public_database"] },
+
+    { "id": "h-cloudfront", "category": "network", "prompt": "Deploy a CloudFront distribution for our static assets.",
+      "mustFlag": ["public_access_block", "waf_protection", "certificate_management", "encryption_in_transit"],
+      "mustNotFlag": [], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "h-eks-kms", "category": "containers", "prompt": "Create an EKS cluster and enable envelope encryption with KMS.",
+      "mustFlag": ["network_isolation", "secrets_management", "monitoring_alerting"],
+      "mustNotFlag": ["encryption_at_rest"], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "h-lb-tls", "category": "network", "prompt": "Set up a website with a load balancer and TLS certificate.",
+      "mustFlag": ["network_restricted", "waf_protection", "monitoring_alerting"],
+      "mustNotFlag": ["encryption_in_transit", "certificate_management"], "risky": [], "notRisky": ["open_ssh"] },
+
+    { "id": "h-s3-private-kms", "category": "storage", "prompt": "Create an S3 bucket but keep all data private and encrypted with KMS.",
+      "mustFlag": ["audit_logging", "versioning"],
+      "mustNotFlag": ["public_access_block", "encryption_at_rest"], "risky": [], "notRisky": ["public_bucket"] },
+
+    { "id": "h-lambda-scoped", "category": "serverless", "prompt": "Give the Lambda function a role with specific read-only permissions.",
+      "mustFlag": ["secrets_management", "monitoring_alerting"],
+      "mustNotFlag": ["least_privilege_iam"], "risky": [], "notRisky": ["wildcard_iam"] }
+  ]
+}

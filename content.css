@@ -1,0 +1,110 @@
+#vector-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483646;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+#vector-fab:hover {
+  transform: scale(1.06);
+}
+
+#vector-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 78px;
+  z-index: 2147483647;
+  width: 440px;
+  max-width: calc(100vw - 40px);
+  max-height: 72vh;
+  overflow-y: auto;
+  display: none;
+  border-radius: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --v-fg: #111827;
+  --v-bg: #ffffff;
+  --v-muted: #6b7280;
+  --v-bg-soft: rgba(128, 128, 128, 0.08);
+  --v-border: rgba(128, 128, 128, 0.3);
+  --v-accent: #6366f1;
+}
+
+#vector-panel.open {
+  display: block;
+}
+
+#vector-panel .v-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  position: sticky;
+  top: 0;
+  background: #fff;
+}
+
+#vector-panel .v-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+#vector-panel .v-panel-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+}
+
+#vector-panel .v-panel-body {
+  padding: 14px;
+}
+
+#vector-panel .v-panel-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+#vector-panel .v-btn {
+  color: #111827;
+}
+
+#vector-panel .v-btn.primary {
+  color: #fff;
+}
+
+#vector-panel .v-muted {
+  color: #6b7280;
+}
+
+#vector-panel h2 {
+  color: #6b7280;
+}
+
+#vector-panel .v-clause code {
+  background: rgba(128, 128, 128, 0.1);
+}

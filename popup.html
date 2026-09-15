@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vector - Security Diagnosis</title>
+  <link rel="stylesheet" href="src/ui.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="vp-header">
+    <div class="vp-brand">
+      <span class="vp-logo">V</span>
+      <div>
+        <h1>Vector</h1>
+        <p>Pre-generation security diagnosis</p>
+      </div>
+    </div>
+    <div class="v-header-actions">
+      <button id="btn-sample" class="v-btn ghost" type="button">Sample</button>
+      <button id="btn-settings" class="v-btn ghost" type="button" title="Settings">Settings</button>
+    </div>
+  </header>
+
+  <main class="vp-main">
+    <label class="vp-label" for="prompt">AWS infrastructure prompt</label>
+    <textarea id="prompt" spellcheck="false"
+      placeholder="e.g. Create an S3 bucket to store user documents and an EC2 instance running a web server."></textarea>
+    <div class="vp-row">
+      <span id="hint" class="v-muted">Runs offline. No data leaves your browser.</span>
+      <div class="v-header-actions">
+        <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
+        <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
+      </div>
+    </div>
+
+    <section id="results" class="vp-results hidden"></section>
+
+    <section id="improved-wrap" class="v-improved hidden">
+      <div class="v-improved-head">
+        <label>Improved prompt</label>
+        <div class="v-header-actions">
+          <button id="btn-copy" class="v-btn" type="button">Copy</button>
+        </div>
+      </div>
+      <pre id="improved" class="v-improved-body"></pre>
+    </section>
+  </main>
+
+  <script src="src/taxonomy.js"></script>
+  <script src="src/analyzer.js"></script>
+  <script src="src/settings.js"></script>
+  <script src="src/ui.js"></script>
+  <script src="src/llm.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
