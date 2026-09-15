@@ -96,6 +96,11 @@ function printReport(report) {
       r.stats.risky + " risky" +
       C.reset
   );
+  const total = r.stats.mentioned + r.stats.missing;
+  console.log(
+    "Coverage: " + C.bold + r.coverageScore + "%" + C.reset +
+      C.dim + " (" + r.stats.mentioned + "/" + total + " controls stated)" + C.reset
+  );
   console.log("");
 
   if (r.resources.length) {

@@ -36,7 +36,7 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*"
       ],
-      "js": ["src/taxonomy.js", "src/analyzer.js", "src/settings.js", "src/ui.js", "src/llm.js", "content.js"],
+      "js": ["src/taxonomy.js", "src/semantic.js", "src/analyzer.js", "src/settings.js", "src/ui.js", "src/llm.js", "content.js"],
       "css": ["src/ui.css", "content.css"],
       "run_at": "document_idle"
     }

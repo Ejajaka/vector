@@ -22,6 +22,11 @@ const _VectorTaxonomy =
     ? require("./taxonomy")
     : globalThis.VectorTaxonomy;
 
+const _VectorSemantic =
+  typeof module !== "undefined" && module.exports
+    ? require("./semantic")
+    : globalThis.VectorSemantic;
+
 const {
   DIMENSIONS,
   SEVERITY_WEIGHT,
@@ -359,7 +364,7 @@ function analyze(prompt, options) {
   }
 
   const mentioned = [];
-  const missing = [];
+  let missing = [];
   const relevantCounts = [];
 
   for (const req of requirements) {
@@ -394,6 +399,29 @@ function analyze(prompt, options) {
     }
   }
 
+  // ---- Second pass: TF-IDF semantic similarity (classic NLP / IR) ----
+  // Each control is a "document". We rank controls by cosine similarity to the
+  // prompt and report the top matches as TOPICALLY RELATED.
+  //
+  // Measurement (tools/calibrate.js) shows cosine is polarity-blind: "open all
+  // ports" scores 0.49 against the "restrict ports" control, while a genuine
+  // paraphrase ("scrambled on disk") scores only 0.20. So it must NOT decide
+  // whether a control is already stated, and it must NOT override the rules.
+  // It is reported as related-topic information only, and the control stays
+  // flagged by the rule engine.
+  const semIndex = _VectorSemantic.buildIndex(requirements);
+  const queryTokens = _VectorSemantic.tokenize(normalized);
+  const queryVec = _VectorSemantic.vectorize(queryTokens, semIndex.idf);
+  const semanticRelated = requirements
+    .map((req) => ({
+      id: req.id,
+      label: req.label,
+      similarity: Number(_VectorSemantic.cosine(queryVec, semIndex.vectors.get(req.id)).toFixed(2))
+    }))
+    .filter((x) => x.similarity >= 0.2)
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 3);
+
   missing.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
   const riskyFindings = dedupeRiskyFindings(normalized, risky);
   riskyFindings.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
@@ -409,6 +437,9 @@ function analyze(prompt, options) {
     missing: missing.length,
     resources: resources.length
   });
+  const totalControls = mentioned.length + missing.length;
+  const coverageScore = totalControls ? Math.round((100 * mentioned.length) / totalControls) : 100;
+
   const feedback = [];
   if (baselineOnly) {
     feedback.push(
@@ -441,6 +472,8 @@ function analyze(prompt, options) {
     feedback,
     baselineOnly,
     coverage: baselineOnly ? "baseline" : "targeted",
+    coverageScore: coverageScore,
+    semanticRelated: semanticRelated,
     confidence: confidence.label,
     confidenceScore: confidence.score,
     needsDeepScan: confidence.needsDeepScan,

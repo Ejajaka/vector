@@ -172,6 +172,8 @@ const FEATURES = [
   LI("Risk score - 0-100 with CRITICAL / HIGH / MEDIUM / LOW."),
   LI("Confidence score - 0-100 (high / medium / low) indicating how complete the analysis is."),
   LI("Baseline mode - unrecognised prompts still receive baseline AWS controls; never returns an empty result."),
+  LI("Prompt Security Coverage Score - the share of required controls the prompt already states, shown before and after hardening."),
+  LI("TF-IDF semantic relevance - a classic NLP / information-retrieval pass that reports topically related controls (offline, no model)."),
   LI("Targeted recommendations - each finding explained in plain language, with standards references and the resource it applies to."),
   LI("One-click \"Add clause\" - every missing control becomes a ready-to-add clause."),
   LI("Fillable / improved prompt - builds the hardened prompt live as clauses are accepted."),
@@ -293,6 +295,12 @@ const PIPELINE = [
 
   H2("Step 12 - Recommendations"),
   P("Each missing control carries a ready-to-add clause; each risky finding carries a fix. These are what the UI offers as one-click additions."),
+
+  H2("Step 12b - Coverage score and semantic relevance"),
+  P("Coverage is the share of required controls already stated: mentioned / (mentioned + missing). The UI shows it before and after clauses are accepted; the CLI prints it."),
+  P("A second pass builds a TF-IDF index of the controls (each control is a document) and ranks them by cosine similarity to the prompt. Measurement showed cosine is polarity-blind (\"open all ports\" scores 0.49 against the restrict-ports control), so it is reported only as topically related controls and never marks a control as already stated."),
+  C("coverage = round(100 * mentioned / (mentioned + missing))"),
+  C("related   = top 3 controls by cosine(prompt, control-document)"),
 
   H2("Step 13 - Optional deep scan"),
   P("Only when requested, an existing model is asked ONLY for controls the rules may have missed (never trained or shipped by us)."),

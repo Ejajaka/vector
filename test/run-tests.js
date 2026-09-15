@@ -233,6 +233,51 @@ test("analyzer exposes needsDeepScan for vague prompts", () => {
   assert.strictEqual(r.needsDeepScan, true);
 });
 
+// ---- Coverage score ----
+test("coverage: a bare prompt has low coverage, a detailed one high", () => {
+  const low = analyze("Create an S3 bucket.");
+  const high = analyze(
+    "Create a private S3 bucket encrypted at rest with KMS and TLS in transit, block all public access, " +
+    "enable CloudTrail audit logging, versioning, backups, least privilege IAM, data classification and " +
+    "retention, and deploy only in eu-west-1."
+  );
+  assert.ok(low.coverageScore < high.coverageScore, "coverage should increase with detail");
+  assert.ok(high.coverageScore >= 60, "detailed prompt should have solidly higher coverage");
+  assert.ok(high.coverageScore - low.coverageScore >= 40, "coverage gap should be large");
+});
+
+test("coverage: UI projects before -> after as clauses are accepted", () => {
+  const r = analyze("Create an S3 bucket.");
+  const before = r.coverageScore;
+  const accepted = {};
+  accepted[r.missing[0].id] = true;
+  const cov = VectorUI.coverage(r, { accepted });
+  assert.strictEqual(cov.before, before);
+  assert.ok(cov.after > cov.before, "accepting a clause should raise coverage");
+});
+
+// ---- TF-IDF semantic module ----
+const VectorSemantic = require("../src/semantic");
+
+test("semantic: tokenize lowercases and strips plural", () => {
+  const t = VectorSemantic.tokenize("Buckets Encrypted");
+  assert.ok(t.includes("bucket"), "plural should be stemmed");
+  assert.ok(t.includes("encrypt"));
+});
+
+test("semantic: identical vectors have cosine ~1", () => {
+  const controls = [{ id: "x", label: "Encryption at rest", description: "encrypt data", clause: "encrypt at rest" }];
+  const idx = VectorSemantic.buildIndex(controls);
+  const q = VectorSemantic.vectorize(VectorSemantic.tokenize("encrypt data at rest"), idx.idf);
+  assert.ok(VectorSemantic.cosine(q, idx.vectors.get("x")) > 0.9);
+});
+
+test("semantic: related controls are reported for a prompt", () => {
+  const r = analyze("Turn on the trail so we can see who did what");
+  assert.ok(Array.isArray(r.semanticRelated));
+  assert.ok(r.semanticRelated.length > 0, "should report at least one related control");
+});
+
 (async function run() {
   for (const t of queue) {
     try {

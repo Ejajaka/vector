@@ -46,7 +46,21 @@
     return '<span class="v-chip ' + (cls || "") + '">' + escapeHtml(text) + "</span>";
   }
 
-  function riskHtml(r) {
+  function coverage(report, state) {
+    const total = report.stats.mentioned + report.stats.missing;
+    const accepted = (state && state.accepted) || {};
+    let coveredNow = report.stats.mentioned;
+    for (const m of report.missing) if (accepted[m.id]) coveredNow++;
+    const before = typeof report.coverageScore === "number" ? report.coverageScore : 0;
+    const after = total ? Math.round((100 * coveredNow) / total) : 100;
+    return { before: before, after: after, total: total };
+  }
+
+  function riskHtml(r, cov) {
+    const covText =
+      cov && cov.after > cov.before
+        ? "coverage " + cov.before + "% &rarr; " + cov.after + "%"
+        : "coverage " + ((cov && cov.before) || 0) + "%";
     return (
       '<div class="v-risk">' +
       '<div class="v-risk-score" style="border-color:' + r.riskColor + ";color:" + r.riskColor + '">' +
@@ -60,6 +74,7 @@
       "<span>" + r.stats.mentioned + " controls present</span>" +
       "<span>" + r.stats.missing + " missing</span>" +
       "<span>" + r.stats.risky + " risky</span>" +
+      "<span><strong>" + covText + "</strong></span>" +
       "</div></div></div>"
     );
   }
@@ -69,6 +84,18 @@
       '<div class="v-feedback">' +
       r.feedback.map((f) => '<p class="v-feedback-line">' + escapeHtml(f) + "</p>").join("") +
       "</div>"
+    );
+  }
+
+  // TF-IDF topical relevance - informational only (never used to satisfy a control).
+  function relatedHtml(r) {
+    if (!r.semanticRelated || !r.semanticRelated.length) return "";
+    return (
+      '<p class="v-related">Topically related controls (TF-IDF): ' +
+      r.semanticRelated
+        .map((x) => escapeHtml(x.label) + " <span class=\"v-muted\">" + x.similarity + "</span>")
+        .join(" &middot; ") +
+      "</p>"
     );
   }
 
@@ -147,8 +174,9 @@
     handlers = handlers || {};
     const accepted = (state && state.accepted) || {};
     container.innerHTML =
-      riskHtml(report) +
+      riskHtml(report, coverage(report, state)) +
       feedbackHtml(report) +
+      relatedHtml(report) +
       detectedHtml(report) +
       findingsHtml(report, accepted) +
       missingHtml(report, accepted);
@@ -171,6 +199,7 @@
     escapeHtml: escapeHtml,
     severityClass: severityClass,
     SEV_ORDER: SEV_ORDER,
+    coverage: coverage,
     // html builders exposed for testing
     riskHtml: riskHtml,
     findingsHtml: findingsHtml,

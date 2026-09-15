@@ -41,7 +41,6 @@ merge the answer back. Every finding is badged **AI** vs rule. If neither tier i
 available the extension still works - rules only.
 
 ## Confidence
-
 Every analysis returns a rule-engine confidence (0-100):
 
 - `high` (>=75): resources clearly recognised.
@@ -50,6 +49,22 @@ Every analysis returns a rule-engine confidence (0-100):
 
 If **Auto deep scan** is on and confidence is low, the popup runs a deep scan
 automatically (on-device first).
+
+## Coverage score
+
+`coverageScore = mentioned / (mentioned + missing)`, as a percentage. The popup
+shows it, and updates live as you accept clauses (e.g. `0% → 64%`). The CLI
+prints it too. It is the project's own metric: how much of the required security
+surface the prompt already states.
+
+## Semantic relevance (TF-IDF)
+
+`src/semantic.js` treats each control as a document and ranks them by cosine
+similarity to the prompt (top 3 shown as "topically related controls"). This is
+deliberately **informational only**: measurement (`tools/calibrate.js`) showed
+cosine similarity is polarity-blind — "open all ports" scores 0.49 against the
+*restrict ports* control — so it is never allowed to mark a control as already
+stated. That negative result is documented rather than hidden.
 
 ## Install the Chrome extension
 

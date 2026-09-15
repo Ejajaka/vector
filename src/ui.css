@@ -133,6 +133,12 @@ body {
   margin-top: 14px;
 }
 
+.v-related {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--v-muted);
+}
+
 .v-feedback-line {
   margin: 4px 0;
   line-height: 1.5;
