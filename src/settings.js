@@ -8,8 +8,8 @@
 (function (root) {
   const DEFAULTS = {
     apiKey: "",
-    baseUrl: "https://api.openai.com/v1",
-    model: "gpt-4o-mini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    model: "gemini-2.0-flash",
     autoDeepScan: false,
     strictMode: false,
     policyText: ""

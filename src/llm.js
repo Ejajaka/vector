@@ -99,8 +99,7 @@
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: "Infrastructure prompt:\n\n" + String(prompt || "") }
-        ],
-        response_format: { type: "json_object" }
+        ]
       })
     });
     if (!res.ok) throw new Error("Deep scan failed (" + res.status + ")");

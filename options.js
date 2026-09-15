@@ -37,8 +37,8 @@
       strictMode: el.strict.checked,
       autoDeepScan: el.auto.checked,
       apiKey: el.key.value.trim(),
-      baseUrl: el.url.value.trim() || "https://api.openai.com/v1",
-      model: el.model.value.trim() || "gpt-4o-mini",
+      baseUrl: el.url.value.trim() || "https://generativelanguage.googleapis.com/v1beta/openai",
+      model: el.model.value.trim() || "gemini-2.0-flash",
       policyText: el.policy.value
     };
   }
