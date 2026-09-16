@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Vector",
+    "slug": "vector-security",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.vector.security",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.vector.security"
+    }
+  }
+}
