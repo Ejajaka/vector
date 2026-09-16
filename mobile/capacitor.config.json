@@ -1,0 +1,6 @@
+{
+  "appId": "com.vector.security",
+  "appName": "Vector",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
