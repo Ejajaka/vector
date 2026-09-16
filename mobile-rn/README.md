@@ -6,9 +6,11 @@ engine as the extension and the Capacitor app.
 ## Verified in this repo
 
 - JSX parses cleanly (`@babel/parser`).
-- `npx expo export --platform ios` → **iOS bundle built** (537 modules, Hermes
-  bytecode, 1.56 MB).
-- `npx expo export --platform android` → **Android bundle built** (1.56 MB).
+- `npx expo export --platform ios` → **iOS bundle built** (Hermes bytecode, 1.5 MB).
+- `npx expo export --platform android` → **Android bundle built** (1.5 MB).
+
+Runs on **Expo SDK 57 / React Native 0.86 / React 19**, which matches the current
+**Expo Go** app (older SDKs are rejected by Expo Go).
 
 That proves the app code and engine imports compile for both platforms.
 A native `.ipa`/`.apk` still has to be produced (see below).
@@ -51,7 +53,7 @@ Store metadata can reuse `../store/privacy-policy.html` and `../store/listing.md
 mobile-rn/
   App.js                 single-screen UI (React Native components)
   app.json               Expo config (bundle id com.vector.security)
-  package.json           Expo SDK 51 (RN 0.74)
+  package.json           Expo SDK 57 (RN 0.86, React 19)
   babel.config.js
   sync-engine.ps1        copies ../src engine files into src/
   src/                   taxonomy.js, semantic.js, analyzer.js, llm.js (generated)

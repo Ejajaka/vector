@@ -2,7 +2,6 @@
 // UI is rebuilt with React Native components (the DOM ui.js cannot apply here).
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -124,7 +123,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <View style={styles.header}>
         <View style={styles.logo}><Text style={styles.logoText}>V</Text></View>
         <View style={{ flex: 1 }}>
@@ -254,7 +253,7 @@ export default function App() {
           </View>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

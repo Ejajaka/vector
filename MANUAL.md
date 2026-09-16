@@ -267,7 +267,7 @@ app + `npx expo start`.
 
 Compile check (verified in this repo):
 ```powershell
-npx expo export --platform ios       # iOS bundle, 537 modules, 1.56 MB Hermes
+npx expo export --platform ios       # iOS bundle, 580 modules, 1.5 MB Hermes
 npx expo export --platform android
 ```
 
@@ -345,6 +345,10 @@ extension and repo ship with none.
 | Everything scored CRITICAL | risk saturation | recalibrated curve + tier weighting |
 | `ANDROID_HOME` empty; `adb` not on PATH | env not set | set `ANDROID_HOME` to `%LOCALAPPDATA%\Android\Sdk` |
 | Headless emulator never booted | no hardware acceleration | run the emulator from Android Studio UI |
+| Expo Go: "couldn't connect to the server" | tunnel blocked, or phone/PC on different networks | use the emulator (`npx expo start`, press `a`) or same Wi-Fi + firewall |
+| Expo Go: SDK incompatible | project SDK older than current Expo Go | upgrade: `npx expo install expo@latest && npx expo install --fix` |
+| Metro: "Cannot read properties of undefined (reading 'transformFile')" | `babel-preset-expo` not resolvable at top level after an SDK jump | clean reinstall + `npx expo install babel-preset-expo` |
+| Emulator: "Unknown AVD name" | wrong AVD name | use the real name from `%USERPROFILE%\.android\avd\*.ini` (e.g. `Medium_Phone_API_36`) |
 
 ---
 
