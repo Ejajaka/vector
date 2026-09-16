@@ -45,7 +45,7 @@ const REQUIREMENTS = [
     description:
       "Data stored on disk is readable by anyone with access to the underlying media. Encryption at rest protects data if the storage layer is compromised or a snapshot leaks.",
     clause:
-      "All data must be encrypted at rest using a customer-managed KMS key with automatic key rotation enabled.",
+      "Enable encryption at rest (AWS-managed keys are acceptable; specify whether customer-managed KMS keys with automatic rotation are required).",
     standards: ["CIS AWS 2.1.1", "AWS FSBP S3.4 / RDS.3", "NIST SP 800-53 SC-28"],
     patterns: ["encrypt(ed|ion)?", "\\bkms\\b", "server[- ]side encryption", "sse[- ]?(s3|kms)", "aes[- ]?256", "at rest", "customer[- ]managed key", "\\bcmk\\b", "disk encryption"],
     notAfter: ["in transit", "over the (network|wire)"]
@@ -116,9 +116,9 @@ const REQUIREMENTS = [
     dimension: "network_exposure",
     severity: "high",
     description:
-      "Security groups open to 0.0.0.0/0 expose services such as SSH, RDP or databases to the whole internet and are routinely found in breaches.",
+      "Security groups open to 0.0.0.0/0 can expose administrative or database ports to the whole internet. Internet-facing application ports are legitimate; management and data ports are not.",
     clause:
-      "Security groups and firewalls must not allow inbound traffic from 0.0.0.0/0; restrict source IP ranges / CIDRs to known corporate or private networks and open only required ports.",
+      "Limit public inbound traffic to the required application ports (for example HTTPS 443). Do not expose administrative (SSH/RDP) or database ports to 0.0.0.0/0; reach those only from known corporate or private networks.",
     standards: ["CIS AWS 5.2 / 5.3", "AWS FSBP EC2.18 / EC2.19", "NIST SP 800-53 SC-7"],
     patterns: [
       "restrict(ed)? (access|inbound|traffic|ports?|security group|ingress)",
@@ -147,11 +147,11 @@ const REQUIREMENTS = [
     id: "data_residency",
     label: "Data residency / sovereignty",
     dimension: "data_residency",
-    severity: "high",
+    severity: "medium",
     description:
-      "Regulations (GDPR, India DPDP Act) restrict where personal data may be stored and processed. Unspecified residency risks non-compliance.",
+      "The prompt does not state where data may be stored or processed. If personal or regulated data is involved, residency must be specified to meet GDPR / DPDP obligations.",
     clause:
-      "Data must reside within approved jurisdictions only (for example EU or India), and cross-region replication to unapproved regions must be disabled.",
+      "If personal or regulated data is involved, specify the approved jurisdictions where data may be stored and processed, and whether cross-region replication is permitted.",
     standards: ["GDPR Art. 5 / 44-49", "India DPDP Act 2023 s.16", "NIST SP 800-53 PM-8"],
     patterns: [
       "data residency", "reside", "sovereignty", "\\bgdpr\\b", "in[- ]country",
@@ -165,9 +165,9 @@ const REQUIREMENTS = [
     dimension: "regional_restrictions",
     severity: "medium",
     description:
-      "Deploying to arbitrary or unapproved regions can violate policy, increase cost and latency, and break data residency guarantees.",
+      "The prompt does not specify which AWS regions are approved. Unapproved regions can violate policy, increase cost and latency, and break data-residency guarantees.",
     clause:
-      "Deploy only to the approved regions (for example eu-west-1 / ap-south-1) and deny creation of resources in any other region.",
+      "Specify the approved deployment region(s), particularly if data-residency or organisational policies apply, and restrict deployment to those regions.",
     standards: ["AWS Well-Architected SEC-06", "NIST SP 800-53 PM-8"],
     patterns: [
       "\\bregion", "regional", "us-east", "us-west", "eu-west", "eu-central",
@@ -231,7 +231,9 @@ const REQUIREMENTS = [
     patterns: [
       "secret", "secrets manager", "parameter store", "\\bssm\\b", "vault",
       "key vault", "secret manager", "no hard[- ]?cod", "credentials (stored|rotated|managed)",
-      "rotate", "environment variable", "injected secret"
+      "rotate", "environment variable", "injected secret",
+      "credential[^.]{0,25}secur", "secur[a-z]*[^.]{0,25}credential",
+      "store[^.]{0,20}(credential|password|secret)"
     ]
   },
   {
