@@ -64,11 +64,19 @@ Both listings can reuse:
 - Description and permission notes: `../store/listing.md`,
   `../store/permissions-and-privacy.md`.
 
+## Build status
+
+- **Android: verified.** `npx cap add android` + `gradlew assembleDebug` produced
+  `android/app/build/outputs/apk/debug/app-debug.apk` (~3.7 MB) containing the
+  web app and engine. BUILD SUCCESSFUL with JDK 17 and Android SDK platform 33.
+- **Runtime not verified here:** a headless emulator did not finish booting in
+  this environment, so the app was not launched on a device. Run it yourself on
+  the `Medium_Phone` emulator or a physical device to confirm the UI.
+
 ## Honest caveats
 
-- This code was written but **cannot be built or tested here** (no Android/iOS
-  toolchain in the repo environment). Run `npm install` and a debug build to
-  verify before submitting.
+- The UI was written but **not launched on a device** in this environment; do a
+  debug run before submitting.
 - A mobile app is a **secondary surface** for a developer-facing tool; the
   browser extension remains the primary deliverable.
 - No account, no tracking, no backend. The only network call is the optional
