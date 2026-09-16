@@ -10,6 +10,10 @@ Ships as a **Chrome extension** (Manifest V3) plus a **CLI**. The core engine is
 **rule-based NLP** - no ML model and no network calls. An optional AI deep scan
 (preferring Chrome's built-in on-device model, so no API key) can be added.
 
+> **Full step-by-step build & usage manual:** [`MANUAL.md`](MANUAL.md) — recreate
+> the whole project (engine, CLI, extension, evaluation, mobile apps, publishing)
+> from a clean machine.
+
 ---
 
 ## How it works (no ML)
