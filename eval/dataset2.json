@@ -28,7 +28,7 @@
     { "id": "c2-lb-waf", "category": "network", "prompt": "Put a WAF in front of the load balancer.", "mustFlag": ["network_restricted", "certificate_management", "monitoring_alerting"], "mustNotFlag": ["waf_protection"] },
     { "id": "c2-cf-oac", "category": "network", "prompt": "Create a CloudFront distribution with an origin access control for the S3 bucket.", "mustFlag": ["public_access_block", "waf_protection", "certificate_management"], "mustNotFlag": [] },
     { "id": "c2-route53", "category": "network", "prompt": "Create a Route 53 hosted zone with a TLS certificate.", "mustFlag": ["monitoring_alerting"], "mustNotFlag": ["certificate_management"] },
-    { "id": "c2-apigw-auth", "category": "network", "prompt": "Create an API Gateway with authentication.", "mustFlag": ["waf_protection", "certificate_management", "private_endpoint", "secrets_management"], "mustNotFlag": [] },
+    { "id": "c2-apigw-auth", "category": "network", "prompt": "Create an API Gateway with authentication.", "mustFlag": ["waf_protection", "certificate_management", "secrets_management"], "mustNotFlag": [] },
     { "id": "c2-apigw-mfa", "category": "network", "prompt": "Require MFA on the API Gateway.", "mustFlag": ["waf_protection", "certificate_management"], "mustNotFlag": ["mfa"] },
     { "id": "c2-cognito-mfa", "category": "identity", "prompt": "Create a Cognito user pool with MFA required.", "mustFlag": ["password_policy", "session_management", "data_classification"], "mustNotFlag": ["mfa"] },
     { "id": "c2-iam-rotation", "category": "identity", "prompt": "Create IAM access keys with 90 day rotation.", "mustFlag": ["least_privilege_iam", "no_wildcard_policy"], "mustNotFlag": [], "risky": [], "notRisky": ["wildcard_iam"] },

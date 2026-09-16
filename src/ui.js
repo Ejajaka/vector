@@ -74,6 +74,10 @@
       "<span>" + r.stats.mentioned + " controls present</span>" +
       "<span>" + r.stats.missing + " missing</span>" +
       "<span>" + r.stats.risky + " risky</span>" +
+      (r.tierCounts
+        ? "<span>" + r.tierCounts.core + " confirmed &middot; " + r.tierCounts.clarify +
+          " clarify &middot; " + r.tierCounts.harden + " optional</span>"
+        : "") +
       "<span><strong>" + covText + "</strong></span>" +
       "</div></div></div>"
     );
@@ -148,6 +152,25 @@
     return html + "</div>";
   }
 
+  function missingCard(m, accepted) {
+    const on = !!accepted[m.id];
+    return (
+      '<div class="v-card missing ' + severityClass(m.severity) + (on ? " is-accepted" : "") + '">' +
+      '<div class="v-card-head"><span class="v-badge">' + escapeHtml(m.severity) + "</span>" +
+      '<span class="v-dim">' + escapeHtml(m.label) + "</span>" +
+      (m.custom ? '<span class="v-tag">policy</span>' : "") +
+      (m.source === "ai" ? '<span class="v-tag ai">AI</span>' : "") + "</div>" +
+      '<p class="v-desc">' + escapeHtml(m.description) + "</p>" +
+      (m.appliesTo && m.appliesTo.length
+        ? '<p class="v-applies">Applies to: ' + escapeHtml(m.appliesTo.join(", ")) + "</p>"
+        : "") +
+      '<div class="v-clause"><code>' + escapeHtml(m.clause) + "</code></div>" +
+      '<div class="v-standards">' + m.standards.map((s) => chip(s, "std")).join("") + "</div>" +
+      '<div class="v-card-actions"><button class="v-btn ' + (on ? "accepted" : "primary") +
+      '" data-toggle="' + escapeHtml(m.id) + '">' + (on ? "Added &#10003;" : "+ Add clause") + "</button></div></div>"
+    );
+  }
+
   function missingHtml(r, accepted) {
     if (!r.missing.length) {
       return '<h2>Missing security constraints</h2><p class="v-muted">None detected. &#10003;</p>';
@@ -157,25 +180,20 @@
       '<div class="v-header-actions v-bulk">' +
       '<button class="v-btn ghost" data-action="accept-all">Accept all</button>' +
       '<button class="v-btn ghost" data-action="clear-all">Clear</button></div>';
-    html += '<div class="v-grid">';
-    for (const m of r.missing) {
-      const on = !!accepted[m.id];
+
+    const groups = [
+      { key: "core", label: "Confirmed gaps" },
+      { key: "clarify", label: "Needs clarification" },
+      { key: "harden", label: "Optional hardening" }
+    ];
+    for (const g of groups) {
+      const items = r.missing.filter((m) => (m.tier || "clarify") === g.key);
+      if (!items.length) continue;
       html +=
-        '<div class="v-card missing ' + severityClass(m.severity) + (on ? " is-accepted" : "") + '">' +
-        '<div class="v-card-head"><span class="v-badge">' + escapeHtml(m.severity) + "</span>" +
-        '<span class="v-dim">' + escapeHtml(m.label) + "</span>" +
-        (m.custom ? '<span class="v-tag">policy</span>' : "") +
-        (m.source === "ai" ? '<span class="v-tag ai">AI</span>' : "") + "</div>" +
-        '<p class="v-desc">' + escapeHtml(m.description) + "</p>" +
-        (m.appliesTo && m.appliesTo.length
-          ? '<p class="v-applies">Applies to: ' + escapeHtml(m.appliesTo.join(", ")) + "</p>"
-          : "") +
-        '<div class="v-clause"><code>' + escapeHtml(m.clause) + "</code></div>" +
-        '<div class="v-standards">' + m.standards.map((s) => chip(s, "std")).join("") + "</div>" +
-        '<div class="v-card-actions"><button class="v-btn ' + (on ? "accepted" : "primary") +
-        '" data-toggle="' + escapeHtml(m.id) + '">' + (on ? "Added &#10003;" : "+ Add clause") + "</button></div></div>";
+        '<h3 class="v-group">' + g.label + ' <span class="v-count">' + items.length + "</span></h3>" +
+        '<div class="v-grid">' + items.map((m) => missingCard(m, accepted)).join("") + "</div>";
     }
-    return html + "</div>";
+    return html;
   }
 
   /**

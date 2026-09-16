@@ -181,6 +181,16 @@ h2 {
   font-size: 11px;
 }
 
+.v-group {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  color: var(--v-fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .v-chip-row {
   display: flex;
   align-items: center;

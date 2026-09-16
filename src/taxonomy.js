@@ -106,7 +106,7 @@ const REQUIREMENTS = [
     description:
       "Policies containing '*' in the Action or Resource field effectively grant administrative access.",
     clause:
-      "Do not use wildcard '*' in IAM Action or Resource fields; each statement must name explicit actions and resources.",
+      "Avoid wildcard '*' in IAM Action fields and avoid '*' in Resource fields. Scoped ARNs such as arn:aws:s3:::my-bucket/* are acceptable; broad account-wide wildcards are not.",
     standards: ["AWS FSBP IAM.1", "CIS AWS 1.16"],
     patterns: ["no wildcard", "explicit actions", "explicit resources", "deny \\*", "avoid \\*", "no \\*:"]
   },
@@ -475,6 +475,49 @@ for (const req of REQUIREMENTS) {
 }
 
 /**
+ * Relevance tier per control. Drives how findings are grouped and weighted:
+ *   core    - strongly implied security requirement that the prompt omits
+ *   clarify - context-dependent; should be clarified, not assumed
+ *   harden  - optional hardening / organisation-specific
+ */
+const TIERS = {
+  encryption_at_rest: "core",
+  encryption_in_transit: "core",
+  public_access_block: "core",
+  least_privilege_iam: "core",
+  no_wildcard_policy: "core",
+  network_restricted: "core",
+  network_isolation: "core",
+  audit_logging: "core",
+  secrets_management: "core",
+  backup_recovery: "core",
+  mfa: "core",
+  data_residency: "clarify",
+  regional_restriction: "clarify",
+  retention_deletion: "clarify",
+  data_classification: "clarify",
+  private_endpoint: "clarify",
+  waf_protection: "clarify",
+  certificate_management: "clarify",
+  session_management: "clarify",
+  password_policy: "clarify",
+  scp_permission_boundary: "clarify",
+  cross_region_replication: "clarify",
+  imdsv2: "harden",
+  monitoring_alerting: "harden",
+  vulnerability_scanning: "harden",
+  key_rotation: "harden",
+  versioning: "harden",
+  availability: "harden",
+  cost_guardrails: "harden",
+  config_compliance: "harden"
+};
+
+for (const req of REQUIREMENTS) {
+  req.tier = TIERS[req.id] || "clarify";
+}
+
+/**
  * Terms that indicate a NON-AWS cloud. Used to warn instead of silently
  * applying AWS baseline controls to an Azure/GCP prompt.
  */
@@ -521,7 +564,7 @@ const RAW_RESOURCES = [
   { id: "elasticache", label: "ElastiCache / cache (AWS)", aliases: ["elasticache", "redis", "memcached", "cache", "caching layer"], required: ["network_restricted", "secrets_management", "backup_recovery", "key_rotation"] },
   { id: "cloudfront", label: "CloudFront / CDN (AWS)", aliases: ["cloudfront", "\\bcdn\\b", "content delivery", "edge location"], required: ["public_access_block", "certificate_management", "waf_protection"] },
   { id: "route53", label: "Route 53 / DNS (AWS)", aliases: ["route.?53", "\\bdns\\b", "hosted zone", "domain name"], required: ["certificate_management", "monitoring_alerting"] },
-  { id: "api_gateway", label: "API Gateway (AWS)", aliases: ["api gateway", "rest api", "http api", "api endpoint"], required: ["public_access_block", "waf_protection", "certificate_management", "private_endpoint", "secrets_management", "monitoring_alerting"] },
+  { id: "api_gateway", label: "API Gateway (AWS)", aliases: ["api gateway", "rest api", "http api", "api endpoint"], required: ["waf_protection", "certificate_management", "secrets_management", "monitoring_alerting"] },
   { id: "efs", label: "EFS / file storage (AWS)", aliases: ["efs", "elastic file system", "file storage", "nfs", "shared file"], required: ["data_residency", "network_restricted", "backup_recovery", "key_rotation"] },
   { id: "fsx", label: "FSx / managed file system (AWS)", aliases: ["fsx", "windows file server", "lustre", "netapp"], required: ["network_restricted", "backup_recovery", "key_rotation"] },
   { id: "stepfunctions", label: "Step Functions / orchestration (AWS)", aliases: ["step function", "orchestration", "state machine", "workflow engine"], required: ["no_wildcard_policy", "secrets_management", "monitoring_alerting"] },
@@ -607,7 +650,8 @@ const NEGATION_WORDS = [
   "forbid", "forbidden", "deny", "denied", "cannot", "can't", "cant",
   "won't", "wont", "wouldn't", "wouldnt", "shouldn't", "shouldnt",
   "neither", "nor", "none", "nothing", "skip", "omit", "exclude",
-  "free of", "exempt", "unnecessary", "needless"
+  "free of", "exempt", "unnecessary", "needless",
+  "rather than", "instead of", "as opposed to", "other than", "as well as not"
 ];
 
 /**

@@ -55,6 +55,11 @@ const RISK_LEVELS = [
   { min: 0, level: "MINIMAL", color: "#16a34a" }
 ];
 
+// How much each relevance tier contributes to the risk score. Clarifications
+// and optional hardening should not dominate the score the way confirmed
+// core gaps do.
+const TIER_MULT = { core: 1, clarify: 0.6, harden: 0.3 };
+
 const NEGATION_RE = new RegExp(
   "\\b(" + NEGATION_WORDS.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",
   "i"
@@ -375,9 +380,11 @@ function analyze(prompt, options) {
 
   for (const req of requirements) {
     if (!relevantIds.has(req.id)) continue;
-    const weight = options.strictMode && req.severity === "medium" ? severityRank("high") : severityRank(req.severity);
+    const tier = req.tier || "clarify";
+    const baseSeverity = options.strictMode && req.severity === "medium" ? "high" : req.severity;
+    const weight = severityRank(baseSeverity) * (TIER_MULT[tier] || 1);
     const res = detectRequirement(req, normalized);
-    relevantCounts.push({ id: req.id, weight, missing: !res.present });
+    relevantCounts.push({ id: req.id, weight: weight, missing: !res.present });
 
     if (res.present) {
       mentioned.push({
@@ -385,6 +392,7 @@ function analyze(prompt, options) {
         label: req.label,
         dimension: DIMENSIONS[req.dimension] || req.dimension,
         severity: req.severity,
+        tier: tier,
         description: req.description,
         standards: req.standards
       });
@@ -394,6 +402,7 @@ function analyze(prompt, options) {
         label: req.label,
         dimension: DIMENSIONS[req.dimension] || req.dimension,
         severity: req.severity,
+        tier: tier,
         description: req.description,
         clause: req.clause,
         standards: req.standards,
@@ -446,6 +455,9 @@ function analyze(prompt, options) {
   const totalControls = mentioned.length + missing.length;
   const coverageScore = totalControls ? Math.round((100 * mentioned.length) / totalControls) : 100;
 
+  const tierCounts = { core: 0, clarify: 0, harden: 0 };
+  for (const m of missing) tierCounts[m.tier || "clarify"]++;
+
   const feedback = [];
   if (nonAwsLikely) {
     feedback.push(
@@ -484,6 +496,7 @@ function analyze(prompt, options) {
     baselineOnly,
     coverage: baselineOnly ? "baseline" : "targeted",
     coverageScore: coverageScore,
+    tierCounts: tierCounts,
     semanticRelated: semanticRelated,
     nonAwsLikely: nonAwsLikely,
     disclaimer: "Diagnostic aid for AWS prompts. Findings are advisory, not a guarantee - verify before deploying.",
@@ -526,6 +539,7 @@ function mergeFindings(report, external) {
       label: m.label,
       dimension: m.dimension || "governance",
       severity: m.severity || "medium",
+      tier: m.tier || "clarify",
       description: m.description || "Identified by deep scan.",
       clause: m.clause || m.description || m.label,
       standards: m.standards || ["Deep scan"],
@@ -558,6 +572,9 @@ function mergeFindings(report, external) {
     missing: missing.length,
     risky: riskyFindings.length
   };
+  const tierCounts = { core: 0, clarify: 0, harden: 0 };
+  for (const m of missing) tierCounts[m.tier || "clarify"]++;
+  merged.tierCounts = tierCounts;
   let extra = 0;
   for (const m of missing) if (m.source === "ai") extra += severityRank(m.severity);
   for (const r of riskyFindings) if (r.source === "ai") extra += severityRank(r.severity) * 1.5;
