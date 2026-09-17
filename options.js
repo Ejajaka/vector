@@ -11,7 +11,11 @@
     save: document.getElementById("save"),
     status: document.getElementById("status"),
     localStatus: document.getElementById("local-status"),
-    history: document.getElementById("history")
+    history: document.getElementById("history"),
+    modelsBtn: document.getElementById("btn-models"),
+    modelsStatus: document.getElementById("models-status"),
+    modelListField: document.getElementById("model-list-field"),
+    modelList: document.getElementById("model-list")
   };
 
   function showLocalStatus() {
@@ -80,4 +84,41 @@
   showLocalStatus();
   VectorSettings.get().then(fill);
   VectorSettings.getHistory().then(renderHistory);
+
+  // Ask the provider which models this API key can actually use, and offer them.
+  el.modelsBtn.addEventListener("click", async function () {
+    const key = el.key.value.trim();
+    if (!key) {
+      el.modelsStatus.textContent = "Enter your API key first.";
+      return;
+    }
+    el.modelsStatus.textContent = "Checking...";
+    const base = (el.url.value.trim() || "https://generativelanguage.googleapis.com/v1beta/openai").replace(/\/+$/, "");
+    const root = base.replace(/\/openai$/, "");
+    try {
+      const res = await fetch(root + "/models?key=" + encodeURIComponent(key));
+      const data = await res.json();
+      const err = Array.isArray(data) ? data[0] && data[0].error : data && data.error;
+      if (err) {
+        el.modelsStatus.textContent = "Error: " + (err.message || err.status || res.status);
+        return;
+      }
+      const models = (data.models || [])
+        .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+        .map((m) => m.name.replace(/^models\//, ""));
+      if (!models.length) {
+        el.modelsStatus.textContent = "No usable models returned. Check the key and base URL.";
+        return;
+      }
+      el.modelList.innerHTML = models.map((n) => '<option value="' + n + '">' + n + "</option>").join("");
+      el.modelListField.classList.remove("hidden");
+      el.modelsStatus.textContent = models.length + " model(s) available - pick one above.";
+    } catch (e) {
+      el.modelsStatus.textContent = "Failed: " + e.message;
+    }
+  });
+
+  el.modelList.addEventListener("change", function () {
+    if (el.modelList.value) el.model.value = el.modelList.value;
+  });
 })();
