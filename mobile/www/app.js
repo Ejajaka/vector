@@ -109,7 +109,12 @@
       setHint();
       toast("Deep scan merged (" + result.via + ")");
     } catch (err) {
-      toast(err.message || "Deep scan failed");
+      const m = String((err && err.message) || "");
+      if (/failed to fetch|network|load failed/i.test(m)) {
+        toast("Deep scan is blocked by the browser (CORS). Use the extension or the mobile app for deep scan.");
+      } else {
+        toast(m || "Deep scan failed");
+      }
     } finally {
       el.deep.disabled = false;
       el.deep.textContent = "Deep scan";
