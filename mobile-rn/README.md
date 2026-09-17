@@ -27,6 +27,16 @@ npm run sync        # copy the shared engine into src/
 npx expo start
 ```
 
+Or use the helper that advertises the correct LAN IP automatically (fixes the
+"couldn't connect to the server" / blank screen on a phone):
+
+```powershell
+npm run start:device
+```
+
+In the app: **Sample** → **Analyze** → **Harden prompt → risk 0** (one tap)
+produces a prompt that re-analyses to risk 0 / coverage 100%.
+
 Then install **Expo Go** on the phone and scan the QR code. Instant demo, no
 build, no Apple account.
 

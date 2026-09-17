@@ -71,6 +71,20 @@ cosine similarity is polarity-blind — "open all ports" scores 0.49 against the
 *restrict ports* control — so it is never allowed to mark a control as already
 stated. That negative result is documented rather than hidden.
 
+## One-tap harden
+
+`VectorAnalyzer.harden(prompt)` produces a prompt that re-analyses to **risk 0 /
+coverage 100%**: it neutralises risky phrases in the base prompt (e.g. `0.0.0.0/0`
+-> "a restricted trusted CIDR range") and appends missing-control clauses,
+re-analysing until nothing new appears. Available as a **Harden prompt** button
+in the popup, the in-page panel and the mobile app.
+
+## Scope guard
+
+Input with no AWS resource, no infrastructure vocabulary and no infrastructure
+intent (e.g. "tell me a joke") is rejected (`report.outOfScope`) with a short
+message instead of a security score.
+
 ## Install the Chrome extension
 
 1. `chrome://extensions` -> enable **Developer mode**.

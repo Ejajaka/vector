@@ -50,7 +50,7 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-├── manifest.json            Chrome/Edge MV3 manifest (v0.4.8)
+├── manifest.json            Chrome/Edge MV3 manifest (v0.5.1)
 ├── popup.html/.css/.js       extension toolbar popup
 ├── content.js/.css           in-page floating button
 ├── options.html/.js          settings, policy, history
@@ -151,6 +151,11 @@ No `npm install` is needed for the core — the engine has zero dependencies.
   (`m.tf`), e.g. `storage_encrypted = true`, `block_public_acls = true`.
 - **Context awareness**: rule-based cues detect `dev` vs `prod` and adjust the
   risk score (`envFactor` 0.75 / 1.1 / 1.0).
+- **Scope guard**: input with no AWS resource, no infrastructure vocabulary and
+  no infrastructure intent is rejected (`report.outOfScope`) instead of scored.
+- **Harden**: `VectorAnalyzer.harden(prompt)` neutralises risky phrases in the
+  base prompt and appends missing-control clauses iteratively until re-analysis
+  is clean (risk 0, coverage 100%). One tap in the UIs.
 - **Negation guard**: "do not make it public" is not "public"; "not not
   encrypted" is positive; "logging disabled" is not "logging".
 - **Aliases** may be plain phrases (`"s3 bucket"`) or regex (`"\becr\b"`).
@@ -373,6 +378,8 @@ extension and repo ship with none.
 | 0.4.6 | live risk + coverage projection on clause accept; concise clauses (all <= 160 chars) |
 | 0.4.7 | context-aware env weighting, Terraform attribute hints, post-generation `verify` (src/tfcheck.js), LLM downstream study + kappa harnesses |
 | 0.4.8 | expand to 78 AWS resources, scope-aware negation (except/unless), GitHub Actions CI, CIS org policy pack (`examples/policy-cis.json`) |
+| 0.5.0 | one-tap `harden()`: neutralises risky phrases + iterates clauses until risk 0 / coverage 100% |
+| 0.5.1 | scope guard: reject non-infrastructure input instead of scoring it |
 
 ---
 

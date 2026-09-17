@@ -178,6 +178,8 @@ const FEATURES = [
   LI("Paraphrase lexicon - a curated, polarity-safe list of alternative phrasings per control (for example \"scrambled on disk\" -> encryption at rest, \"who did what\" -> audit logging)."),
   LI("Non-AWS guard - warns when a prompt targets Azure or GCP instead of silently applying AWS rules."),
   LI("Advisory disclaimer - results are presented as a diagnostic aid, not a guarantee, and the prompt stays AWS-scoped."),
+  LI("One-tap Harden - neutralises risky phrasing and appends missing clauses until the prompt re-analyses to risk 0 / coverage 100%."),
+  LI("Scope guard - input with no infrastructure signal is rejected instead of being scored."),
   LI("Targeted recommendations - each finding explained in plain language, with standards references and the resource it applies to."),
   LI("One-click \"Add clause\" - every missing control becomes a ready-to-add clause."),
   LI("Fillable / improved prompt - builds the hardened prompt live as clauses are accepted."),
@@ -325,7 +327,8 @@ const PIPELINE = [
   C("REPORT { prompt, tokens, intents, resources, mentioned, missing,"),
   C("         riskyFindings, riskScore, riskLevel, confidenceScore,"),
   C("         needsDeepScan, feedback, coverage, stats }"),
-  P("The shared renderer (src/ui.js) draws the report. Accepting clauses calls buildImprovedPrompt to produce the hardened prompt, which can be copied."),
+  P("Scope guard: if the text has no AWS resource, no infrastructure vocabulary and no infrastructure intent, the report is marked outOfScope with no findings instead of inventing them."),
+  P("The shared renderer (src/ui.js) draws the report. Accepting clauses calls buildImprovedPrompt; the one-tap Harden calls harden(), which neutralises risky phrasing and iterates clauses until re-analysis is clean (risk 0, coverage 100%)."),
 
   H1("3. Where the pipeline runs"),
   LI("Popup (popup.js): reads a typed prompt, analyses, renders, accepts clauses, copies the improved prompt, records history, offers deep scan."),
