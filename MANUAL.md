@@ -50,7 +50,7 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-├── manifest.json            Chrome/Edge MV3 manifest (v0.5.5)
+├── manifest.json            Chrome/Edge MV3 manifest (v0.5.6)
 ├── popup.html/.css/.js       extension toolbar popup
 ├── content.js/.css           in-page floating button
 ├── options.html/.js          settings, policy, history
@@ -408,6 +408,7 @@ Notes:
 | 0.5.3 | Options "List models for my key" button |
 | 0.5.4 | allow `opencode.ai` host (OpenCode Zen OpenAI-compatible endpoint) |
 | 0.5.5 | visible low-confidence indicator + Deep scan guidance (popup + mobile) |
+| 0.5.6 | scope guard tightened: an ambiguous word alone ("a bucket of water", "a queue for tickets") is no longer scored; risky-only statements stay in scope; demo cache-busted with a version badge |
 
 ---
 
