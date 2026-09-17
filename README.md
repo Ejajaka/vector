@@ -44,6 +44,20 @@ Either way we only *ask an existing model* for controls we may have missed and
 merge the answer back. Every finding is badged **AI** vs rule. If neither tier is
 available the extension still works - rules only.
 
+**Providers must match across key, Base URL and model:**
+
+| Provider | Base URL | Example model |
+|---|---|---|
+| Gemini (free tier, works from a web page) | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.5-flash` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| OpenCode Zen | `https://opencode.ai/zen/v1` | `deepseek-v4-flash` |
+
+Use **Options -> "List models for my key"** to see valid model ids (names change;
+`gemini-2.0-flash` was retired). Deep scan auto-runs on low confidence
+(`< 50%`) or coverage `< 50%` when a key is saved and *Auto deep scan* is on.
+**CORS:** the browser demo can only call providers that send CORS headers
+(Gemini does; OpenCode Zen does not) - use the extension or mobile app for those.
+
 ## Confidence
 Every analysis returns a rule-engine confidence (0-100):
 

@@ -50,7 +50,7 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-├── manifest.json            Chrome/Edge MV3 manifest (v0.5.1)
+├── manifest.json            Chrome/Edge MV3 manifest (v0.5.5)
 ├── popup.html/.css/.js       extension toolbar popup
 ├── content.js/.css           in-page floating button
 ├── options.html/.js          settings, policy, history
@@ -355,11 +355,35 @@ Off by default. Two tiers:
 1. **On-device** (Chrome's built-in model) — no key, no network. Not available in
    Edge; availability varies.
 2. **Hosted** — any OpenAI-compatible endpoint using the user's own key.
-   Default: `https://generativelanguage.googleapis.com/v1beta/openai`,
-   model `gemini-2.0-flash` (Gemini has a limited free tier).
 
 Set the key in the extension **Options** page. Never commit an API key; the
 extension and repo ship with none.
+
+### Providers (key, Base URL and model must match)
+
+| Provider | Base URL | Example model |
+|---|---|---|
+| Gemini (free tier, browser-friendly) | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.5-flash` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| OpenCode Zen | `https://opencode.ai/zen/v1` | `deepseek-v4-flash` |
+
+Notes:
+- **Model names change.** `gemini-2.0-flash` was retired and returns 404. Use the
+  **"List models for my key"** button in Options to see what your key can call.
+- **CORS:** a **web page** (the GitHub Pages demo) can only call providers that
+  send CORS headers (Gemini does; OpenCode Zen does not). The **extension**
+  (host permissions) and the **mobile app** (native networking) bypass CORS.
+- The manifest `host_permissions` must include the provider host:
+  `api.openai.com`, `generativelanguage.googleapis.com`, `opencode.ai`.
+- Use **chat-completions** models. OpenCode Zen GPT/Grok ids use `/responses`,
+  which this client does not call.
+
+### When it runs
+- **Manually:** the **Deep scan** button.
+- **Automatically:** when the analysis is low-confidence (`confidence < 50%`)
+  **or** coverage is below 50%. The extension requires *Auto deep scan* to be
+  ticked in Options; the mobile app runs it whenever a key is saved. The UI shows
+  a `deep scan recommended` / `low confidence` indicator.
 
 ---
 
@@ -380,6 +404,10 @@ extension and repo ship with none.
 | 0.4.8 | expand to 78 AWS resources, scope-aware negation (except/unless), GitHub Actions CI, CIS org policy pack (`examples/policy-cis.json`) |
 | 0.5.0 | one-tap `harden()`: neutralises risky phrases + iterates clauses until risk 0 / coverage 100% |
 | 0.5.1 | scope guard: reject non-infrastructure input instead of scoring it |
+| 0.5.2 | fix deep scan 404 (retired `gemini-2.0-flash` -> `gemini-2.5-flash`); surface provider error detail |
+| 0.5.3 | Options "List models for my key" button |
+| 0.5.4 | allow `opencode.ai` host (OpenCode Zen OpenAI-compatible endpoint) |
+| 0.5.5 | visible low-confidence indicator + Deep scan guidance (popup + mobile) |
 
 ---
 
