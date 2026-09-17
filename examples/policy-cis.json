@@ -1,0 +1,44 @@
+{
+  "requirements": [
+    {
+      "id": "org_encryption_cmk",
+      "label": "Customer-managed KMS keys required",
+      "dimension": "encryption",
+      "severity": "high",
+      "description": "Organisation policy requires customer-managed KMS keys with rotation, not AWS-managed keys.",
+      "clause": "Encrypt at rest with a customer-managed KMS key with automatic rotation enabled.",
+      "standards": ["Organisation policy", "CIS AWS 3.7"],
+      "patterns": ["customer[- ]managed key", "cmk", "kms key rotation"],
+      "alwaysRequired": true
+    },
+    {
+      "id": "org_tagging",
+      "label": "Mandatory resource tagging",
+      "dimension": "governance",
+      "severity": "medium",
+      "description": "Every resource must carry Owner, Environment and CostCenter tags.",
+      "clause": "Tag every resource with Owner, Environment and CostCenter.",
+      "standards": ["Organisation policy"],
+      "patterns": ["tagged", "tags", "cost ?center"],
+      "alwaysRequired": true
+    }
+  ],
+  "riskyPatterns": [
+    {
+      "id": "banned_region",
+      "pattern": "us-east-1|us-west-1|us-west-2",
+      "label": "Banned region",
+      "severity": "high",
+      "description": "Organisation policy forbids US regions for data-residency reasons.",
+      "fix": "Deploy only to approved regions (eu-west-1 or ap-south-1)."
+    },
+    {
+      "id": "open_ssh_org",
+      "pattern": "port 22|ssh",
+      "label": "SSH exposed",
+      "severity": "medium",
+      "description": "Organisation policy requires SSM Session Manager instead of SSH.",
+      "fix": "Use SSM Session Manager and close port 22."
+    }
+  ]
+}

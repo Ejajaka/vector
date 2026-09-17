@@ -605,7 +605,7 @@ const RAW_RESOURCES = [
   { id: "vpc", label: "VPC / network (AWS)", aliases: ["vpc", "virtual private cloud", "subnet", "route table", "nat gateway", "network acl"], required: ["network_isolation", "network_restricted", "private_endpoint", "monitoring_alerting"] },
   { id: "load_balancer", label: "Load balancer / endpoint (AWS)", aliases: ["load balancer", "\\balb\\b", "\\bnlb\\b", "\\belb\\b", "application gateway", "endpoint", "elastic load"], required: ["network_restricted", "waf_protection", "certificate_management", "monitoring_alerting"] },
   { id: "kms", label: "KMS key (AWS)", aliases: ["kms", "key management", "encryption key", "customer managed key", "aws kms"], required: ["key_rotation", "no_wildcard_policy"] },
-  { id: "cloudtrail", label: "CloudTrail / logging service (AWS)", aliases: ["cloudtrail", "cloudwatch", "\\btrail\\b", "audit service", "central logging"], required: ["config_compliance", "monitoring_alerting"] },
+  { id: "cloudtrail", label: "CloudTrail / logging service (AWS)", aliases: ["cloudtrail", "\\btrail\\b", "audit service", "central logging"], required: ["config_compliance", "monitoring_alerting"] },
   { id: "eks", label: "EKS / container platform (AWS)", aliases: ["eks", "kubernetes", "\\bk8s\\b", "container cluster", "container service"], required: ["network_isolation", "network_restricted", "secrets_management", "vulnerability_scanning", "monitoring_alerting", "key_rotation"] },
   { id: "secrets", label: "Secrets manager (AWS)", aliases: ["secrets manager", "parameter store", "\\bssm\\b", "secret store"], required: ["key_rotation", "data_classification"] },
   { id: "sqs", label: "SQS queue (AWS)", aliases: ["sqs", "queue", "message queue", "simple queue"], required: ["key_rotation", "retention_deletion"] },
@@ -652,7 +652,26 @@ const RAW_RESOURCES = [
   { id: "transfer", label: "Transfer Family / SFTP (AWS)", aliases: ["transfer family", "\\bsftp\\b", "\\bftp\\b", "managed file transfer"], required: ["network_restricted", "public_access_block", "private_endpoint"] },
   { id: "lightsail", label: "Lightsail (AWS)", aliases: ["lightsail"], required: ["network_restricted", "backup_recovery", "monitoring_alerting"] },
   { id: "apprunner", label: "App Runner (AWS)", aliases: ["app runner", "apprunner"], required: ["no_wildcard_policy", "secrets_management", "monitoring_alerting"] },
-  { id: "cloudformation", label: "CloudFormation / IaC (AWS)", aliases: ["cloudformation", "\\bcfn\\b", "infrastructure as code"], noDefaults: true, required: ["no_wildcard_policy", "config_compliance", "secrets_management", "audit_logging"] }
+  { id: "cloudformation", label: "CloudFormation / IaC (AWS)", aliases: ["cloudformation", "\\bcfn\\b", "infrastructure as code"], noDefaults: true, required: ["no_wildcard_policy", "config_compliance", "secrets_management", "audit_logging"] },
+  { id: "cloudwatch", label: "CloudWatch / observability (AWS)", aliases: ["cloudwatch", "cloud watch", "metrics", "alarms?", "dashboards?"], required: ["monitoring_alerting", "retention_deletion"] },
+  { id: "acm", label: "ACM / certificate manager (AWS)", aliases: ["\\bacm\\b", "certificate manager", "ssl certificate"], required: ["certificate_management", "key_rotation"] },
+  { id: "elastic_beanstalk", label: "Elastic Beanstalk (AWS)", aliases: ["elastic beanstalk", "beanstalk"], required: ["network_restricted", "secrets_management", "vulnerability_scanning", "monitoring_alerting", "imdsv2"] },
+  { id: "appsync", label: "AppSync / GraphQL (AWS)", aliases: ["appsync", "graphql api"], required: ["waf_protection", "certificate_management", "secrets_management", "monitoring_alerting"] },
+  { id: "amplify", label: "Amplify / hosting (AWS)", aliases: ["amplify", "amplify hosting"], required: ["certificate_management", "waf_protection", "secrets_management"] },
+  { id: "codepipeline", label: "CodePipeline / CI-CD (AWS)", aliases: ["codepipeline", "codebuild", "codecommit", "codedeploy", "ci/?cd pipeline"], noDefaults: true, required: ["no_wildcard_policy", "secrets_management", "audit_logging", "least_privilege_iam", "config_compliance"] },
+  { id: "xray", label: "X-Ray / tracing (AWS)", aliases: ["x-?ray", "distributed tracing"], required: ["least_privilege_iam", "private_endpoint"] },
+  { id: "documentdb", label: "DocumentDB / MongoDB (AWS)", aliases: ["documentdb", "mongo ?db", "document database"], required: ["public_access_block", "data_residency", "network_restricted", "secrets_management", "backup_recovery", "key_rotation", "monitoring_alerting"] },
+  { id: "neptune", label: "Neptune / graph DB (AWS)", aliases: ["neptune", "graph database"], required: ["public_access_block", "data_residency", "network_restricted", "secrets_management", "backup_recovery", "key_rotation"] },
+  { id: "timestream", label: "Timestream / time series (AWS)", aliases: ["timestream", "time series database"], required: ["key_rotation", "backup_recovery", "data_residency", "retention_deletion"] },
+  { id: "memorydb", label: "MemoryDB / Redis (AWS)", aliases: ["memorydb"], required: ["network_restricted", "secrets_management", "backup_recovery", "key_rotation"] },
+  { id: "keyspaces", label: "Keyspaces / Cassandra (AWS)", aliases: ["keyspaces", "cassandra"], required: ["network_restricted", "backup_recovery", "key_rotation", "data_residency"] },
+  { id: "global_accelerator", label: "Global Accelerator (AWS)", aliases: ["global accelerator", "anycast"], required: ["waf_protection", "certificate_management", "monitoring_alerting"] },
+  { id: "vpc_lattice", label: "VPC Lattice (AWS)", aliases: ["vpc lattice"], required: ["network_isolation", "network_restricted", "audit_logging", "monitoring_alerting"] },
+  { id: "service_catalog", label: "Service Catalog (AWS)", aliases: ["service catalog"], noDefaults: true, required: ["no_wildcard_policy", "least_privilege_iam", "audit_logging"] },
+  { id: "cost_explorer", label: "Cost Explorer / Budgets (AWS)", aliases: ["cost explorer", "cost management", "\\bbudgets?\\b"], noDefaults: true, required: ["cost_guardrails", "least_privilege_iam", "audit_logging"] },
+  { id: "identity_center", label: "IAM Identity Center / SSO (AWS)", aliases: ["identity center", "single sign.?on", "\\bsso\\b"], noDefaults: true, required: ["mfa", "session_management", "password_policy", "audit_logging"] },
+  { id: "cloudhsm", label: "CloudHSM (AWS)", aliases: ["cloudhsm", "\\bhsm\\b", "hardware security module"], required: ["network_isolation", "audit_logging", "backup_recovery"] },
+  { id: "appmesh", label: "App Mesh / service mesh (AWS)", aliases: ["app mesh", "service mesh"], required: ["network_isolation", "encryption_in_transit", "monitoring_alerting", "secrets_management"] }
 ];
 
 function uniq(arr) {

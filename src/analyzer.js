@@ -67,7 +67,7 @@ const NEGATION_RE = new RegExp(
   "i"
 );
 const NEGATION_RE_G = new RegExp(NEGATION_RE.source, "gi");
-const CLAUSE_SPLIT = /[.,;!?\n]|\b(?:and|but|or|then|so|while|however)\b/;
+const CLAUSE_SPLIT = /[.,;!?\n]|\b(?:and|but|or|then|so|while|however|except|unless|apart from|provided|assuming)\b/;
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

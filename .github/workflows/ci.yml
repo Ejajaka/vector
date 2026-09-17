@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Evaluation (precision / recall / F1 + negation traps)
+        run: npm run eval
+
+      - name: Downstream demo (insecure vs hardened Terraform)
+        run: npm run downstream
+
+      - name: Post-generation verification demo
+        run: npm run verify -- eval/downstream/insecure.tf || true
