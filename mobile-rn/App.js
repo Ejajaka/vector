@@ -120,17 +120,18 @@ export default function App() {
     });
   }
 
-  function acceptTop() {
-    if (!report) return;
-    const next = {};
-    // Accept the confirmed gaps only (the important ones), not everything.
-    report.missing.forEach((m) => {
-      if ((m.tier || "clarify") === "core") next[m.id] = true;
-    });
-    report.riskyFindings.forEach((f) => (next[f.id] = true));
-    const proj = project(report, next);
-    setAccepted(next);
-    flash("Confirmed gaps added · coverage " + proj.coverageScore + "%");
+  function hardenNow() {
+    const p = (report ? report.prompt : prompt).trim();
+    if (!p) {
+      setStatus("Enter a prompt first");
+      return;
+    }
+    const h = VectorAnalyzer.harden(p);
+    setReport(h.report);
+    setAccepted({});
+    setShowClarify(false);
+    setShowHarden(false);
+    flash("Hardened · risk " + h.report.riskScore + " · coverage " + h.report.coverageScore + "%");
   }
 
   const improved = report ? buildImproved(report.prompt, acceptedClauses(report, accepted)) : "";
@@ -254,8 +255,8 @@ export default function App() {
                   <Text style={[styles.tierChip, { color: "#fbbf24" }]}>{clarify.length} clarify</Text>
                   <Text style={[styles.tierChip, { color: "#60a5fa" }]}>{harden.length} optional</Text>
                 </View>
-                <Pressable style={styles.acceptTop} onPress={acceptTop}>
-                  <Text style={styles.acceptTopText}>Accept confirmed gaps + risky</Text>
+                <Pressable style={styles.acceptTop} onPress={hardenNow}>
+                  <Text style={styles.acceptTopText}>Harden prompt → risk 0</Text>
                 </Pressable>
               </View>
 

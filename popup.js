@@ -50,9 +50,20 @@
         report.riskyFindings.forEach(function (f) { state.accepted[f.id] = true; });
         render();
       },
-      onClearAll: function () { state.accepted = {}; render(); }
+      onClearAll: function () { state.accepted = {}; render(); },
+      onHarden: hardenNow
     });
     updateImproved();
+  }
+
+  function hardenNow() {
+    if (!report) return;
+    const h = VectorAnalyzer.harden(report.prompt);
+    report = h.report;
+    state.accepted = {};
+    render();
+    setHint();
+    toast("Hardened · risk " + report.riskScore + " · coverage " + report.coverageScore + "%");
   }
 
   function setHint() {

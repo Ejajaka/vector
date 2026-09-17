@@ -661,10 +661,60 @@ function buildImprovedPrompt(prompt, clauses) {
   return base + "\n\nSecurity requirements:\n" + list.map((c) => "- " + c).join("\n");
 }
 
+/**
+ * Rewrite the risky phrases in a prompt into safe wording (e.g. "0.0.0.0/0"
+ * -> "a restricted trusted CIDR range"). Deterministic, template based.
+ */
+function neutralizeRisky(text) {
+  let out = String(text || "");
+  for (const rp of RISKY_PATTERNS) {
+    if (!rp.neutralize) continue;
+    for (const pair of rp.neutralize) {
+      out = out.replace(pair[0], pair[1]);
+    }
+  }
+  return out;
+}
+
+/**
+ * Iteratively harden a prompt until re-analysis is clean (risk 0 / coverage 100%).
+ *
+ * Two things happen:
+ *   1. risky phrases in the base prompt are neutralised into safe wording
+ *   2. missing-control clauses are appended, re-analysed and topped up until
+ *      nothing new appears (a clause can mention another service, which the
+ *      analyzer then also wants covered)
+ */
+function harden(prompt, maxIterations) {
+  const limit = maxIterations || 8;
+  const base = neutralizeRisky(String(prompt || "").trim());
+  const clauses = [];
+  let current = base;
+
+  for (let i = 0; i < limit; i++) {
+    const r = analyze(current);
+    const found = r.missing
+      .map((m) => m.clause)
+      .concat(r.riskyFindings.map((f) => f.fix));
+    let added = 0;
+    for (const c of found) {
+      if (c && clauses.indexOf(c) === -1) {
+        clauses.push(c);
+        added++;
+      }
+    }
+    if (added === 0) break;
+    current = buildImprovedPrompt(base, clauses);
+  }
+
+  return { prompt: current, clauses: clauses, report: analyze(current) };
+}
+
 const VectorAnalyzer = {
   analyze,
   mergeFindings,
   project,
+  harden,
   buildImprovedPrompt,
   normalize,
   tokenize,

@@ -58,7 +58,7 @@ const REQUIREMENTS = [
     description:
       "Traffic can be intercepted or modified on the network. TLS protects data in transit and prevents downgrade / man-in-the-middle attacks.",
     clause:
-      "Use TLS 1.2 or higher for all traffic and redirect HTTP to HTTPS.",
+      "Use TLS 1.2 or higher for every connection and redirect HTTP to HTTPS.",
     standards: ["AWS FSBP ELB.4 / CloudFront.4", "NIST SP 800-53 SC-8"],
     patterns: ["in transit", "\\btls\\b", "\\bssl\\b", "https", "encrypted (connection|traffic)", "certificate", "secure transport", "end[- ]to[- ]end encrypt"]
   },
@@ -106,7 +106,7 @@ const REQUIREMENTS = [
     description:
       "Policies containing '*' in the Action or Resource field effectively grant administrative access.",
     clause:
-      "Avoid wildcard actions and account-wide wildcard resources in IAM policies.",
+      "In IAM policies use explicit actions and explicit resources instead of '*', scoped to the minimum required.",
     standards: ["AWS FSBP IAM.1", "CIS AWS 1.16"],
     patterns: ["no wildcard", "explicit actions", "explicit resources", "deny \\*", "avoid \\*", "no \\*:"]
   },
@@ -118,7 +118,7 @@ const REQUIREMENTS = [
     description:
       "Security groups open to 0.0.0.0/0 can expose administrative or database ports to the whole internet. Internet-facing application ports are legitimate; management and data ports are not.",
     clause:
-      "Allow public inbound only on required app ports (for example 443); never expose SSH/RDP or database ports to the internet.",
+      "Restrict inbound to the required app ports (for example 443). Keep administrative and database ports reachable only from trusted networks.",
     standards: ["CIS AWS 5.2 / 5.3", "AWS FSBP EC2.18 / EC2.19", "NIST SP 800-53 SC-7"],
     patterns: [
       "restrict(ed)? (access|inbound|traffic|ports?|security group|ingress)",
@@ -151,7 +151,7 @@ const REQUIREMENTS = [
     description:
       "The prompt does not state where data may be stored or processed. If personal or regulated data is involved, residency must be specified to meet GDPR / DPDP obligations.",
     clause:
-      "If personal or regulated data is involved, specify the approved jurisdictions and whether cross-region replication is allowed.",
+      "If personal or regulated data is involved, define data residency: the approved jurisdictions where data may reside.",
     standards: ["GDPR Art. 5 / 44-49", "India DPDP Act 2023 s.16", "NIST SP 800-53 PM-8"],
     patterns: [
       "data residency", "reside", "sovereignty", "\\bgdpr\\b", "in[- ]country",
@@ -733,14 +733,26 @@ const RISKY_PATTERNS = [
   {
     id: "open_ssh",
     pattern: "0\\.0\\.0\\.0/0|::/0|open to (the )?(internet|world|public|anyone)|any ip|all traffic|all ports|unrestricted",
+    neutralize: [
+      [/0\.0\.0\.0\/0/gi, "a restricted trusted CIDR range"],
+      [/\ball ports\b/gi, "only the required ports"],
+      [/open to (the )?(internet|world|public|anyone)/gi, "reachable only on required ports"],
+      [/\bunrestricted\b/gi, "restricted"]
+    ],
     label: "Unrestricted inbound access",
     severity: "high",
     description: "The prompt appears to allow traffic from anywhere, exposing services to the entire internet.",
-    fix: "Replace 0.0.0.0/0 with a specific, trusted CIDR range and open only required ports."
+    fix: "Restrict inbound to a specific trusted CIDR range and open only the required ports."
   },
   {
     id: "public_bucket",
     pattern: "public\\s+(?:s3\\s+|aws\\s+|amazon\\s+)?(?:bucket|blob|storage|files?|object)|public(ly)? (bucket|blob|readable|writable)|world[- ]readable|world[- ]writable|make\\s+(?:it|the|this|a|my)?\\s*(?:s3|aws|amazon|the)?\\s*(?:bucket|blob|storage|files?|object)?\\s*public|public[- ]read|public[- ]write|anonymous (access|read)",
+    neutralize: [
+      [/make\s+(?:it|the|this|a|my)?\s*(?:s3|aws|amazon|the)?\s*(?:bucket|blob|storage|files?|object)?\s*public/gi, "keep the storage private"],
+      [/world[- ]readable/gi, "private"],
+      [/world[- ]writable/gi, "private"],
+      [/public(ly)? (bucket|blob|readable|writable)/gi, "private storage"]
+    ],
     label: "Publicly exposed storage",
     severity: "high",
     description: "The prompt explicitly asks for public storage access, which risks a data breach.",
@@ -749,14 +761,32 @@ const RISKY_PATTERNS = [
   {
     id: "wildcard_iam",
     pattern: "wildcard|\\*:\\*|administratoraccess|admin access|full admin|root access|all permissions|\\* on all|\\* for all|full control|full access",
+    neutralize: [
+      [/administratoraccess/gi, "least-privilege access"],
+      [/admin access/gi, "least-privilege access"],
+      [/\bfull admin\b/gi, "scoped access"],
+      [/\broot access\b/gi, "scoped access"],
+      [/\ball permissions\b/gi, "only the required permissions"],
+      [/\bfull access\b/gi, "scoped access"],
+      [/\bfull control\b/gi, "scoped control"],
+      [/\bwildcard\b/gi, "scoped"]
+    ],
     label: "Wildcard / admin IAM permissions",
     severity: "high",
     description: "Wildcard or administrative permissions violate least privilege and massively widen the blast radius.",
-    fix: "Scope IAM actions and resources to the minimum required; remove all wildcards."
+    fix: "Scope IAM actions and resources to the minimum required; remove broad '*' permissions."
   },
   {
     id: "no_encryption",
     pattern: "without (encryption|tls|ssl)|no encryption|not encrypted|unencrypted|disable encryption|encryption[^.]{0,12}(disabled|off)|plaintext|plain text|in the clear",
+    neutralize: [
+      [/without (encryption|tls|ssl)/gi, "with encryption"],
+      [/no encryption/gi, "encryption"],
+      [/not encrypted/gi, "encrypted"],
+      [/unencrypted/gi, "encrypted"],
+      [/plain ?text/gi, "encrypted transport"],
+      [/in the clear/gi, "encrypted"]
+    ],
     label: "Unencrypted data",
     severity: "high",
     description: "The prompt appears to allow unencrypted data, which is almost never acceptable.",
@@ -765,6 +795,7 @@ const RISKY_PATTERNS = [
   {
     id: "hardcoded_secret",
     pattern: "hard[- ]?cod|password in (the )?code|put the password|api key in|paste the key|inline (password|secret)|embed the (key|secret|password)",
+    neutralize: [[/hard[- ]?cod(e|ed|ing)?/gi, "stored in a managed secret store"]],
     label: "Hard-coded credentials",
     severity: "high",
     description: "Hard-coding secrets leaks them into source control, logs and build artifacts.",
@@ -773,6 +804,12 @@ const RISKY_PATTERNS = [
   {
     id: "disabled_logging",
     pattern: "disable log|no log|without log|turn off log|stop logging|remove logging|logging (is )?(disabled|off)|logs? (are )?(disabled|off)",
+    neutralize: [
+      [/disable (logging|logs?)/gi, "enable logging"],
+      [/logging (is )?(disabled|off)/gi, "logging enabled"],
+      [/no logging/gi, "full logging"],
+      [/without logging/gi, "with logging"]
+    ],
     label: "Logging disabled",
     severity: "medium",
     description: "Disabling logs destroys the audit trail needed for incident response.",
@@ -781,6 +818,13 @@ const RISKY_PATTERNS = [
   {
     id: "weak_auth",
     pattern: "no mfa|without mfa|no authentication|without authentication|anonymous user|no password|weak password|no authorization",
+    neutralize: [
+      [/without mfa/gi, "with MFA"],
+      [/no mfa/gi, "MFA"],
+      [/without authentication/gi, "with authentication"],
+      [/no authentication/gi, "authentication"],
+      [/weak password/gi, "strong password"]
+    ],
     label: "Weak or missing authentication",
     severity: "high",
     description: "Missing authentication or MFA lets attackers reach resources with stolen or no credentials.",
@@ -789,6 +833,7 @@ const RISKY_PATTERNS = [
   {
     id: "public_database",
     pattern: "(public(ly)?|internet)[^.]{0,20}(database|\\bdb\\b|rds|sql)|(database|\\brds\\b|\\bdb\\b)[^.]{0,20}(public|internet)",
+    neutralize: [[/public(ly)? accessible (database|db|rds)/gi, "private database"], [/internet[- ]facing (database|db|rds)/gi, "private database"]],
     label: "Publicly reachable database",
     severity: "high",
     description: "A database exposed to the internet is a top breach vector.",
@@ -797,6 +842,7 @@ const RISKY_PATTERNS = [
   {
     id: "no_backup",
     pattern: "no backup|without backup|skip backup|disable backup|no snapshot",
+    neutralize: [[/no backups?/gi, "automated backups"], [/without backups?/gi, "with automated backups"], [/disable backup/gi, "enable backups"]],
     label: "Backups disabled",
     severity: "medium",
     description: "Without backups, accidental deletion or ransomware becomes permanent loss.",

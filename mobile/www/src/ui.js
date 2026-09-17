@@ -195,6 +195,7 @@
     let html =
       '<h2>Missing security constraints <span class="v-count">' + r.missing.length + "</span></h2>" +
       '<div class="v-header-actions v-bulk">' +
+      '<button class="v-btn primary" data-action="harden">Harden prompt</button>' +
       '<button class="v-btn ghost" data-action="accept-all">Accept all</button>' +
       '<button class="v-btn ghost" data-action="clear-all">Clear</button></div>';
 
@@ -242,6 +243,8 @@
     if (aa) aa.addEventListener("click", () => handlers.onAcceptAll && handlers.onAcceptAll());
     const ca = container.querySelector('[data-action="clear-all"]');
     if (ca) ca.addEventListener("click", () => handlers.onClearAll && handlers.onClearAll());
+    const hb = container.querySelector('[data-action="harden"]');
+    if (hb) hb.addEventListener("click", () => handlers.onHarden && handlers.onHarden());
   }
 
   const VectorUI = {

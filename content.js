@@ -77,7 +77,14 @@
         report.riskyFindings.forEach(function (f) { state.accepted[f.id] = true; });
         render();
       },
-      onClearAll: function () { state.accepted = {}; render(); }
+      onClearAll: function () { state.accepted = {}; render(); },
+      onHarden: function () {
+        if (!report) return;
+        const h = VectorAnalyzer.harden(report.prompt);
+        report = h.report;
+        state.accepted = {};
+        render();
+      }
     });
     updateImproved();
   }

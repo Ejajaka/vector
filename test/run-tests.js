@@ -3,6 +3,7 @@
 const assert = require("assert");
 const { analyze, buildImprovedPrompt, tokenize } = require("../src/analyzer");
 const { project } = require("../src/analyzer");
+const { harden } = require("../src/analyzer");
 
 let passed = 0;
 let failed = 0;
@@ -406,6 +407,33 @@ test("tfcheck: a hardened Terraform file passes the built-in checks", () => {
   ].join("\n");
   const issues = verifyText(tf);
   assert.strictEqual(issues.length, 0, "expected no issues, got: " + issues.map((i) => i.id).join(","));
+});
+
+// ---- Harden (iterative) ----
+test("harden: a plain prompt becomes a zero-risk prompt", () => {
+  const h = harden("Create an S3 bucket for user documents.");
+  assert.strictEqual(h.report.riskScore, 0, "risk should be 0");
+  assert.strictEqual(h.report.coverageScore, 100, "coverage should be 100%");
+});
+
+test("harden: risky phrases are neutralised to zero", () => {
+  const h = harden(
+    "Create an S3 bucket and an EC2 instance with a security group that allows SSH from 0.0.0.0/0. Give the instance an IAM role with admin access."
+  );
+  assert.strictEqual(h.report.riskScore, 0, "risk should be 0");
+  assert.strictEqual(h.report.riskyFindings.length, 0, "no risky findings should remain");
+  assert.ok(!/0\.0\.0\.0\/0/.test(h.prompt), "0.0.0.0/0 should be neutralised");
+});
+
+test("harden: an RDS prompt reaches zero as well", () => {
+  const h = harden("Create an RDS PostgreSQL database for application data and an S3 bucket for uploads.");
+  assert.strictEqual(h.report.riskScore, 0);
+  assert.strictEqual(h.report.coverageScore, 100);
+});
+
+test("harden: every clause is self-satisfying (no residual misses)", () => {
+  const h = harden("Create an S3 bucket for user documents.");
+  assert.strictEqual(h.report.missing.length, 0, "still missing: " + h.report.missing.map((m) => m.id).join(","));
 });
 
 (async function run() {
