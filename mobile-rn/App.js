@@ -264,6 +264,13 @@ export default function App() {
                 <Pressable style={styles.acceptTop} onPress={hardenNow}>
                   <Text style={styles.acceptTopText}>Harden prompt → risk 0</Text>
                 </Pressable>
+                {report.needsDeepScan ? (
+                  <Text style={styles.note}>
+                    {settings.apiKey
+                      ? "Low confidence" + (busy ? " — running Deep scan…" : " — Deep scan applied/available")
+                      : "Low confidence — add an API key in ⚙ to run Deep scan automatically."}
+                  </Text>
+                ) : null}
               </View>
 
               {report.riskyFindings.length ? (
@@ -406,6 +413,7 @@ const styles = StyleSheet.create({
   tierChip: { fontSize: 11, fontWeight: "700" },
   acceptTop: { marginTop: 12, borderWidth: 1, borderColor: "#6366f1", borderRadius: 9, paddingVertical: 9, alignItems: "center" },
   acceptTopText: { color: "#a5b4fc", fontWeight: "700", fontSize: 12 },
+  note: { marginTop: 10, fontSize: 11, color: "#fbbf24" },
 
   h2: { fontSize: 15, fontWeight: "800", marginTop: 20, color: "#f9fafb" },
   none: { color: "#4ade80", fontSize: 13, marginTop: 6 },

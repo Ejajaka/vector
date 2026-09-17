@@ -75,7 +75,10 @@
     el.hint.innerHTML =
       report.riskLevel + " risk &middot; " + report.stats.missing + " missing &middot; confidence " +
       report.confidenceScore + "% (" + report.confidence + ")" +
-      (report.baselineOnly ? " &middot; baseline" : "");
+      (report.baselineOnly ? " &middot; baseline" : "") +
+      (report.needsDeepScan
+        ? " &middot; <em>" + (settings.autoDeepScan ? "deep scan recommended" : "low confidence - enable Auto deep scan in Settings") + "</em>"
+        : "");
   }
 
   function analyzeNow() {

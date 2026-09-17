@@ -582,6 +582,9 @@ function analyze(prompt, options) {
   } else if (environment === "prod") {
     feedback.push("This looks like a production prompt, so the risk score is weighted higher.");
   }
+  if (confidence.needsDeepScan) {
+    feedback.push("Low confidence on this prompt, so some constraints may be unstated - the optional Deep scan can fill the gaps.");
+  }
 
   return {
     prompt: raw,
