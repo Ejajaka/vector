@@ -102,7 +102,22 @@
         ]
       })
     });
-    if (!res.ok) throw new Error("Deep scan failed (" + res.status + ")");
+    if (!res.ok) {
+      let detail = "";
+      try {
+        const body = await res.json();
+        const err = Array.isArray(body) ? body[0] && body[0].error : body && body.error;
+        detail = (err && (err.message || err.status)) || "";
+      } catch (e) {
+        /* ignore */
+      }
+      let msg = "Deep scan failed (" + res.status + ")";
+      if (detail) msg += ": " + detail;
+      if (res.status === 404) {
+        msg += "  Check the model name in Settings (current Gemini models include gemini-2.5-flash and gemini-3.7-flash).";
+      }
+      throw new Error(msg);
+    }
     const data = await res.json();
     const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
     return parseFindings(text);
