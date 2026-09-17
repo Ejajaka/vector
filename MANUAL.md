@@ -50,12 +50,12 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-├── manifest.json            Chrome/Edge MV3 manifest (v0.4.4)
+├── manifest.json            Chrome/Edge MV3 manifest (v0.4.8)
 ├── popup.html/.css/.js       extension toolbar popup
 ├── content.js/.css           in-page floating button
 ├── options.html/.js          settings, policy, history
 ├── src/
-│   ├── taxonomy.js           59 AWS resources, 30 controls, risky patterns,
+│   ├── taxonomy.js           78 AWS resources, 30 controls, risky patterns,
 │   │                         synonyms, paraphrase lexicon, tiers, non-AWS terms
 │   ├── analyzer.js           the rule engine (pipeline)
 │   ├── semantic.js           TF-IDF semantic relevance (advisory)
@@ -112,6 +112,7 @@ No `npm install` is needed for the core — the engine has zero dependencies.
 - `src/analyzer.js` — the pipeline.
 - `src/semantic.js` — TF-IDF relevance (advisory only).
 - `src/ui.js` + `src/ui.css` — DOM renderer (browser/extension).
+- `src/tfcheck.js` — post-generation Terraform verifier (used by `vector verify`).
 
 ### 4.2 The pipeline (in `analyzer.js`)
 
@@ -121,7 +122,7 @@ No `npm install` is needed for the core — the engine has zero dependencies.
 3. synonym expand   "website" -> ec2 / load balancer
 4. intent detect    create/deploy/allow/restrict/...
 5. paraphrase       curated lexicon extends control patterns
-6. resource detect  59 AWS resources (phrase + regex aliases)
+6. resource detect  78 AWS resources (phrase + regex aliases)
 7. policy merge     apply custom org policy + non-AWS guard
 8. relevant set     union of each resource's controls (+ defaults / baseline)
 9. requirement       regex match + negation guard
@@ -139,7 +140,7 @@ No `npm install` is needed for the core — the engine has zero dependencies.
 
 - **Controls** (30): e.g. `encryption_at_rest`, `public_access_block`,
   `network_restricted`, `audit_logging`, `secrets_management`, `backup_recovery`.
-- **Resources** (59): S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, KMS,
+- **Resources** (78): S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, KMS,
   SQS, SNS, Redshift, OpenSearch, SageMaker, …
 - **Risky patterns** (9): `open_ssh`, `public_bucket`, `wildcard_iam`,
   `no_encryption`, `hardcoded_secret`, `disabled_logging`, `weak_auth`,
@@ -270,6 +271,36 @@ npx expo start               # then scan the QR with Expo Go on a phone
 **Run on a real iPhone with no Mac and no Apple account** using the **Expo Go**
 app + `npx expo start`.
 
+### Running on your iPhone (step by step)
+
+1. On the iPhone, install **Expo Go** from the App Store.
+2. Make sure the iPhone and the PC are on the **same Wi-Fi network** (an Ethernet
+   PC and a Wi-Fi iPhone on the same router is the same LAN, which is fine).
+   If the network isolates devices, use `npx expo start --tunnel` instead.
+3. On the PC:
+   ```powershell
+   cd mobile-rn
+   npm install
+   npm run sync
+   npx expo start
+   ```
+4. A QR code appears in the terminal. Open the **Camera** app on the iPhone,
+   point it at the QR, and tap the banner to open it in Expo Go.
+   (You can also open Expo Go and type the `exp://...` URL shown in the terminal.)
+5. The Vector app loads on the phone. Tap **Sample** and **Analyze** to test.
+6. If it says "project is incompatible", your Expo Go is newer/older than the
+   project SDK. Fix:
+   ```powershell
+   npx expo install expo@latest
+   npx expo install --fix
+   npx expo start
+   ```
+7. To stop the server, press `Ctrl+C` in the terminal.
+
+> No Mac, no Xcode and no Apple Developer account are needed for Expo Go.
+> For a standalone installable iOS build (App Store / TestFlight) you need EAS
+> Build plus the $99/year Apple Developer Program — see below.
+
 Compile check (verified in this repo):
 ```powershell
 npx expo export --platform ios       # iOS bundle, 580 modules, 1.5 MB Hermes
@@ -341,6 +372,7 @@ extension and repo ship with none.
 | 0.4.5 | fix public-database false positive; RN app safe-area, live coverage, richer UI, auto AI fallback |
 | 0.4.6 | live risk + coverage projection on clause accept; concise clauses (all <= 160 chars) |
 | 0.4.7 | context-aware env weighting, Terraform attribute hints, post-generation `verify` (src/tfcheck.js), LLM downstream study + kappa harnesses |
+| 0.4.8 | expand to 78 AWS resources, scope-aware negation (except/unless), GitHub Actions CI, CIS org policy pack (`examples/policy-cis.json`) |
 
 ---
 

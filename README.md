@@ -22,7 +22,7 @@ Ships as a **Chrome extension** (Manifest V3) plus a **CLI**. The core engine is
 prompt
   -> normalise + tokenise
   -> synonym expansion        ("website" -> ec2 / load balancer)
-  -> resource detection       (59 AWS resources + aliases)
+  -> resource detection       (78 AWS resources + aliases)
   -> requirement detection    (30 controls, regex + negation guard)
   -> omissions                (needed controls  MINUS  stated controls)
   -> risky statements         (0.0.0.0/0, public buckets, wildcard IAM ...)
@@ -106,7 +106,8 @@ Expand the sets (100+ cases, adversarial paraphrase) before quoting them.
 node cli/vector-cli.js analyze "Create an S3 bucket and an EC2 instance"
 node cli/vector-cli.js improved "Create an S3 bucket"
 node cli/vector-cli.js hook "Deploy an S3 bucket open to the public"   # exit 2/1
-node cli/vector-cli.js analyze --policy examples/policy.example.json "Deploy in us-east-1"
+node cli/vector-cli.js verify "eval/downstream/insecure.tf"           # post-generation check
+node cli/vector-cli.js analyze --policy examples/policy-cis.json "Deploy in us-east-1"
 ```
 
 ## Custom organisation policy
@@ -140,7 +141,7 @@ src/analyzer.js       rule engine (negation guard, scoring, merge)
 src/settings.js       chrome.storage helpers (shared by all UIs)
 src/ui.js/.css        shared results renderer
 src/llm.js            optional deep scan (on-device + hosted)
-cli/vector-cli.js     CLI + CI hook
+cli/vector-cli.js     CLI + CI hook + `verify` (post-generation)
 eval/                 labelled sets + metrics + downstream demo
 test/run-tests.js     29 unit tests
 tools/                icon generator, packaging script

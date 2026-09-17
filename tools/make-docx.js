@@ -164,7 +164,7 @@ const FEATURES = [
 
   H1("1. Core analysis features"),
   LI("Natural-language prompt analysis - accepts a plain-English AWS infrastructure prompt."),
-  LI("Resource detection - recognises 59 AWS services (S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, WAF, KMS, and more), including synonyms and regex aliases."),
+  LI("Resource detection - recognises 78 AWS services (S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, WAF, KMS, and more), including synonyms and regex aliases."),
   LI("Security requirement detection - recognises controls already stated in the prompt."),
   LI("Missing-constraint detection - flags omitted controls such as encryption, IAM scope, public access, audit logging, data residency, backups and key rotation."),
   LI("Risky-statement detection - catches 0.0.0.0/0, public buckets, wildcard/admin IAM, hard-coded secrets, and disabled logging / backups / MFA."),
@@ -258,7 +258,7 @@ const PIPELINE = [
   P("Ambiguous or opposite phrasings (\"reachable from the internet\", \"world-readable\") are deliberately excluded and belong to risky statements instead."),
 
   H2("Step 5 - Resource detection"),
-  P("Each of the 59 AWS resources has a list of aliases. An alias is matched either as a plain phrase (word-boundary aware) or as a regular expression, chosen automatically by whether it contains regex metacharacters."),
+  P("Each of the 78 AWS resources has a list of aliases. An alias is matched either as a plain phrase (word-boundary aware) or as a regular expression, chosen automatically by whether it contains regex metacharacters."),
   C("plain phrase : \"s3 bucket\"       (word-boundary match)"),
   C("regex alias  : \"\\\\becr\\\\b\", \"route.?53\"  (regex match)"),
   P("This distinction matters: escaping a regex alias would make it never match (a bug the evaluation caught)."),
@@ -358,7 +358,7 @@ const PROGRESS = [
 
   H1("1. Where we are"),
   P("The core is built and running. Vector reads a plain-English AWS prompt, finds the security controls the prompt never states, flags risky statements, and turns every omission into a clause the user can add in one click."),
-  LI("Engine: rule-based NLP, no ML and no network. 59 AWS resources, 30 controls, a negation and double-negation guard."),
+  LI("Engine: rule-based NLP, no ML and no network. 78 AWS resources, 30 controls, a negation and double-negation guard."),
   LI("Scoring: risk 0-100 with severity levels, confidence 0-100 with a baseline mode, and our own Prompt Security Coverage Score."),
   LI("Shipped surfaces: a Chrome extension (Manifest V3) with a popup and an in-page button on ChatGPT, Claude and Gemini, plus a CLI with a CI hook."),
   LI("Evidence: 29 unit tests, an evaluation harness over 112 hand-labelled prompts, and a downstream demo where insecure Terraform drops from 6 findings to 0."),

@@ -28,7 +28,7 @@ check to the point of intent: the prompt.
 
 HOW IT WORKS
 - Rule-based NLP runs fully offline. No account, no sign-in, no data collection.
-- 59 AWS resources and 30 security controls, grounded in CIS AWS, AWS
+- 78 AWS resources and 30 security controls, grounded in CIS AWS, AWS
   Well-Architected, AWS Foundational Security Best Practices and NIST SP 800-53.
 - Detects missing controls AND risky statements (0.0.0.0/0, public buckets,
   wildcard IAM, hard-coded secrets, disabled logging).
