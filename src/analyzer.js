@@ -39,6 +39,8 @@ const {
   CONTEXT_CUES,
   ENV_FACTOR,
   INFRA_TERMS,
+  STRONG_TERMS,
+  AMBIGUOUS_ALIASES,
   RISKY_PATTERNS,
   STANDARDS
 } = _VectorTaxonomy;
@@ -376,17 +378,45 @@ function analyze(prompt, options) {
 
   const resources = detectResources(expanded);
 
-  // Scope guard: if the text has no AWS resource, no infrastructure vocabulary
-  // and no infrastructure intent, it is not an infrastructure prompt at all.
-  // Return a clean "out of scope" report instead of inventing findings.
-  const hasInfraTerm = INFRA_TERMS.some((t) => {
+  // Scope guard: decide whether this is a cloud infrastructure prompt at all.
+  // An ambiguous word alone ("a bucket of water") must NOT count, and off-topic
+  // text must not be scored. In scope if any of:
+  //   - a strong cloud/provisioning term (aws, s3, terraform, vpc ...)
+  //   - an infrastructure intent verb (create/deploy/...)
+  //   - two or more infrastructure terms
+  //   - a resource matched by an unambiguous alias (not "bucket", "queue" ...)
+  function termMatches(terms, text) {
+    return terms.filter((t) => {
+      try {
+        return new RegExp("(^|[^a-z0-9])" + t + "([^a-z0-9]|$)", "i").test(text);
+      } catch (e) {
+        return false;
+      }
+    }).length;
+  }
+
+  const infraHits = termMatches(INFRA_TERMS, normalized);
+  const hasStrongTerm = termMatches(STRONG_TERMS, normalized) > 0;
+  // Resource evidence must come from the ORIGINAL text, not the synonym-expanded
+  // text (otherwise "bucket" -> "s3" would look strong).
+  const strongResource = detectResources(normalized).some((r) => {
+    if (/[\\^$.*+?()[\]{}|]/.test(r.matched)) return true; // regex alias is specific
+    return AMBIGUOUS_ALIASES.indexOf(String(r.matched).toLowerCase()) === -1;
+  });
+  // A clearly security-relevant statement is in scope even without an intent verb
+  // ("hard-code the password", "send data in plaintext").
+  const hasRiskySignal = RISKY_PATTERNS.some((rp) => {
     try {
-      return new RegExp("(^|[^a-z0-9])" + t + "([^a-z0-9]|$)", "i").test(expanded);
+      return new RegExp(rp.pattern, "i").test(normalized);
     } catch (e) {
       return false;
     }
   });
-  if (resources.length === 0 && !hasInfraTerm && intents.length === 0) {
+
+  const inScope =
+    hasStrongTerm || intents.length > 0 || infraHits >= 2 || strongResource || hasRiskySignal;
+
+  if (!inScope) {
     return {
       prompt: raw,
       tokens: tokens,

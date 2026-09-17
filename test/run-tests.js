@@ -459,6 +459,34 @@ test("scope: harden leaves an off-topic prompt unchanged", () => {
   assert.strictEqual(h.prompt, "i will kill u");
 });
 
+test("scope: an ambiguous word alone is not infrastructure", () => {
+  for (const t of ["i want a bucket full of water", "a bucket of water", "i need a queue for the tickets"]) {
+    const r = analyze(t);
+    assert.strictEqual(r.outOfScope, true, "should be out of scope: " + t);
+    assert.strictEqual(r.stats.missing, 0);
+  }
+});
+
+test("scope: real infrastructure prompts stay in scope", () => {
+  for (const t of [
+    "Create an S3 bucket for user documents.",
+    "Create a bucket for user files.",
+    "Build an internal tool for the team.",
+    "Deploy our application to the cloud."
+  ]) {
+    assert.ok(!analyze(t).outOfScope, "should be in scope: " + t);
+  }
+});
+
+test("scope: a risky statement alone is still in scope", () => {
+  const a = analyze("Hard-code the database password in the application.");
+  assert.ok(!a.outOfScope);
+  assert.ok(a.riskyFindings.some((f) => f.id === "hardcoded_secret"));
+  const b = analyze("Send data in plaintext over the network.");
+  assert.ok(!b.outOfScope);
+  assert.ok(b.riskyFindings.some((f) => f.id === "no_encryption"));
+});
+
 (async function run() {
   for (const t of queue) {
     try {

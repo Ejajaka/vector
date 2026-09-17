@@ -584,6 +584,32 @@ const INFRA_TERMS = [
   "redis", "kafka", "postgres", "mysql", "elasticsearch", "opensearch", "sagemaker"
 ];
 
+/**
+ * Strong, unambiguous cloud/provisioning signals. Presence of one of these is
+ * enough to treat the text as an infrastructure prompt.
+ */
+const STRONG_TERMS = [
+  "aws", "amazon web services", "terraform", "cloudformation", "\\biac\\b",
+  "\\bvpc\\b", "subnet", "s3", "ec2", "\\brds\\b", "lambda", "\\biam\\b",
+  "\\beks\\b", "\\becs\\b", "dynamodb", "cloudfront", "\\bkms\\b", "\\bsqs\\b",
+  "\\bsns\\b", "route ?53", "api gateway", "cloudwatch", "cloudtrail", "guardduty",
+  "sagemaker", "opensearch", "elasticache", "redshift", "aurora", "fargate",
+  "presigned", "bucket policy", "availability zone", "security group"
+];
+
+/**
+ * Aliases that are too generic to prove cloud context on their own
+ * ("a bucket of water", "a queue at the bank"). Only used when there is no
+ * strong term, no intent and no second infrastructure signal.
+ */
+const AMBIGUOUS_ALIASES = [
+  "bucket", "storage", "queue", "topic", "stream", "cache", "table", "function",
+  "role", "policy", "key", "secret", "instance", "server", "endpoint", "gateway",
+  "broker", "warehouse", "cluster", "network", "database", "api", "log", "logs",
+  "monitoring", "container", "domain", "topic"
+];
+
+
 
 /**
  * Terms that indicate a NON-AWS cloud. Used to warn instead of silently
@@ -886,6 +912,8 @@ const VectorTaxonomy = {
   CONTEXT_CUES,
   ENV_FACTOR,
   INFRA_TERMS,
+  STRONG_TERMS,
+  AMBIGUOUS_ALIASES,
   NON_AWS_TERMS,
   DEFAULT_REQUIRED,
   RESOURCES,
