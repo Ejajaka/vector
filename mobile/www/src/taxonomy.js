@@ -717,7 +717,7 @@ const RISKY_PATTERNS = [
   },
   {
     id: "public_database",
-    pattern: "(public(ly)?|internet)[^.]{0,25}(database|db|rds|sql|instance)|(database|rds|db)[^.]{0,25}(public|internet)",
+    pattern: "(public(ly)?|internet)[^.]{0,20}(database|\\bdb\\b|rds|sql)|(database|\\brds\\b|\\bdb\\b)[^.]{0,20}(public|internet)",
     label: "Publicly reachable database",
     severity: "high",
     description: "A database exposed to the internet is a top breach vector.",
