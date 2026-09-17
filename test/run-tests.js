@@ -2,6 +2,7 @@
 
 const assert = require("assert");
 const { analyze, buildImprovedPrompt, tokenize } = require("../src/analyzer");
+const { project } = require("../src/analyzer");
 
 let passed = 0;
 let failed = 0;
@@ -320,6 +321,41 @@ test("non-AWS: an AWS prompt is not flagged", () => {
 test("report carries an advisory disclaimer", () => {
   const r = analyze("Create an S3 bucket");
   assert.ok(/advisory/i.test(r.disclaimer));
+});
+
+// ---- Live score projection ----
+test("project: accepting clauses lowers risk and raises coverage", () => {
+  const r = analyze("Create an S3 bucket.");
+  const before = project(r, {});
+  const all = {};
+  r.missing.forEach((m) => (all[m.id] = true));
+  const after = project(r, all);
+  assert.ok(after.riskScore < before.riskScore, "risk should fall");
+  assert.ok(after.coverageScore > before.coverageScore, "coverage should rise");
+});
+
+test("project: accepting every clause reaches 100% coverage and 0 risk", () => {
+  const r = analyze("Create an S3 bucket for user uploads.");
+  const all = {};
+  r.missing.forEach((m) => (all[m.id] = true));
+  r.riskyFindings.forEach((f) => (all[f.id] = true));
+  const p = project(r, all);
+  assert.strictEqual(p.coverageScore, 100);
+  assert.strictEqual(p.riskScore, 0);
+});
+
+test("clauses are concise (single sentence, under 160 chars)", () => {
+  const r = analyze("Create an S3 bucket and an RDS database.");
+  for (const m of r.missing) {
+    assert.ok(m.clause.length <= 160, "clause too long for " + m.id + ": " + m.clause.length);
+  }
+});
+
+test("public database is no longer a false positive", () => {
+  const r = analyze(
+    "Public-facing EC2 web/API, an S3 bucket, an RDS PostgreSQL database. Available over the internet and survives an instance failure."
+  );
+  assert.ok(!r.riskyFindings.some((f) => f.id === "public_database"), "should not flag a public DB here");
 });
 
 (async function run() {

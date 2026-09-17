@@ -48,12 +48,12 @@ function buildImproved(prompt, clauses) {
 }
 
 function liveCoverage(report, accepted) {
-  const total = report.stats.mentioned + report.stats.missing;
-  let covered = report.stats.mentioned;
-  for (const m of report.missing) if (accepted[m.id]) covered++;
+  const proj = VectorAnalyzer.project(report, accepted);
   return {
     before: report.coverageScore,
-    after: total ? Math.round((100 * covered) / total) : 100,
+    after: proj.coverageScore,
+    riskBefore: report.riskScore,
+    riskAfter: proj.riskScore,
   };
 }
 
@@ -231,7 +231,12 @@ export default function App() {
 
                 <View style={styles.covRow}>
                   <Text style={styles.covLabel}>
-                    Coverage{" "}
+                    Risk{" "}
+                    <Text style={styles.covValue}>
+                      {cov.riskBefore}
+                      {cov.riskAfter < cov.riskBefore ? " → " + cov.riskAfter : ""}
+                    </Text>
+                    {"    "}Coverage{" "}
                     <Text style={styles.covValue}>
                       {cov.before}%{cov.after > cov.before ? " → " + cov.after + "%" : ""}
                     </Text>

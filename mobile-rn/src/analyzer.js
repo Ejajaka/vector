@@ -297,6 +297,7 @@ function dedupeRiskyFindings(text, risky) {
         id: rp.id,
         label: rp.label,
         severity: rp.severity,
+        weight: severityRank(rp.severity) * 1.5,
         description: rp.description,
         fix: rp.fix,
         source: "rule"
@@ -319,6 +320,42 @@ function computeRisk(relevantCounts, findings) {
   for (const f of findings) riskyWeight += severityRank(f.severity) * 1.5;
   const riskyBump = Math.min(55, riskyWeight * 9);
   return Math.min(100, Math.round(score + riskyBump));
+}
+
+/**
+ * Recompute risk + coverage for a hypothetical set of accepted clauses.
+ * Used by the UI to show "risk 99 -> 40" and "coverage 0% -> 60%" as the user
+ * accepts recommendations, i.e. that the suggestions actually improve the score.
+ * @param {object} report
+ * @param {object} accepted  map of id -> boolean
+ */
+function project(report, accepted) {
+  accepted = accepted || {};
+  const on = (id) => !!accepted[id];
+
+  let missingWeight = 0;
+  for (const m of report.missing) {
+    if (on(m.id)) continue;
+    missingWeight += typeof m.weight === "number" ? m.weight : severityRank(m.severity);
+  }
+  let riskyWeight = 0;
+  for (const f of report.riskyFindings) {
+    if (on(f.id)) continue;
+    riskyWeight += typeof f.weight === "number" ? f.weight : severityRank(f.severity) * 1.5;
+  }
+
+  const ratio = missingWeight / Math.max(1, report.totalWeight || 1);
+  const riskScore = Math.min(100, Math.round(100 * Math.pow(ratio, 1.5) + Math.min(55, riskyWeight * 9)));
+
+  const total = report.stats.mentioned + report.stats.missing;
+  let covered = report.stats.mentioned;
+  for (const m of report.missing) if (on(m.id)) covered++;
+
+  return {
+    riskScore: riskScore,
+    riskLevel: riskLevelFromScore(riskScore).level,
+    coverageScore: total ? Math.round((100 * covered) / total) : 100
+  };
 }
 
 function analyze(prompt, options) {
@@ -403,6 +440,7 @@ function analyze(prompt, options) {
         dimension: DIMENSIONS[req.dimension] || req.dimension,
         severity: req.severity,
         tier: tier,
+        weight: weight,
         description: req.description,
         clause: req.clause,
         standards: req.standards,
@@ -454,6 +492,7 @@ function analyze(prompt, options) {
   });
   const totalControls = mentioned.length + missing.length;
   const coverageScore = totalControls ? Math.round((100 * mentioned.length) / totalControls) : 100;
+  const totalWeight = relevantCounts.reduce(function (a, r) { return a + r.weight; }, 0);
 
   const tierCounts = { core: 0, clarify: 0, harden: 0 };
   for (const m of missing) tierCounts[m.tier || "clarify"]++;
@@ -496,6 +535,7 @@ function analyze(prompt, options) {
     baselineOnly,
     coverage: baselineOnly ? "baseline" : "targeted",
     coverageScore: coverageScore,
+    totalWeight: totalWeight,
     tierCounts: tierCounts,
     semanticRelated: semanticRelated,
     nonAwsLikely: nonAwsLikely,
@@ -540,6 +580,7 @@ function mergeFindings(report, external) {
       dimension: m.dimension || "governance",
       severity: m.severity || "medium",
       tier: m.tier || "clarify",
+      weight: severityRank(m.severity || "medium") * (TIER_MULT[m.tier || "clarify"] || 1),
       description: m.description || "Identified by deep scan.",
       clause: m.clause || m.description || m.label,
       standards: m.standards || ["Deep scan"],
@@ -556,6 +597,7 @@ function mergeFindings(report, external) {
       id: r.id || "ai_risky_" + riskyFindings.length,
       label: r.label,
       severity: r.severity || "high",
+      weight: severityRank(r.severity || "high") * 1.5,
       description: r.description || "Identified by deep scan.",
       fix: r.fix || r.description || r.label,
       source: "ai"
@@ -575,6 +617,9 @@ function mergeFindings(report, external) {
   const tierCounts = { core: 0, clarify: 0, harden: 0 };
   for (const m of missing) tierCounts[m.tier || "clarify"]++;
   merged.tierCounts = tierCounts;
+  merged.totalWeight = report.totalWeight + missing
+    .filter((m) => m.source === "ai")
+    .reduce((a, m) => a + (m.weight || 0), 0);
   let extra = 0;
   for (const m of missing) if (m.source === "ai") extra += severityRank(m.severity);
   for (const r of riskyFindings) if (r.source === "ai") extra += severityRank(r.severity) * 1.5;
@@ -598,6 +643,7 @@ function buildImprovedPrompt(prompt, clauses) {
 const VectorAnalyzer = {
   analyze,
   mergeFindings,
+  project,
   buildImprovedPrompt,
   normalize,
   tokenize,

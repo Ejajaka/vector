@@ -45,7 +45,7 @@ const REQUIREMENTS = [
     description:
       "Data stored on disk is readable by anyone with access to the underlying media. Encryption at rest protects data if the storage layer is compromised or a snapshot leaks.",
     clause:
-      "Enable encryption at rest (AWS-managed keys are acceptable; specify whether customer-managed KMS keys with automatic rotation are required).",
+      "Encrypt data at rest; specify whether a customer-managed KMS key is required.",
     standards: ["CIS AWS 2.1.1", "AWS FSBP S3.4 / RDS.3", "NIST SP 800-53 SC-28"],
     patterns: ["encrypt(ed|ion)?", "\\bkms\\b", "server[- ]side encryption", "sse[- ]?(s3|kms)", "aes[- ]?256", "at rest", "customer[- ]managed key", "\\bcmk\\b", "disk encryption"],
     notAfter: ["in transit", "over the (network|wire)"]
@@ -58,7 +58,7 @@ const REQUIREMENTS = [
     description:
       "Traffic can be intercepted or modified on the network. TLS protects data in transit and prevents downgrade / man-in-the-middle attacks.",
     clause:
-      "All network traffic must use TLS 1.2 or higher, and any plaintext HTTP listener must redirect to HTTPS.",
+      "Use TLS 1.2 or higher for all traffic and redirect HTTP to HTTPS.",
     standards: ["AWS FSBP ELB.4 / CloudFront.4", "NIST SP 800-53 SC-8"],
     patterns: ["in transit", "\\btls\\b", "\\bssl\\b", "https", "encrypted (connection|traffic)", "certificate", "secure transport", "end[- ]to[- ]end encrypt"]
   },
@@ -70,7 +70,7 @@ const REQUIREMENTS = [
     description:
       "Publicly reachable storage or endpoints are the single most common cloud data-leak cause. Access should be explicit and private unless there is a deliberate, reviewed reason otherwise.",
     clause:
-      "The resource and its contents must be private: block all public access, disable ACLs, and expose it only through authenticated, authorised mechanisms.",
+      "Block all public access and ACLs; expose the resource only through authenticated access.",
     standards: ["CIS AWS 2.1.4", "AWS FSBP S3.1 / S3.2", "NIST SP 800-53 AC-3"],
     patterns: [
       "\\bprivate\\b", "not (be )?public", "no public", "block (all )?(the )?(public|external|anonymous)",
@@ -89,7 +89,7 @@ const REQUIREMENTS = [
     description:
       "Over-broad IAM policies (for example wildcard actions on all resources) grant far more power than needed and turn one compromised component into a full account takeover.",
     clause:
-      "IAM permissions must follow least privilege: grant only the specific actions and resource ARNs required, and never use wildcard '*' actions or resources.",
+      "Grant only the specific IAM actions and resource ARNs required (least privilege).",
     standards: ["CIS AWS 1.x", "AWS FSBP IAM.1", "NIST SP 800-53 AC-6"],
     patterns: [
       "least privilege", "least[- ]privilege", "scoped (permission|policy|role|access)",
@@ -106,7 +106,7 @@ const REQUIREMENTS = [
     description:
       "Policies containing '*' in the Action or Resource field effectively grant administrative access.",
     clause:
-      "Avoid wildcard '*' in IAM Action fields and avoid '*' in Resource fields. Scoped ARNs such as arn:aws:s3:::my-bucket/* are acceptable; broad account-wide wildcards are not.",
+      "Avoid wildcard actions and account-wide wildcard resources in IAM policies.",
     standards: ["AWS FSBP IAM.1", "CIS AWS 1.16"],
     patterns: ["no wildcard", "explicit actions", "explicit resources", "deny \\*", "avoid \\*", "no \\*:"]
   },
@@ -118,7 +118,7 @@ const REQUIREMENTS = [
     description:
       "Security groups open to 0.0.0.0/0 can expose administrative or database ports to the whole internet. Internet-facing application ports are legitimate; management and data ports are not.",
     clause:
-      "Limit public inbound traffic to the required application ports (for example HTTPS 443). Do not expose administrative (SSH/RDP) or database ports to 0.0.0.0/0; reach those only from known corporate or private networks.",
+      "Allow public inbound only on required app ports (for example 443); never expose SSH/RDP or database ports to the internet.",
     standards: ["CIS AWS 5.2 / 5.3", "AWS FSBP EC2.18 / EC2.19", "NIST SP 800-53 SC-7"],
     patterns: [
       "restrict(ed)? (access|inbound|traffic|ports?|security group|ingress)",
@@ -135,7 +135,7 @@ const REQUIREMENTS = [
     description:
       "Without audit logs there is no record of who did what, so incidents cannot be detected, investigated or attributed.",
     clause:
-      "Enable AWS CloudTrail plus resource access logs (for example S3 server access logs), delivered to a central, access-controlled log account / bucket.",
+      "Enable CloudTrail and resource access logs delivered to a central, access-controlled account.",
     standards: ["CIS AWS 3.1", "AWS FSBP CloudTrail.1", "NIST SP 800-53 AU-2 / AU-3"],
     patterns: [
       "cloudtrail", "audit log", "logging", "access log", "log all", "\\btrail\\b",
@@ -151,7 +151,7 @@ const REQUIREMENTS = [
     description:
       "The prompt does not state where data may be stored or processed. If personal or regulated data is involved, residency must be specified to meet GDPR / DPDP obligations.",
     clause:
-      "If personal or regulated data is involved, specify the approved jurisdictions where data may be stored and processed, and whether cross-region replication is permitted.",
+      "If personal or regulated data is involved, specify the approved jurisdictions and whether cross-region replication is allowed.",
     standards: ["GDPR Art. 5 / 44-49", "India DPDP Act 2023 s.16", "NIST SP 800-53 PM-8"],
     patterns: [
       "data residency", "reside", "sovereignty", "\\bgdpr\\b", "in[- ]country",
@@ -167,7 +167,7 @@ const REQUIREMENTS = [
     description:
       "The prompt does not specify which AWS regions are approved. Unapproved regions can violate policy, increase cost and latency, and break data-residency guarantees.",
     clause:
-      "Specify the approved deployment region(s), particularly if data-residency or organisational policies apply, and restrict deployment to those regions.",
+      "Specify the approved AWS region(s) and restrict deployment to them.",
     standards: ["AWS Well-Architected SEC-06", "NIST SP 800-53 PM-8"],
     patterns: [
       "\\bregion", "regional", "us-east", "us-west", "eu-west", "eu-central",
@@ -198,7 +198,7 @@ const REQUIREMENTS = [
     description:
       "Versioning protects against accidental overwrite/deletion and supports integrity checks and audit.",
     clause:
-      "Enable object versioning and integrity controls (checksums / MFA delete) so data can be recovered and tampering detected.",
+      "Enable versioning and integrity controls such as object lock.",
     standards: ["CIS AWS 2.1.3", "AWS FSBP S3.5"],
     patterns: ["versioning", "versioned", "mfa delete", "checksum", "integrity", "object lock", "immutable"]
   },
@@ -210,7 +210,7 @@ const REQUIREMENTS = [
     description:
       "Detecting anomalous activity requires monitoring and alerts; logging alone is not enough.",
     clause:
-      "Configure continuous monitoring with alerts (for example Amazon GuardDuty, Security Hub and CloudWatch) routed to an on-call channel.",
+      "Enable continuous monitoring and alerts (for example GuardDuty and Security Hub).",
     standards: ["CIS AWS 4.x", "AWS FSBP GuardDuty.1", "NIST SP 800-53 SI-4"],
     patterns: [
       "monitor", "alert", "guardduty", "security hub", "cloudwatch", "anomaly",
@@ -244,7 +244,7 @@ const REQUIREMENTS = [
     description:
       "Single-AZ deployments fail when an availability zone goes down.",
     clause:
-      "Deploy across at least two availability zones with a load balancer and health checks for resilience.",
+      "Deploy across at least two availability zones behind a load balancer with health checks.",
     standards: ["AWS Well-Architected REL-10", "NIST SP 800-53 CP-6"],
     patterns: [
       "multi[- ]az", "availability zone", "highly available", "high availability",
@@ -259,7 +259,7 @@ const REQUIREMENTS = [
     description:
       "Resources should sit inside a VPC/VNet with public/private subnet separation to limit lateral movement.",
     clause:
-      "Deploy into an AWS VPC with separate public and private subnets; place data and compute resources in private subnets with NAT egress only.",
+      "Use a VPC with public and private subnets; keep data and compute in private subnets.",
     standards: ["CIS AWS 5.1", "AWS FSBP EC2.15", "NIST SP 800-53 SC-7"],
     patterns: [
       "\\bvpc\\b", "\\bvnet\\b", "subnet", "private subnet", "network isolation",
@@ -274,7 +274,7 @@ const REQUIREMENTS = [
     description:
       "Internet-facing endpoints should be protected against common web exploits and volumetric attacks.",
     clause:
-      "Front public endpoints with a WAF (managed rule sets) and DDoS protection, and rate-limit abusive traffic.",
+      "Put a WAF with managed rules and rate limiting in front of public endpoints.",
     standards: ["AWS FSBP WAF.1", "CIS AWS 5.x", "NIST SP 800-53 SC-5"],
     patterns: ["\\bwaf\\b", "web application firewall", "\\bddos\\b", "shield", "rate[- ]limit", "owasp rules?", "bot control", "cloud armor"]
   },
@@ -286,7 +286,7 @@ const REQUIREMENTS = [
     description:
       "Long-lived encryption keys increase the impact of a key compromise.",
     clause:
-      "Enable automatic key rotation for customer-managed encryption keys and rotate secrets on a defined schedule.",
+      "Enable automatic rotation for KMS keys and secrets.",
     standards: ["CIS AWS 3.7", "AWS FSBP KMS.4"],
     patterns: ["key rotation", "rotate (the )?(key|keys)", "rotation (enabled|period)", "automatic rotation", "renew (key|secret)", "\\brotation\\b"]
   },
@@ -298,7 +298,7 @@ const REQUIREMENTS = [
     description:
       "Traffic to managed services should not traverse the public internet; private endpoints reduce exposure.",
     clause:
-      "Use private endpoints / VPC endpoints (PrivateLink) so traffic to managed services never leaves the private network.",
+      "Use VPC endpoints (PrivateLink) so managed-service traffic stays off the public internet.",
     standards: ["AWS FSBP EC2.10", "CIS AWS 5.x"],
     patterns: ["private endpoint", "vpc endpoint", "privatelink", "private link", "private connectivity", "private service connect", "service endpoint"]
   },
@@ -310,7 +310,7 @@ const REQUIREMENTS = [
     description:
       "IMDSv1 can be abused via SSRF to steal instance credentials; IMDSv2 requires a session token.",
     clause:
-      "Require IMDSv2 (session-token metadata access) and disable IMDSv1 on all compute instances.",
+      "Require IMDSv2 and disable IMDSv1 on all instances.",
     standards: ["AWS FSBP EC2.8", "CIS AWS 5.x"],
     patterns: ["imds", "imdsv2", "metadata service", "instance metadata", "session token"]
   },
@@ -322,7 +322,7 @@ const REQUIREMENTS = [
     description:
       "Single-factor authentication is easily defeated by credential theft or phishing.",
     clause:
-      "Require MFA for all privileged and interactive access, and enforce it on the account root / administrator.",
+      "Require MFA for all privileged and root access.",
     standards: ["CIS AWS 1.2 / 1.10", "AWS FSBP IAM.6", "NIST SP 800-53 IA-2"],
     patterns: ["\\bmfa\\b", "multi[- ]?factor", "two[- ]?factor", "\\b2fa\\b", "one[- ]time password", "authenticator"]
   },
@@ -346,7 +346,7 @@ const REQUIREMENTS = [
     description:
       "Without classifying data you cannot apply proportionate controls or meet privacy obligations.",
     clause:
-      "Classify data (public / internal / confidential / PII) and apply controls appropriate to each class.",
+      "Classify data (public / internal / confidential / PII) and apply matching controls.",
     standards: ["NIST SP 800-53 RA-2", "ISO 27001 A.8.2", "GDPR Art. 5"],
     patterns: ["classif", "\\bpii\\b", "sensitive data", "confidential", "personal data", "data inventory", "data catalog"]
   },
@@ -370,7 +370,7 @@ const REQUIREMENTS = [
     description:
       "Unpatched systems are a primary initial-access vector.",
     clause:
-      "Enable vulnerability scanning and automated patching (for example Inspector / Defender for Cloud) with remediation SLAs.",
+      "Enable vulnerability scanning and automated patching.",
     standards: ["CIS AWS 4.x", "NIST SP 800-53 RA-5 / SI-2"],
     patterns: ["vulnerability", "inspector", "patch", "\\bcve\\b", "scan(ning)?", "defender for cloud", "security scanner"]
   },
@@ -382,7 +382,7 @@ const REQUIREMENTS = [
     description:
       "Configuration drift silently reintroduces insecure defaults over time.",
     clause:
-      "Continuously assess configuration against an AWS Config baseline and remediate drift.",
+      "Use AWS Config to detect and remediate configuration drift.",
     standards: ["CIS AWS 3.x", "NIST SP 800-53 CM-6", "AWS FSBP Config.1"],
     patterns: ["config rule", "aws config", "compliance", "conformance pack", "drift", "policy as code", "azure policy", "org policy", "baseline"]
   },
@@ -394,7 +394,7 @@ const REQUIREMENTS = [
     description:
       "Expired or unmanaged certificates cause outages and encourage insecure bypasses.",
     clause:
-      "Use managed certificates (for example ACM) with automatic renewal and strong key algorithms.",
+      "Use managed certificates (for example ACM) with automatic renewal.",
     standards: ["AWS FSBP ACM.1", "NIST SP 800-53 SC-12"],
     patterns: ["certificate", "\\bacm\\b", "cert manager", "renew(ing)? cert", "tls certificate", "cert rotation"]
   },
@@ -406,7 +406,7 @@ const REQUIREMENTS = [
     description:
       "A single-region dataset is lost entirely if that region becomes unavailable.",
     clause:
-      "Replicate critical data to a second approved region with documented failover, while respecting data residency.",
+      "Replicate critical data to a second approved region with documented failover.",
     standards: ["AWS Well-Architected REL-13", "NIST SP 800-53 CP-6"],
     patterns: ["cross[- ]region", "replicate", "multi[- ]region", "geo[- ]redundant", "failover region", "secondary region"]
   },
@@ -418,7 +418,7 @@ const REQUIREMENTS = [
     description:
       "Without account-level guardrails a single over-privileged role can disable controls.",
     clause:
-      "Apply organisation guardrails (service control policies / permission boundaries) to cap maximum permissions.",
+      "Apply organisation guardrails (SCPs / permission boundaries) to cap maximum permissions.",
     standards: ["CIS AWS 1.x", "NIST SP 800-53 AC-6"],
     patterns: ["service control policy", "\\bscps?\\b", "permission boundary", "guardrail", "org policy", "organization policy"]
   },

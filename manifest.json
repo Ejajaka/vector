@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vector - Pre-Generation Security Diagnosis",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "Find missing AWS security controls in your infrastructure prompts before code generation. One-click fix clauses. Runs offline.",
   "icons": {
     "16": "media/icon16.png",

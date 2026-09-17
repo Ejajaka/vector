@@ -51,9 +51,20 @@
     const accepted = (state && state.accepted) || {};
     let coveredNow = report.stats.mentioned;
     for (const m of report.missing) if (accepted[m.id]) coveredNow++;
-    const before = typeof report.coverageScore === "number" ? report.coverageScore : 0;
-    const after = total ? Math.round((100 * coveredNow) / total) : 100;
-    return { before: before, after: after, total: total };
+    const out = {
+      before: typeof report.coverageScore === "number" ? report.coverageScore : 0,
+      after: total ? Math.round((100 * coveredNow) / total) : 100,
+      total: total,
+      riskBefore: report.riskScore,
+      riskAfter: report.riskScore
+    };
+    // Projected risk + coverage after the accepted clauses are applied.
+    if (typeof VectorAnalyzer !== "undefined" && VectorAnalyzer.project) {
+      const proj = VectorAnalyzer.project(report, accepted);
+      out.after = proj.coverageScore;
+      out.riskAfter = proj.riskScore;
+    }
+    return out;
   }
 
   function riskHtml(r, cov) {
@@ -61,6 +72,10 @@
       cov && cov.after > cov.before
         ? "coverage " + cov.before + "% &rarr; " + cov.after + "%"
         : "coverage " + ((cov && cov.before) || 0) + "%";
+    const riskText =
+      cov && cov.riskAfter < cov.riskBefore
+        ? '<span>projected risk <strong>' + cov.riskBefore + " &rarr; " + cov.riskAfter + "</strong></span>"
+        : "";
     return (
       '<div class="v-risk">' +
       '<div class="v-risk-score" style="border-color:' + r.riskColor + ";color:" + r.riskColor + '">' +
@@ -78,6 +93,7 @@
         ? "<span>" + r.tierCounts.core + " confirmed &middot; " + r.tierCounts.clarify +
           " clarify &middot; " + r.tierCounts.harden + " optional</span>"
         : "") +
+      riskText +
       "<span><strong>" + covText + "</strong></span>" +
       "</div></div></div>"
     );
