@@ -1,5 +1,6 @@
 // Vector - React Native (Expo) app. Reuses the shared rule engine (src/).
-// UI rebuilt with React Native components; live coverage + tiered findings.
+// Designed to stay readable: a live summary in the header, confirmed gaps shown
+// first, clarification/optional behind a toggle, and a toast on "Add clause".
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -17,9 +18,8 @@ import { StatusBar } from "expo-status-bar";
 const VectorAnalyzer = require("./src/analyzer");
 const VectorLLM = require("./src/llm");
 
-const SAMPLE =
-  "Create an S3 bucket to store user documents and an EC2 instance running a web server " +
-  "with a security group that allows SSH from 0.0.0.0/0. Give the instance an IAM role with admin access.";
+// One resource, no risky statements: a calm first impression.
+const SAMPLE = "Create an S3 bucket to store user documents.";
 
 const DEFAULTS = {
   apiKey: "",
@@ -28,18 +28,13 @@ const DEFAULTS = {
 };
 
 const RISK_COLOR = {
-  CRITICAL: "#b91c1c",
-  HIGH: "#dc2626",
-  MEDIUM: "#d97706",
-  LOW: "#16a34a",
-  MINIMAL: "#16a34a",
+  CRITICAL: "#f87171",
+  HIGH: "#f87171",
+  MEDIUM: "#fbbf24",
+  LOW: "#4ade80",
+  MINIMAL: "#4ade80",
 };
-const SEV_COLOR = { high: "#dc2626", medium: "#d97706", low: "#16a34a" };
-const TIERS = [
-  { key: "core", label: "Confirmed gaps", color: "#dc2626" },
-  { key: "clarify", label: "Needs clarification", color: "#d97706" },
-  { key: "harden", label: "Optional hardening", color: "#0ea5e9" },
-];
+const SEV_COLOR = { high: "#f87171", medium: "#fbbf24", low: "#4ade80" };
 
 function buildImproved(prompt, clauses) {
   const list = (clauses || []).filter(Boolean);
@@ -47,14 +42,8 @@ function buildImproved(prompt, clauses) {
   return String(prompt || "").trim() + "\n\nSecurity requirements:\n" + list.map((c) => "- " + c).join("\n");
 }
 
-function liveCoverage(report, accepted) {
-  const proj = VectorAnalyzer.project(report, accepted);
-  return {
-    before: report.coverageScore,
-    after: proj.coverageScore,
-    riskBefore: report.riskScore,
-    riskAfter: proj.riskScore,
-  };
+function project(report, accepted) {
+  return VectorAnalyzer.project(report, accepted);
 }
 
 export default function App() {
@@ -65,6 +54,14 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [toast, setToast] = useState("");
+  const [showClarify, setShowClarify] = useState(false);
+  const [showHarden, setShowHarden] = useState(false);
+
+  function flash(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 1400);
+  }
 
   function acceptedClauses(rep, acc) {
     const out = [];
@@ -87,6 +84,8 @@ export default function App() {
     const rep = VectorAnalyzer.analyze(p, { strictMode: false });
     setReport(rep);
     setAccepted({});
+    setShowClarify(false);
+    setShowHarden(false);
     setStatus("");
     if (rep.needsDeepScan && settings.apiKey) runDeepScan(rep);
   }
@@ -103,7 +102,8 @@ export default function App() {
     try {
       const result = await VectorLLM.deepScan(target.prompt, settings);
       setReport(VectorAnalyzer.mergeFindings(target, result.findings));
-      setStatus("Deep scan merged (" + result.via + ")");
+      setStatus("");
+      flash("Deep scan merged (" + result.via + ")");
     } catch (e) {
       setStatus(e.message || "Deep scan failed");
     } finally {
@@ -111,29 +111,49 @@ export default function App() {
     }
   }
 
-  function toggle(id) {
-    setAccepted((prev) => Object.assign({}, prev, { [id]: !prev[id] }));
+  function toggle(id, label) {
+    setAccepted((prev) => {
+      const next = Object.assign({}, prev, { [id]: !prev[id] });
+      const proj = report ? project(report, next) : null;
+      if (proj && next[id]) flash(label + " added · coverage " + proj.coverageScore + "%");
+      return next;
+    });
   }
-  function acceptAll() {
+
+  function acceptTop() {
     if (!report) return;
     const next = {};
-    report.missing.forEach((m) => (next[m.id] = true));
+    // Accept the confirmed gaps only (the important ones), not everything.
+    report.missing.forEach((m) => {
+      if ((m.tier || "clarify") === "core") next[m.id] = true;
+    });
     report.riskyFindings.forEach((f) => (next[f.id] = true));
+    const proj = project(report, next);
     setAccepted(next);
+    flash("Confirmed gaps added · coverage " + proj.coverageScore + "%");
   }
 
   const improved = report ? buildImproved(report.prompt, acceptedClauses(report, accepted)) : "";
-  const cov = report ? liveCoverage(report, accepted) : null;
+  const proj = report ? project(report, accepted) : null;
+
+  const core = report ? report.missing.filter((m) => (m.tier || "clarify") === "core") : [];
+  const clarify = report ? report.missing.filter((m) => (m.tier || "clarify") === "clarify") : [];
+  const harden = report ? report.missing.filter((m) => (m.tier || "clarify") === "harden") : [];
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
         <StatusBar style="light" />
+
         <View style={styles.header}>
           <View style={styles.logo}><Text style={styles.logoText}>V</Text></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.h1}>Vector</Text>
-            <Text style={styles.sub}>AWS prompt security</Text>
+            <Text style={styles.sub}>
+              {report
+                ? report.riskLevel + " " + proj.riskScore + "  ·  coverage " + proj.coverageScore + "%"
+                : "AWS prompt security"}
+            </Text>
           </View>
           <Pressable style={styles.iconBtn} onPress={() => setShowSettings((s) => !s)}>
             <Text style={styles.iconText}>⚙</Text>
@@ -175,7 +195,6 @@ export default function App() {
                 autoCorrect={false}
                 placeholderTextColor="#9ca3af"
               />
-              <Text style={styles.hint}>On-device models aren't available on phones, so deep scan uses your key.</Text>
             </View>
           ) : null}
 
@@ -184,7 +203,7 @@ export default function App() {
             style={styles.textarea}
             value={prompt}
             onChangeText={setPrompt}
-            placeholder="e.g. Create an S3 bucket and an EC2 instance running a web server."
+            placeholder="e.g. Create an S3 bucket for user documents."
             placeholderTextColor="#9ca3af"
             multiline
           />
@@ -195,7 +214,7 @@ export default function App() {
             </Pressable>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Pressable style={styles.ghostBtn} onPress={() => runDeepScan()} disabled={busy}>
-                {busy ? <ActivityIndicator size="small" color="#6366f1" /> : <Text style={styles.ghostText}>Deep scan</Text>}
+                {busy ? <ActivityIndicator size="small" color="#818cf8" /> : <Text style={styles.ghostText}>Deep scan</Text>}
               </Pressable>
               <Pressable style={styles.primaryBtn} onPress={() => analyze()}>
                 <Text style={styles.primaryText}>Analyze</Text>
@@ -210,99 +229,90 @@ export default function App() {
               {report.nonAwsLikely ? (
                 <View style={styles.warn}>
                   <Text style={styles.warnText}>
-                    This looks like a non-AWS cloud prompt. Vector is AWS-specific, so treat these as generic advice.
+                    This looks like a non-AWS cloud prompt. Vector is AWS-specific.
                   </Text>
                 </View>
               ) : null}
 
-              {/* Risk + coverage card */}
-              <View style={[styles.riskCard, { borderLeftColor: RISK_COLOR[report.riskLevel] || "#6b7280" }]}>
+              <View style={[styles.riskCard, { borderLeftColor: RISK_COLOR[report.riskLevel] || "#94a3b8" }]}>
                 <View style={styles.riskTop}>
-                  <Text style={[styles.riskScore, { color: RISK_COLOR[report.riskLevel] }]}>{report.riskScore}</Text>
+                  <Text style={[styles.riskScore, { color: RISK_COLOR[report.riskLevel] || "#94a3b8" }]}>{proj.riskScore}</Text>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={[styles.riskLevel, { color: RISK_COLOR[report.riskLevel] }]}>
+                    <Text style={[styles.riskLevel, { color: RISK_COLOR[report.riskLevel] || "#94a3b8" }]}>
                       {report.riskLevel} RISK
                     </Text>
                     <Text style={styles.riskMeta}>
-                      {report.stats.resources} resource(s) · {report.stats.missing} missing · {report.stats.risky} risky
+                      started {report.riskScore} · coverage {report.coverageScore}% → {proj.coverageScore}%
                     </Text>
                   </View>
                 </View>
-
-                <View style={styles.covRow}>
-                  <Text style={styles.covLabel}>
-                    Risk{" "}
-                    <Text style={styles.covValue}>
-                      {cov.riskBefore}
-                      {cov.riskAfter < cov.riskBefore ? " → " + cov.riskAfter : ""}
-                    </Text>
-                    {"    "}Coverage{" "}
-                    <Text style={styles.covValue}>
-                      {cov.before}%{cov.after > cov.before ? " → " + cov.after + "%" : ""}
-                    </Text>
-                  </Text>
-                </View>
                 <View style={styles.covTrack}>
-                  <View style={[styles.covFill, { width: Math.max(2, cov.after) + "%" }]} />
+                  <View style={[styles.covFill, { width: Math.max(2, proj.coverageScore) + "%" }]} />
                 </View>
-
                 <View style={styles.tierRow}>
-                  <Text style={[styles.tierChip, { color: "#dc2626" }]}>{report.tierCounts.core} confirmed</Text>
-                  <Text style={[styles.tierChip, { color: "#d97706" }]}>{report.tierCounts.clarify} clarify</Text>
-                  <Text style={[styles.tierChip, { color: "#0ea5e9" }]}>{report.tierCounts.harden} optional</Text>
+                  <Text style={[styles.tierChip, { color: "#f87171" }]}>{core.length} confirmed</Text>
+                  <Text style={[styles.tierChip, { color: "#fbbf24" }]}>{clarify.length} clarify</Text>
+                  <Text style={[styles.tierChip, { color: "#60a5fa" }]}>{harden.length} optional</Text>
                 </View>
+                <Pressable style={styles.acceptTop} onPress={acceptTop}>
+                  <Text style={styles.acceptTopText}>Accept confirmed gaps + risky</Text>
+                </Pressable>
               </View>
 
               {report.riskyFindings.length ? (
                 <View>
-                  <Text style={styles.h2}>Risky statements</Text>
+                  <Text style={styles.h2}>Risky ({report.riskyFindings.length})</Text>
                   {report.riskyFindings.map((f) => (
-                    <FindingCard
-                      key={f.id}
-                      id={f.id}
-                      accepted={accepted}
-                      onToggle={toggle}
-                      color="#b91c1c"
-                      badge={f.severity}
-                      title={f.label}
-                      desc={f.description}
-                      clause={"Fix: " + f.fix}
-                    />
+                    <Card key={f.id} id={f.id} accepted={accepted} onToggle={toggle} color="#f87171"
+                      badge={f.severity} title={f.label} desc={f.description} clause={"Fix: " + f.fix} />
                   ))}
                 </View>
               ) : null}
 
-              <View style={styles.rowBetween}>
-                <Text style={styles.h2}>Missing constraints ({report.missing.length})</Text>
-                <Pressable onPress={acceptAll}><Text style={styles.link}>Accept all</Text></Pressable>
-              </View>
+              <Text style={styles.h2}>Confirmed gaps ({core.length})</Text>
+              {core.length === 0 ? <Text style={styles.none}>None. ✓</Text> : null}
+              {core.map((m) => (
+                <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
+                  color={SEV_COLOR[m.severity] || "#fbbf24"}
+                  badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                  title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
+              ))}
 
-              {TIERS.map((t) => {
-                const items = report.missing.filter((m) => (m.tier || "clarify") === t.key);
-                if (!items.length) return null;
-                return (
-                  <View key={t.key}>
-                    <View style={styles.groupRow}>
-                      <View style={[styles.groupDot, { backgroundColor: t.color }]} />
-                      <Text style={styles.group}>{t.label} ({items.length})</Text>
-                    </View>
-                    {items.map((m) => (
-                      <FindingCard
-                        key={m.id}
-                        id={m.id}
-                        accepted={accepted}
-                        onToggle={toggle}
-                        color={SEV_COLOR[m.severity] || "#d97706"}
-                        badge={m.severity + (m.source === "ai" ? " · AI" : "")}
-                        title={m.label}
-                        desc={m.description}
-                        clause={m.clause}
-                        tf={m.tf}
-                      />
-                    ))}
-                  </View>
-                );
-              })}
+              {clarify.length ? (
+                <View>
+                  <Pressable style={styles.toggle} onPress={() => setShowClarify((s) => !s)}>
+                    <Text style={styles.toggleText}>
+                      {showClarify ? "− Hide" : "+ Show"} clarification ({clarify.length})
+                    </Text>
+                  </Pressable>
+                  {showClarify
+                    ? clarify.map((m) => (
+                        <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
+                          color={SEV_COLOR[m.severity] || "#fbbf24"}
+                          badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                          title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
+                      ))
+                    : null}
+                </View>
+              ) : null}
+
+              {harden.length ? (
+                <View>
+                  <Pressable style={styles.toggle} onPress={() => setShowHarden((s) => !s)}>
+                    <Text style={styles.toggleText}>
+                      {showHarden ? "− Hide" : "+ Show"} optional hardening ({harden.length})
+                    </Text>
+                  </Pressable>
+                  {showHarden
+                    ? harden.map((m) => (
+                        <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
+                          color={SEV_COLOR[m.severity] || "#4ade80"}
+                          badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                          title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
+                      ))
+                    : null}
+                </View>
+              ) : null}
 
               <View style={styles.rowBetween}>
                 <Text style={styles.h2}>Improved prompt</Text>
@@ -316,12 +326,18 @@ export default function App() {
             </View>
           ) : null}
         </ScrollView>
+
+        {toast ? (
+          <View style={styles.toast} pointerEvents="none">
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
+        ) : null}
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
 
-function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause, tf }) {
+function Card({ id, accepted, onToggle, color, badge, title, desc, clause, tf }) {
   const on = !!accepted[id];
   return (
     <View style={[styles.card, { borderLeftColor: color }, on && styles.cardOn]}>
@@ -334,7 +350,7 @@ function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause
       {desc ? <Text style={styles.cardDesc}>{desc}</Text> : null}
       {clause ? <Text style={styles.clause}>{clause}</Text> : null}
       {tf ? <Text style={styles.tf}>Terraform: {tf}</Text> : null}
-      <Pressable style={[styles.smallBtn, on && styles.smallBtnOn]} onPress={() => onToggle(id)}>
+      <Pressable style={[styles.smallBtn, on && styles.smallBtnOn]} onPress={() => onToggle(id, title)}>
         <Text style={[styles.smallBtnText, on && styles.smallBtnTextOn]}>
           {on ? "Added ✓" : "+ Add clause"}
         </Text>
@@ -345,32 +361,22 @@ function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#0f172a" },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#111827",
-    borderBottomWidth: 1,
-    borderBottomColor: "#1f2937",
-  },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#111827", borderBottomWidth: 1, borderBottomColor: "#1f2937" },
   logo: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#6366f1", alignItems: "center", justifyContent: "center", marginRight: 10 },
   logoText: { color: "#fff", fontWeight: "800", fontSize: 17 },
   h1: { fontSize: 17, fontWeight: "800", color: "#f9fafb" },
-  sub: { fontSize: 11, color: "#9ca3af" },
+  sub: { fontSize: 12, color: "#a5b4fc", fontWeight: "700" },
   iconBtn: { borderWidth: 1, borderColor: "#334155", borderRadius: 9, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   iconText: { fontSize: 19, color: "#e5e7eb" },
 
-  body: { padding: 16, paddingBottom: 48, backgroundColor: "#0f172a" },
+  body: { padding: 16, paddingBottom: 60, backgroundColor: "#0f172a" },
   settings: { borderWidth: 1, borderColor: "#1f2937", borderRadius: 12, padding: 14, marginBottom: 16, backgroundColor: "#111827" },
   label: { fontSize: 13, fontWeight: "700", marginBottom: 6, color: "#e5e7eb" },
-  hint: { fontSize: 11, color: "#9ca3af", marginTop: 4 },
   input: { borderWidth: 1, borderColor: "#334155", borderRadius: 9, padding: 10, marginBottom: 10, fontSize: 14, color: "#f9fafb", backgroundColor: "#0f172a" },
-  textarea: { borderWidth: 1, borderColor: "#334155", borderRadius: 12, padding: 12, minHeight: 120, fontSize: 14, color: "#f9fafb", backgroundColor: "#111827", textAlignVertical: "top" },
+  textarea: { borderWidth: 1, borderColor: "#334155", borderRadius: 12, padding: 12, minHeight: 110, fontSize: 14, color: "#f9fafb", backgroundColor: "#111827", textAlignVertical: "top" },
 
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 20 },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 22 },
   ghostBtn: { paddingVertical: 8, paddingHorizontal: 12, marginRight: 8 },
   ghostText: { color: "#c7d2fe", fontWeight: "700" },
   primaryBtn: { backgroundColor: "#6366f1", borderRadius: 10, paddingVertical: 11, paddingHorizontal: 18 },
@@ -384,22 +390,20 @@ const styles = StyleSheet.create({
 
   riskCard: { borderWidth: 1, borderColor: "#1f2937", borderLeftWidth: 5, borderRadius: 12, padding: 14, backgroundColor: "#111827" },
   riskTop: { flexDirection: "row", alignItems: "center" },
-  riskScore: { fontSize: 40, fontWeight: "900" },
+  riskScore: { fontSize: 42, fontWeight: "900" },
   riskLevel: { fontSize: 13, fontWeight: "800" },
   riskMeta: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
-
-  covRow: { marginTop: 12 },
-  covLabel: { fontSize: 12, color: "#9ca3af" },
-  covValue: { color: "#f9fafb", fontWeight: "800" },
-  covTrack: { height: 8, borderRadius: 4, backgroundColor: "#1f2937", marginTop: 6, overflow: "hidden" },
+  covTrack: { height: 8, borderRadius: 4, backgroundColor: "#1f2937", marginTop: 10, overflow: "hidden" },
   covFill: { height: 8, borderRadius: 4, backgroundColor: "#22c55e" },
   tierRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   tierChip: { fontSize: 11, fontWeight: "700" },
+  acceptTop: { marginTop: 12, borderWidth: 1, borderColor: "#6366f1", borderRadius: 9, paddingVertical: 9, alignItems: "center" },
+  acceptTopText: { color: "#a5b4fc", fontWeight: "700", fontSize: 12 },
 
   h2: { fontSize: 15, fontWeight: "800", marginTop: 20, color: "#f9fafb" },
-  groupRow: { flexDirection: "row", alignItems: "center", marginTop: 16, marginBottom: 8 },
-  groupDot: { width: 9, height: 9, borderRadius: 5, marginRight: 8 },
-  group: { fontSize: 13, fontWeight: "800", color: "#e5e7eb" },
+  none: { color: "#4ade80", fontSize: 13, marginTop: 6 },
+  toggle: { marginTop: 16, borderWidth: 1, borderColor: "#334155", borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  toggleText: { color: "#c7d2fe", fontWeight: "700", fontSize: 13 },
 
   card: { borderWidth: 1, borderColor: "#1f2937", borderLeftWidth: 4, borderRadius: 12, padding: 12, marginBottom: 10, backgroundColor: "#111827" },
   cardOn: { backgroundColor: "#052e16", borderColor: "#16a34a" },
@@ -416,4 +420,7 @@ const styles = StyleSheet.create({
   smallBtnTextOn: { color: "#4ade80" },
   improved: { fontFamily: "monospace", fontSize: 12, color: "#e2e8f0", backgroundColor: "#0b1220", padding: 12, borderRadius: 10, marginTop: 6, lineHeight: 18 },
   disclaimer: { marginTop: 18, fontSize: 11, fontStyle: "italic", color: "#94a3b8" },
+
+  toast: { position: "absolute", left: 20, right: 20, bottom: 24, backgroundColor: "#16a34a", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, alignItems: "center" },
+  toastText: { color: "#fff", fontWeight: "700", fontSize: 13 },
 });
