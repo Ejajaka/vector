@@ -13,6 +13,10 @@ Ships as a **Chrome extension** (Manifest V3) plus a **CLI**. The core engine is
 > **Full step-by-step build & usage manual:** [`MANUAL.md`](MANUAL.md) — recreate
 > the whole project (engine, CLI, extension, evaluation, mobile apps, publishing)
 > from a clean machine.
+>
+> **Detailed system design:** [`ARCHITECTURE.md`](ARCHITECTURE.md) — layers, the
+> 18-step pipeline, scoring formulas, harden/project helpers, deep scan, and
+> evaluation methodology. Also as `docs/Vector-Architecture.docx`.
 
 ---
 

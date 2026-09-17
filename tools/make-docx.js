@@ -426,6 +426,199 @@ const PROGRESS = [
   P("We will report expanded evaluation results, the Expo app running on both platforms, a live demo from prompt to hardened prompt, and any detection gaps found on paraphrased prompts.")
 ];
 
+// ========================================================== ARCHITECTURE DOC
+const ARCHITECTURE = [
+  T("Vector - Architecture & Pipeline"),
+  S("Detailed system design for the pre-generation security diagnosis engine (v0.5.6, AWS-only, rule-based, offline)."),
+
+  H1("1. Executive summary"),
+  P("Vector sits between a user's natural-language prompt and the LLM that turns it into infrastructure code. It detects the AWS resources being described, looks up the security controls those resources require, subtracts the controls the prompt already states, and reports the rest as missing constraints, together with any risky statements. Every finding carries a ready-to-add clause and the Terraform attribute to set. One tap rewrites the prompt into a hardened version that re-analyses to risk 0 and coverage 100 percent."),
+  P("There is no machine learning, no trained model and no network on the core path. The knowledge is a curated, standards-grounded taxonomy."),
+
+  H1("2. System architecture"),
+  H2("2.1 Layers"),
+  LI("Knowledge base - src/taxonomy.js: resources, controls, risky patterns, synonyms, paraphrase lexicon, tiers, Terraform hints, context cues, scope vocabularies."),
+  LI("Core engine - src/analyzer.js: the analysis pipeline, scoring, harden, project and merge."),
+  LI("Secondary NLP - src/semantic.js: TF-IDF index and cosine similarity, advisory only."),
+  LI("Optional AI - src/llm.js: deep scan through an existing model, on-device or hosted."),
+  LI("Post-generation - src/tfcheck.js: deterministic checks on generated Terraform."),
+  LI("Shared utilities - src/settings.js, src/ui.js and src/ui.css."),
+  LI("Surfaces - extension (manifest.json, popup, content, options), CLI (cli/vector-cli.js), mobile (mobile/, mobile-rn/), web demo (demo/)."),
+  LI("Quality - test/run-tests.js, eval/, .github/workflows/ci.yml."),
+
+  H2("2.2 Layering rule"),
+  P("The engine is UI-agnostic and dependency-free. Every surface loads the same files and calls the same functions: analyze, harden, project and mergeFindings. This is why the extension, CLI, mobile apps and web demo produce identical results."),
+  C("src/taxonomy.js --+"),
+  C("src/semantic.js --+--> src/analyzer.js --> report --> src/ui.js"),
+  C("src/settings.js --+                                --> popup.js / content.js"),
+  C("                                                   --> App.js (React Native)"),
+  C("                                                   --> cli/vector-cli.js"),
+  C("src/llm.js --> mergeFindings --> same report"),
+  C("src/tfcheck.js --> independent post-generation path"),
+
+  H1("3. The analysis pipeline"),
+  P("Entry point: VectorAnalyzer.analyze(prompt, options) in src/analyzer.js, where options is { policy, strictMode }."),
+
+  H2("Step 0 - Input"),
+  LI("prompt: the natural-language infrastructure request."),
+  LI("options.policy: optional custom organisation rules (requirements and riskyPatterns)."),
+  LI("options.strictMode: promotes medium severity to high in the weighting."),
+
+  H2("Step 1 - Normalisation"),
+  C('"Store data UNENCRYPTED in the S3 bucket"'),
+  C('  -> lowercase, quotes removed, whitespace collapsed'),
+  C('  -> "store data unencrypted in the s3 bucket"'),
+  C('  -> negation prefix fixup: "unencrypted" -> "not encrypted"'),
+  C('  -> "store data not encrypted in the s3 bucket"'),
+
+  H2("Step 2 - Tokenisation"),
+  P("Split on non-alphanumerics and drop a stopword list. Token count drives the confidence score."),
+
+  H2("Step 3 - Synonym expansion"),
+  P("Everyday words are mapped to canonical AWS nouns, used only for resource detection. This step is deliberately excluded from the scope guard so that a bucket of water cannot become an s3 bucket."),
+  C('"website"        -> ec2, load balancer'),
+  C('"object storage" -> s3'),
+  C('"serverless"     -> lambda'),
+  C('"relational db"  -> rds'),
+
+  H2("Step 4 - Intent detection"),
+  P("Verb groups matched: create, deploy, store, allow, restrict, secure, connect, backup, monitor. Intents are reported and count as a scope signal."),
+
+  H2("Step 5 - Policy merge"),
+  P("Custom policy requirements are appended; those marked alwaysRequired are treated as relevant regardless of detected resources. Custom risky patterns are appended to the risky list."),
+
+  H2("Step 6 - Resource detection"),
+  P("78 AWS resources, each with aliases matched either as a word-boundary phrase or as a regular expression, decided automatically by whether the alias contains regex metacharacters."),
+  C('plain alias : "s3 bucket"   -> word-boundary phrase match'),
+  C('regex alias : "\\\\becr\\\\b"    -> regex match'),
+
+  H2("Step 7 - Scope guard"),
+  P("Decides whether this is an infrastructure prompt at all. It is in scope if any of the following hold: a strong unambiguous term such as aws, s3, vpc, terraform, iam or rds; an infrastructure intent verb; two or more infrastructure terms; a resource matched by a non-ambiguous alias; or a risky security statement. Otherwise the function returns immediately with outOfScope true, risk 0 and no findings."),
+  C('OUT  "i want a bucket full of water"   IN  "Create an S3 bucket for user documents."'),
+  C('OUT  "a bucket of water"               IN  "Create a bucket for user files."'),
+  C('OUT  "i need a queue for the tickets"  IN  "Deploy our application to the cloud."'),
+  C('OUT  "i will kill u"                   IN  "Hard-code the database password in the application."'),
+
+  H2("Step 8 - Context detection"),
+  P("Rule-based environment cues adjust the risk weight later: dev, sandbox, test, staging and prototype give a factor of 0.75; production, live, customer data, PII and regulated give 1.10; otherwise 1.00. Non-AWS terms such as azure or gcp set a warning flag so the UI does not present AWS-specific advice."),
+
+  H2("Step 9 - Relevant control set"),
+  P("The union of the required controls of every detected resource. Resources may opt out of the shared defaults where they do not apply. If no resource is recognised, a baseline set is used. Always-required policy rules are added unconditionally."),
+  C("DEFAULT_REQUIRED = encryption_at_rest, encryption_in_transit, least_privilege_iam,"),
+  C("                   audit_logging, regional_restriction"),
+
+  H2("Step 10 - Requirement detection with negation guard"),
+  P("Each control has regex patterns plus a curated paraphrase lexicon. A control counts as stated only if at least one match survives three guards."),
+  LI("before - the clause before the match must contain an odd number of negation words. Example: do NOT make it public means the public-access control is not stated."),
+  LI("after - the next characters must not be disabled, off, not enabled or inactive. Example: logging disabled means audit logging is not stated."),
+  LI("notAfter - a control may declare qualifiers that disqualify a match. Example: encryption in transit does not satisfy at-rest."),
+  P("Negation words include not, no, never, without, avoid, disable, deny, cannot, except, rather than and instead of."),
+
+  H2("Step 11 - Omission analysis"),
+  C("MISSING = relevant controls - stated controls"),
+  P("Each missing control carries an id, label, dimension, severity, tier, weight, a Terraform hint, a description, a ready-to-add clause, standards, applicable resources and its source."),
+
+  H2("Step 12 - Risky-statement detection"),
+  P("Nine built-in risky patterns, matched negated-aware and de-duplicated: open SSH, public bucket, wildcard IAM, unencrypted data, hard-coded secret, disabled logging, weak authentication, public database and no backup. Each pattern may define rewrite rules used by harden()."),
+
+  H2("Step 13 - Scoring"),
+  C("severityWeight : high = 3, medium = 2, low = 1"),
+  C("tierMultiplier : core = 1.0, clarify = 0.6, harden = 0.3"),
+  C("weight = severityWeight x tierMultiplier"),
+  C("missingRatio = missingWeight / maxWeight"),
+  C("base = round(100 x missingRatio^1.5 + min(55, riskyWeight x 9))"),
+  C("riskScore = clamp(round(base x envFactor), 0, 100)"),
+  P("Risk levels: 75 and above CRITICAL, 50 and above HIGH, 25 and above MEDIUM, 1 and above LOW, otherwise MINIMAL."),
+
+  H2("Step 14 - Confidence"),
+  C("base 34 in baseline mode, else 78"),
+  C("-22 if fewer than 4 tokens, -8 if fewer than 8 tokens"),
+  C("-20 if no controls matched, +6 if two or more resources"),
+  C("clamp 5 to 98; high at 75, medium at 45, else low"),
+  C("needsDeepScan = confidence < 50 OR coverage < 50"),
+
+  H2("Step 15 - Tiering and coverage"),
+  C("coverageScore = round(100 x mentioned / (mentioned + missing))"),
+  P("Findings are grouped into core (strongly implied), clarify (context-dependent) and harden (optional)."),
+
+  H2("Step 16 - Semantic relevance, advisory only"),
+  P("src/semantic.js builds a TF-IDF index over the controls and ranks them by cosine similarity to the prompt. Measurement showed cosine similarity is polarity-blind: open all ports scores 0.49 against the restrict-ports control, while a genuine paraphrase scores 0.20. Similarity is therefore never allowed to mark a control as stated, and the negative result is documented rather than hidden."),
+
+  H2("Step 17 - Report"),
+  P("The report contains the prompt, tokens, intents, resources, mentioned controls, missing controls, risky findings, risk score and level, coverage score, tier counts, total weight, confidence, environment, non-AWS and out-of-scope flags, semantic matches, feedback, disclaimer and statistics."),
+
+  H2("Step 18 - Rendering"),
+  P("src/ui.js draws the report: warning banner, risk card with score, level and coverage, the risky section, and tier-grouped missing controls each with a clause, a Terraform hint and a one-click Add clause action."),
+
+  H1("4. Interactive helpers"),
+  H2("4.1 project - live score projection"),
+  P("Recomputes risk and coverage for a hypothetical set of accepted clauses without re-analysing. A bare S3 bucket moves from risk 100 and coverage 0 percent to risk 46 at three clauses, risk 15 at six, and risk 0 at all clauses."),
+  H2("4.2 harden - one-tap hardening"),
+  P("Rewrites risky phrasing into safe wording, then iteratively appends every missing clause and re-analyses until no new clauses appear. The iteration is required because an appended clause can mention another service, which the analyser then also finds missing."),
+  C("base = neutralizeRisky(prompt)"),
+  C("if analyze(base).outOfScope: return unchanged"),
+  C("repeat up to 8 times: add missing clauses, re-analyse, stop when nothing new"),
+  C("returns { prompt, clauses, report }"),
+  H2("4.3 mergeFindings"),
+  P("Merges deep-scan output, de-duplicating by label, marking findings as AI, and recomputing statistics, tier counts, total weight and risk."),
+
+  H1("5. Optional AI deep scan"),
+  P("Off by default. Two tiers: on-device using the browser model with no key and no network, then hosted using an OpenAI-compatible chat-completions endpoint with the user's own key."),
+  LI("Gemini: https://generativelanguage.googleapis.com/v1beta/openai, model gemini-2.5-flash."),
+  LI("OpenAI: https://api.openai.com/v1, model gpt-4o-mini."),
+  LI("OpenCode Zen: https://opencode.ai/zen/v1, model deepseek-v4-flash."),
+  P("The model is asked only for controls that appear missing and for risky statements, as strict JSON. Errors surface the provider's own message. A static web page can only call providers that send CORS headers, so the demo can use Gemini but not OpenCode Zen; the extension and mobile app bypass CORS."),
+
+  H1("6. Post-generation loop"),
+  P("src/tfcheck.js and the verify command run eleven deterministic checks over generated HCL and exit with 2 for high severity, 1 for other findings, and 0 when clean. This makes the architecture honest: prompt-stage diagnosis is complementary to post-generation scanning, not a replacement."),
+
+  H1("7. Surfaces"),
+  LI("Browser extension: toolbar popup and an in-page floating button on ChatGPT, Claude and Gemini. Buttons: Analyze, Deep scan, Harden prompt, Add clause, Accept all, Copy."),
+  LI("CLI: analyze, analyze-file, improved, hook and verify, with --json, --strict and --policy."),
+  LI("Mobile: a Capacitor app with the Android build verified, and a React Native Expo app with both iOS and Android bundles verified. Both reuse the engine unchanged."),
+  LI("Web demo: the same web app published by GitHub Pages with a version query for cache-busting."),
+
+  H1("8. Evaluation methodology"),
+  LI("Two tuning sets, 39 and 59 labelled prompts, plus a 14-prompt set written before the last round of pattern fixes."),
+  LI("Metrics: missing-constraint precision, recall and F1; risky-statement precision, recall and F1; negation-trap failures."),
+  LI("Cohen's kappa harness for agreement between two independent labelers."),
+  LI("Downstream studies: hand-written insecure versus hardened Terraform, and a script that generates Terraform with an LLM from raw versus hardened prompts and scores both."),
+  P("Honest status: all 112 prompts were seen during development, so the current F1 is indicative and not a clean held-out result. Two results that would strengthen the claim are wired but need external inputs: the LLM downstream study needs an API key, and inter-annotator agreement needs a second human labeler."),
+
+  H1("9. Grounding"),
+  P("CIS AWS Foundations Benchmark, AWS Well-Architected Framework Security Pillar, AWS Foundational Security Best Practices, NIST SP 800-53 Rev.5, GDPR Article 5 and 32, and the India DPDP Act 2023. Each control carries its standards citations, shown on the finding."),
+
+  H1("10. Properties, limits and design decisions"),
+  LI("Deterministic: the same prompt always gives the same report."),
+  LI("Explainable: every finding traces to a named control and pattern."),
+  LI("Offline: no network, no account and no telemetry on the core path."),
+  LI("Never empty: an unrecognised but in-scope prompt still receives baseline controls."),
+  LI("Limit: AWS only. Azure and GCP prompts receive a warning instead of results."),
+  LI("Limit: rule-based recall has a ceiling on arbitrary paraphrase; the optional deep scan covers the long tail."),
+  LI("Limit: ambiguity is inherent to keyword matching; the scope guard removes the obvious failures, not every odd sentence."),
+  LI("Positioning: a diagnostic aid that complements post-generation scanning, not a guarantee."),
+
+  H1("11. Version history"),
+  LI("0.2.0 first Edge submission, AWS-only rule engine."),
+  LI("0.3.0 coverage score and TF-IDF relevance."),
+  LI("0.4.0 paraphrase lexicon, non-AWS guard, disclaimer, tests."),
+  LI("0.4.1 default to Gemini endpoint."),
+  LI("0.4.2 auto deep scan on low coverage."),
+  LI("0.4.3 reworded clauses, credentials false positive fixed."),
+  LI("0.4.4 relevance tiers, API Gateway fix, negation for rather than, tier-weighted risk."),
+  LI("0.4.5 public-database false positive, React Native safe area, live coverage, auto AI."),
+  LI("0.4.6 live risk and coverage projection, concise clauses."),
+  LI("0.4.7 context-aware risk, Terraform hints, verify command, study and kappa harnesses."),
+  LI("0.4.8 78 resources, scope-aware negation, CI, CIS policy pack."),
+  LI("0.5.0 one-tap harden to risk 0."),
+  LI("0.5.1 scope guard rejects non-infrastructure input."),
+  LI("0.5.2 deep-scan 404 fix and provider error detail."),
+  LI("0.5.3 List models for my key."),
+  LI("0.5.4 OpenCode Zen host permission."),
+  LI("0.5.5 low-confidence indicator and Deep scan guidance."),
+  LI("0.5.6 scope guard tightened; risky-only prompts remain in scope; demo cache-buster.")
+];
+
 // ------------------------------------------------------------------- output
 const outDir = path.join(__dirname, "..", "docs");
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -433,7 +626,7 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 const docs = [
   ["Vector-Features.docx", FEATURES],
   ["Vector-Pipeline.docx", PIPELINE],
-  ["Vector-Progress-Report.docx", PROGRESS]
+  ["Vector-Architecture.docx", ARCHITECTURE]
 ];
 
 for (const [name, blocks] of docs) {

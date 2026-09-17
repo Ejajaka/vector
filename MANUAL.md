@@ -1,4 +1,4 @@
-# VECTOR — Complete Build & Usage Manual
+# VECTOR â€” Complete Build & Usage Manual
 
 Pre-Generation Security Diagnosis of Cloud Infrastructure Prompts Using NLP
 (AWS-only). This document lets anyone recreate the entire project from a clean
@@ -50,42 +50,42 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-├── manifest.json            Chrome/Edge MV3 manifest (v0.5.6)
-├── popup.html/.css/.js       extension toolbar popup
-├── content.js/.css           in-page floating button
-├── options.html/.js          settings, policy, history
-├── src/
-│   ├── taxonomy.js           78 AWS resources, 30 controls, risky patterns,
-│   │                         synonyms, paraphrase lexicon, tiers, non-AWS terms
-│   ├── analyzer.js           the rule engine (pipeline)
-│   ├── semantic.js           TF-IDF semantic relevance (advisory)
-│   ├── settings.js           shared chrome.storage helpers
-│   ├── ui.js / ui.css        shared results renderer
-│   └── llm.js                optional deep scan (on-device + hosted)
-├── cli/vector-cli.js         command line interface
-├── eval/
-│   ├── dataset.json          39 labelled prompts (tuning)
-│   ├── dataset2.json         59 labelled prompts (tuning)
-│   ├── heldout.json          14 labelled prompts
-│   ├── run-eval.js           precision/recall/F1 harness
-│   └── downstream/           insecure vs secured Terraform demo
-├── test/run-tests.js         42 unit tests
-├── tools/
-│   ├── make-icons.js         PNG icon generator
-│   ├── make-docx.js          Word doc generator
-│   ├── package.ps1           build the store zip
-│   └── calibrate.js          semantic threshold calibration
-├── docs/                     Vector-Features.docx, Vector-Pipeline.docx
-├── store/                    listing, privacy policy, publishing steps
-├── references/               supporting literature
-├── mobile/                   Capacitor app (Android verified)
-├── mobile-rn/                React Native (Expo) app (both bundles verified)
-└── README.md
+â”œâ”€â”€ manifest.json            Chrome/Edge MV3 manifest (v0.5.6)
+â”œâ”€â”€ popup.html/.css/.js       extension toolbar popup
+â”œâ”€â”€ content.js/.css           in-page floating button
+â”œâ”€â”€ options.html/.js          settings, policy, history
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ taxonomy.js           78 AWS resources, 30 controls, risky patterns,
+â”‚   â”‚                         synonyms, paraphrase lexicon, tiers, non-AWS terms
+â”‚   â”œâ”€â”€ analyzer.js           the rule engine (pipeline)
+â”‚   â”œâ”€â”€ semantic.js           TF-IDF semantic relevance (advisory)
+â”‚   â”œâ”€â”€ settings.js           shared chrome.storage helpers
+â”‚   â”œâ”€â”€ ui.js / ui.css        shared results renderer
+â”‚   â””â”€â”€ llm.js                optional deep scan (on-device + hosted)
+â”œâ”€â”€ cli/vector-cli.js         command line interface
+â”œâ”€â”€ eval/
+â”‚   â”œâ”€â”€ dataset.json          39 labelled prompts (tuning)
+â”‚   â”œâ”€â”€ dataset2.json         59 labelled prompts (tuning)
+â”‚   â”œâ”€â”€ heldout.json          14 labelled prompts
+â”‚   â”œâ”€â”€ run-eval.js           precision/recall/F1 harness
+â”‚   â””â”€â”€ downstream/           insecure vs secured Terraform demo
+â”œâ”€â”€ test/run-tests.js         42 unit tests
+â”œâ”€â”€ tools/
+â”‚   â”œâ”€â”€ make-icons.js         PNG icon generator
+â”‚   â”œâ”€â”€ make-docx.js          Word doc generator
+â”‚   â”œâ”€â”€ package.ps1           build the store zip
+â”‚   â””â”€â”€ calibrate.js          semantic threshold calibration
+â”œâ”€â”€ docs/                     Vector-Features.docx, Vector-Pipeline.docx, Vector-Architecture.docx
+â”œâ”€â”€ store/                    listing, privacy policy, publishing steps
+â”œâ”€â”€ references/               supporting literature
+â”œâ”€â”€ mobile/                   Capacitor app (Android verified)
+â”œâ”€â”€ mobile-rn/                React Native (Expo) app (both bundles verified)
+â””â”€â”€ README.md
 ```
 
 ---
 
-## 3. Recreate from scratch — the 10-minute path
+## 3. Recreate from scratch â€” the 10-minute path
 
 ```powershell
 git clone https://github.com/Ejajaka/vector.git
@@ -101,18 +101,18 @@ Expected:
 - `Overall worst F1 across sets: 1.000`
 - `Summary: 6 -> 0 issues.`
 
-No `npm install` is needed for the core — the engine has zero dependencies.
+No `npm install` is needed for the core â€” the engine has zero dependencies.
 
 ---
 
-## 4. Part A — The engine
+## 4. Part A â€” The engine
 
 ### 4.1 Files
-- `src/taxonomy.js` — the knowledge base.
-- `src/analyzer.js` — the pipeline.
-- `src/semantic.js` — TF-IDF relevance (advisory only).
-- `src/ui.js` + `src/ui.css` — DOM renderer (browser/extension).
-- `src/tfcheck.js` — post-generation Terraform verifier (used by `vector verify`).
+- `src/taxonomy.js` â€” the knowledge base.
+- `src/analyzer.js` â€” the pipeline.
+- `src/semantic.js` â€” TF-IDF relevance (advisory only).
+- `src/ui.js` + `src/ui.css` â€” DOM renderer (browser/extension).
+- `src/tfcheck.js` â€” post-generation Terraform verifier (used by `vector verify`).
 
 ### 4.2 The pipeline (in `analyzer.js`)
 
@@ -141,7 +141,7 @@ No `npm install` is needed for the core — the engine has zero dependencies.
 - **Controls** (30): e.g. `encryption_at_rest`, `public_access_block`,
   `network_restricted`, `audit_logging`, `secrets_management`, `backup_recovery`.
 - **Resources** (78): S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, KMS,
-  SQS, SNS, Redshift, OpenSearch, SageMaker, …
+  SQS, SNS, Redshift, OpenSearch, SageMaker, â€¦
 - **Risky patterns** (9): `open_ssh`, `public_bucket`, `wildcard_iam`,
   `no_encryption`, `hardcoded_secret`, `disabled_logging`, `weak_auth`,
   `public_database`, `no_backup`.
@@ -169,7 +169,7 @@ node -e "const {analyze}=require('./src/analyzer'); console.log(analyze('Create 
 
 ---
 
-## 5. Part B — CLI
+## 5. Part B â€” CLI
 
 `cli/vector-cli.js`:
 
@@ -186,15 +186,15 @@ npm shortcuts: `npm run analyze`, `npm run improved`.
 
 ---
 
-## 6. Part C — The browser extension
+## 6. Part C â€” The browser extension
 
 ### 6.1 Load it locally (fastest way to test)
 1. Open `chrome://extensions` (or `edge://extensions`).
 2. Enable **Developer mode**.
-3. **Load unpacked** → select the project folder.
+3. **Load unpacked** â†’ select the project folder.
 
 ### 6.2 Use it
-- Toolbar icon → paste a prompt → **Analyze**.
+- Toolbar icon â†’ paste a prompt â†’ **Analyze**.
 - Or **Sample**; then **+ Add clause**; **Copy** the improved prompt.
 - `content.js` adds a floating **V** on chatgpt.com / claude.ai / gemini.google.com.
 
@@ -205,28 +205,28 @@ npm run package
 ```
 
 Produces `dist/vector-extension.zip` (only runtime files; manifest at zip root).
-The version comes from `manifest.json` — **bump it before every upload** (Edge
+The version comes from `manifest.json` â€” **bump it before every upload** (Edge
 rejects a re-upload with the same version).
 
 ---
 
-## 7. Part D — Publishing to Microsoft Edge Add-ons
+## 7. Part D â€” Publishing to Microsoft Edge Add-ons
 
 Full detail in `store/edge-submission.md`. Summary:
 
 1. Register a **free** developer account at
    https://partner.microsoft.com/dashboard/microsoftedge/public/login
    (choose **Individual**; no fee for Edge).
-2. Create extension → upload `dist/vector-extension.zip`.
-3. Availability → Public. Properties → Category **Developer tools**.
-4. Privacy tab → paste from `store/permissions-and-privacy.md`:
+2. Create extension â†’ upload `dist/vector-extension.zip`.
+3. Availability â†’ Public. Properties â†’ Category **Developer tools**.
+4. Privacy tab â†’ paste from `store/permissions-and-privacy.md`:
    - Single purpose, permission justifications, remote code = **No**,
      data usage = **Website content**, privacy policy URL.
-5. Store listing → description from `store/listing.md`, logo
+5. Store listing â†’ description from `store/listing.md`, logo
    `media/store-logo-300.png`.
-6. Notes for certification → see the prepared text in
+6. Notes for certification â†’ see the prepared text in
    `store/edge-submission.md`.
-7. Publish → review (up to ~7 business days).
+7. Publish â†’ review (up to ~7 business days).
 
 Privacy policy must be hosted publicly. This repo enables GitHub Pages:
 `https://ejajaka.github.io/vector/store/privacy-policy.html`.
@@ -237,7 +237,7 @@ Chrome Web Store: same zip, but **US$5 one-time** registration.
 
 ---
 
-## 8. Part E — Mobile app (Capacitor) — Android verified
+## 8. Part E â€” Mobile app (Capacitor) â€” Android verified
 
 ```powershell
 cd mobile
@@ -264,7 +264,7 @@ iOS with Capacitor requires a Mac + Xcode.
 
 ---
 
-## 9. Part F — Mobile app (React Native / Expo) — iOS + Android bundles verified
+## 9. Part F â€” Mobile app (React Native / Expo) â€” iOS + Android bundles verified
 
 ```powershell
 cd mobile-rn
@@ -304,7 +304,7 @@ app + `npx expo start`.
 
 > No Mac, no Xcode and no Apple Developer account are needed for Expo Go.
 > For a standalone installable iOS build (App Store / TestFlight) you need EAS
-> Build plus the $99/year Apple Developer Program — see below.
+> Build plus the $99/year Apple Developer Program â€” see below.
 
 Compile check (verified in this repo):
 ```powershell
@@ -326,7 +326,7 @@ eas submit -p android
 
 ---
 
-## 10. Part G — Evaluation and tools
+## 10. Part G â€” Evaluation and tools
 
 ```powershell
 npm run eval          # precision / recall / F1 + negation traps
@@ -334,7 +334,7 @@ npm run downstream    # insecure vs hardened Terraform (6 -> 0 issues)
 npm run verify -- <file.tf>   # post-generation check of generated Terraform
 npm run study -- --key <API_KEY>   # generate Terraform with an LLM, raw vs hardened
 npm run kappa -- a.json b.json     # inter-annotator agreement (Cohen's kappa)
-npm run docx          # regenerate docs/Vector-Features.docx + Vector-Pipeline.docx
+npm run docx          # regenerate the Word docs (Features, Pipeline, Architecture)
 npm run icons         # regenerate media/icon*.png + store-logo-300.png
 node tools/calibrate.js   # inspect TF-IDF similarity thresholds
 ```
@@ -349,12 +349,12 @@ result. State it that way.
 
 ---
 
-## 11. Part H — Deep scan (optional AI)
+## 11. Part H â€” Deep scan (optional AI)
 
 Off by default. Two tiers:
-1. **On-device** (Chrome's built-in model) — no key, no network. Not available in
+1. **On-device** (Chrome's built-in model) â€” no key, no network. Not available in
    Edge; availability varies.
-2. **Hosted** — any OpenAI-compatible endpoint using the user's own key.
+2. **Hosted** â€” any OpenAI-compatible endpoint using the user's own key.
 
 Set the key in the extension **Options** page. Never commit an API key; the
 extension and repo ship with none.
@@ -433,10 +433,10 @@ Notes:
 
 ## 14. Reproduce-everything checklist
 
-- [ ] `git clone` → `npm test` (42 pass)
+- [ ] `git clone` â†’ `npm test` (42 pass)
 - [ ] `npm run eval` (F1 1.000)
-- [ ] `npm run downstream` (6 → 0)
-- [ ] `npm run package` → `dist/vector-extension.zip`
+- [ ] `npm run downstream` (6 â†’ 0)
+- [ ] `npm run package` â†’ `dist/vector-extension.zip`
 - [ ] Load unpacked in Edge/Chrome and analyze the Sample prompt
 - [ ] `cd mobile && npm install && npm run add:android && gradlew assembleDebug`
 - [ ] `cd mobile-rn && npm install && npx expo export --platform ios`
