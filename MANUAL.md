@@ -146,6 +146,10 @@ No `npm install` is needed for the core — the engine has zero dependencies.
   `public_database`, `no_backup`.
 - **Tiers**: `core` (strongly implied), `clarify` (context-dependent),
   `harden` (optional).
+- **Terraform hints**: every control also carries the concrete HCL to set
+  (`m.tf`), e.g. `storage_encrypted = true`, `block_public_acls = true`.
+- **Context awareness**: rule-based cues detect `dev` vs `prod` and adjust the
+  risk score (`envFactor` 0.75 / 1.1 / 1.0).
 - **Negation guard**: "do not make it public" is not "public"; "not not
   encrypted" is positive; "logging disabled" is not "logging".
 - **Aliases** may be plain phrases (`"s3 bucket"`) or regex (`"\becr\b"`).
@@ -169,6 +173,7 @@ node cli/vector-cli.js analyze --json "Create an S3 bucket for user documents"
 node cli/vector-cli.js improved "Create an S3 bucket"
 node cli/vector-cli.js hook "Deploy an S3 bucket open to the public"   # exit 2 CRITICAL / 1 HIGH
 node cli/vector-cli.js analyze --policy examples/policy.example.json "Deploy in us-east-1"
+node cli/vector-cli.js verify "eval/downstream/insecure.tf"   # post-generation check, exit 2/1/0
 ```
 
 npm shortcuts: `npm run analyze`, `npm run improved`.
@@ -290,6 +295,9 @@ eas submit -p android
 ```powershell
 npm run eval          # precision / recall / F1 + negation traps
 npm run downstream    # insecure vs hardened Terraform (6 -> 0 issues)
+npm run verify -- <file.tf>   # post-generation check of generated Terraform
+npm run study -- --key <API_KEY>   # generate Terraform with an LLM, raw vs hardened
+npm run kappa -- a.json b.json     # inter-annotator agreement (Cohen's kappa)
 npm run docx          # regenerate docs/Vector-Features.docx + Vector-Pipeline.docx
 npm run icons         # regenerate media/icon*.png + store-logo-300.png
 node tools/calibrate.js   # inspect TF-IDF similarity thresholds
@@ -330,6 +338,9 @@ extension and repo ship with none.
 | 0.4.2 | auto deep scan also triggers on low coverage |
 | 0.4.3 | reword clauses (encryption/network/residency/region); fix credentials false positive |
 | 0.4.4 | relevance tiers (confirmed/clarify/optional), API Gateway fix, "rather than" negation, tier-weighted risk |
+| 0.4.5 | fix public-database false positive; RN app safe-area, live coverage, richer UI, auto AI fallback |
+| 0.4.6 | live risk + coverage projection on clause accept; concise clauses (all <= 160 chars) |
+| 0.4.7 | context-aware env weighting, Terraform attribute hints, post-generation `verify` (src/tfcheck.js), LLM downstream study + kappa harnesses |
 
 ---
 

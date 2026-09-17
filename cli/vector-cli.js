@@ -21,6 +21,7 @@
 const fs = require("fs");
 const path = require("path");
 const { analyze, buildImprovedPrompt } = require("../src/analyzer");
+const { verifyText } = require("../src/tfcheck");
 
 function parseArgs(argv) {
   const args = { command: null, positional: [], flags: {} };
@@ -145,8 +146,33 @@ function main() {
   const policy = loadPolicy(args.flags.policy);
 
   if (!args.command || args.command === "help" || args.command === "--help") {
-    console.log("Usage: vector analyze|analyze-file|improved|hook [prompt] [--json] [--strict] [--policy FILE]");
+    console.log("Usage:");
+    console.log("  vector analyze|analyze-file|improved|hook [prompt] [--json] [--strict] [--policy FILE]");
+    console.log("  vector verify <file.tf>            # post-generation check of generated Terraform");
     process.exit(0);
+  }
+
+  // Post-generation verification: checks generated .tf, no prompt needed.
+  if (args.command === "verify") {
+    const file = args.positional[0];
+    if (!file) {
+      console.error("Usage: vector verify <file.tf>");
+      process.exit(1);
+    }
+    const text = fs.readFileSync(file, "utf8");
+    const issues = verifyText(text);
+    console.log("\nVector post-generation check: " + file + "\n");
+    if (!issues.length) {
+      console.log(C.green + "No issues found by the built-in checks. \u2713" + C.reset);
+    } else {
+      for (const i of issues) {
+        console.log("  " + sevColor(i.severity) + "[" + i.severity.toUpperCase() + "]" + C.reset + " " + i.label);
+        console.log("    fix: " + i.fix);
+      }
+    }
+    console.log("");
+    const high = issues.some((i) => i.severity === "high");
+    process.exit(high ? 2 : issues.length ? 1 : 0);
   }
 
   const prompt = getPrompt(args).trim();

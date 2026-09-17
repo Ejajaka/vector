@@ -181,6 +181,7 @@
         ? '<p class="v-applies">Applies to: ' + escapeHtml(m.appliesTo.join(", ")) + "</p>"
         : "") +
       '<div class="v-clause"><code>' + escapeHtml(m.clause) + "</code></div>" +
+      (m.tf ? '<div class="v-tf"><strong>Terraform:</strong> <code>' + escapeHtml(m.tf) + "</code></div>" : "") +
       '<div class="v-standards">' + m.standards.map((s) => chip(s, "std")).join("") + "</div>" +
       '<div class="v-card-actions"><button class="v-btn ' + (on ? "accepted" : "primary") +
       '" data-toggle="' + escapeHtml(m.id) + '">' + (on ? "Added &#10003;" : "+ Add clause") + "</button></div></div>"

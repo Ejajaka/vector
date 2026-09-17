@@ -1,12 +1,15 @@
 {
   "name": "vector",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Pre-generation security diagnosis of cloud infrastructure prompts using NLP. Chrome extension + CLI. Fully offline, zero dependencies.",
   "private": true,
   "scripts": {
     "test": "node test/run-tests.js",
     "eval": "node eval/run-eval.js",
     "downstream": "node eval/downstream/run-downstream.js",
+    "study": "node eval/downstream/run-llm-study.js",
+    "kappa": "node eval/kappa.js",
+    "verify": "node cli/vector-cli.js verify",
     "icons": "node tools/make-icons.js",
     "docx": "node tools/make-docx.js",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1",

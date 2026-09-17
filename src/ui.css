@@ -324,6 +324,20 @@ h2 {
   margin: 8px 0;
 }
 
+.v-tf {
+  margin: 8px 0;
+  font-size: 11px;
+  color: var(--v-muted);
+}
+
+.v-tf code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  background: rgba(128, 128, 128, 0.14);
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
+
 .v-clause code {
   display: block;
   padding: 8px;

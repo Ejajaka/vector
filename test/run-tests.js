@@ -358,6 +358,56 @@ test("public database is no longer a false positive", () => {
   assert.ok(!r.riskyFindings.some((f) => f.id === "public_database"), "should not flag a public DB here");
 });
 
+// ---- Context awareness ----
+test("context: a dev/sandbox prompt scores lower than production", () => {
+  const dev = analyze("Create a dev sandbox S3 bucket for testing.");
+  const prod = analyze("Create a production S3 bucket for customer data.");
+  assert.ok(dev.riskScore < prod.riskScore, "dev should be lower risk than prod");
+  assert.strictEqual(dev.environment, "dev");
+  assert.strictEqual(prod.environment, "prod");
+});
+
+// ---- Terraform hints ----
+test("every missing control carries a Terraform hint", () => {
+  const r = analyze("Create an S3 bucket and an RDS database.");
+  assert.ok(r.missing.length > 0);
+  for (const m of r.missing) {
+    assert.ok(typeof m.tf === "string" && m.tf.length > 0, "missing tf hint for " + m.id);
+  }
+});
+
+// ---- Post-generation Terraform verification ----
+const { verifyText } = require("../src/tfcheck");
+
+test("tfcheck: flags an insecure Terraform file", () => {
+  const tf = [
+    'resource "aws_s3_bucket" "d" { acl = "public-read" }',
+    'resource "aws_db_instance" "db" { engine = "postgres" }',
+    'resource "aws_security_group" "sg" { ingress { cidr_blocks = ["0.0.0.0/0"] } }',
+    'resource "aws_iam_policy" "p" { policy = jsonencode({ Action = "*", Resource = "*" }) }'
+  ].join("\n");
+  const issues = verifyText(tf);
+  const ids = issues.map((i) => i.id);
+  assert.ok(ids.includes("public_acl"));
+  assert.ok(ids.includes("open_cidr"));
+  assert.ok(ids.includes("no_rds_encryption"));
+  assert.ok(ids.includes("wildcard_iam"));
+});
+
+test("tfcheck: a hardened Terraform file passes the built-in checks", () => {
+  const tf = [
+    'resource "aws_s3_bucket" "d" { bucket = "d" }',
+    'resource "aws_s3_bucket_public_access_block" "d" { bucket = aws_s3_bucket.d.id block_public_acls = true }',
+    'resource "aws_s3_bucket_server_side_encryption_configuration" "d" { bucket = aws_s3_bucket.d.id }',
+    'resource "aws_s3_bucket_versioning" "d" { bucket = aws_s3_bucket.d.id }',
+    'resource "aws_db_instance" "db" { storage_encrypted = true backup_retention_period = 7 }',
+    'resource "aws_security_group" "sg" { ingress { cidr_blocks = ["10.0.0.0/8"] } }',
+    'resource "aws_cloudtrail" "t" { name = "t" }'
+  ].join("\n");
+  const issues = verifyText(tf);
+  assert.strictEqual(issues.length, 0, "expected no issues, got: " + issues.map((i) => i.id).join(","));
+});
+
 (async function run() {
   for (const t of queue) {
     try {

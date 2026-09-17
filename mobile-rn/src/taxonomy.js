@@ -518,6 +518,58 @@ for (const req of REQUIREMENTS) {
 }
 
 /**
+ * Terraform-level hint per control. Turns a prose recommendation into the
+ * concrete thing to set in HCL. Deterministic data, no model.
+ */
+const TF_HINTS = {
+  encryption_at_rest: 'storage_encrypted = true / server_side_encryption_configuration { sse_algorithm = "aws:kms" }',
+  encryption_in_transit: 'aws_lb_listener { protocol = "HTTPS" } and redirect 80 -> 443',
+  public_access_block: "aws_s3_bucket_public_access_block { block_public_acls = true, restrict_public_buckets = true }",
+  least_privilege_iam: "aws_iam_policy statement with explicit Action[] and Resource[] (no wildcards)",
+  no_wildcard_policy: 'do not use "Action": "*" or "Resource": "*"',
+  network_restricted: 'aws_security_group ingress { cidr_blocks = ["10.0.0.0/8"] } on required ports only',
+  audit_logging: "aws_cloudtrail (multi-region) and aws_s3_bucket_logging",
+  backup_recovery: "aws_db_instance { backup_retention_period = 7 } and aws_backup_plan",
+  versioning: 'aws_s3_bucket_versioning { status = "Enabled" }',
+  monitoring_alerting: "aws_guardduty_detector and aws_cloudwatch_metric_alarm",
+  secrets_management: "aws_secretsmanager_secret + data.aws_secretsmanager_secret_version",
+  network_isolation: "private aws_subnet + aws_nat_gateway for egress",
+  imdsv2: 'aws_instance { metadata_options { http_tokens = "required" } }',
+  mfa: "aws_iam_account_password_policy + enforce MFA on IAM users/root",
+  data_residency: 'provider "aws" { region = "<approved>" } and disable cross-region replication',
+  regional_restriction: 'provider "aws" { region = "<approved>" }',
+  key_rotation: "aws_kms_key { enable_key_rotation = true }",
+  private_endpoint: "aws_vpc_endpoint (interface/gateway)",
+  waf_protection: "aws_wafv2_web_acl associated with the public endpoint",
+  certificate_management: "aws_acm_certificate (+ validation) with auto-renewal",
+  data_classification: "resource tags (e.g. tags = { DataClass = \"confidential\" })",
+  retention_deletion: "aws_s3_bucket_lifecycle_configuration { expiration { days = N } }",
+  vulnerability_scanning: "aws_inspector2_enabler and SSM patch baselines",
+  config_compliance: "aws_config_config_rule for the baseline",
+  availability: "multi_az = true (RDS) / subnets across >= 2 AZs",
+  cost_guardrails: "aws_budgets_budget with alerts",
+  cross_region_replication: "second-region replica resource",
+  scp_permission_boundary: "aws_organizations_policy (SCP) / iam permission boundary",
+  session_management: "short MaxSessionDuration in IAM roles",
+  password_policy: "aws_iam_account_password_policy"
+};
+
+for (const req of REQUIREMENTS) {
+  req.tf = TF_HINTS[req.id] || "";
+}
+
+/**
+ * Context cues used to adjust relevance + risk. Deterministic keyword sets.
+ */
+const CONTEXT_CUES = {
+  dev: ["dev", "development", "sandbox", "test", "staging", "poc", "throwaway", "prototype"],
+  prod: ["production", "prod", "live", "customer-facing", "customer data", "regulated", "pci", "hipaa", "pii", "personal data"]
+};
+
+const ENV_FACTOR = { dev: 0.75, prod: 1.1, unknown: 1 };
+
+
+/**
  * Terms that indicate a NON-AWS cloud. Used to warn instead of silently
  * applying AWS baseline controls to an Azure/GCP prompt.
  */
@@ -748,6 +800,10 @@ const VectorTaxonomy = {
   SEVERITY_WEIGHT,
   REQUIREMENTS,
   PARAPHRASES,
+  TIERS,
+  TF_HINTS,
+  CONTEXT_CUES,
+  ENV_FACTOR,
   NON_AWS_TERMS,
   DEFAULT_REQUIRED,
   RESOURCES,

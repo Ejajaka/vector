@@ -36,6 +36,8 @@ const {
   SYNONYMS,
   NEGATION_WORDS,
   NON_AWS_TERMS,
+  CONTEXT_CUES,
+  ENV_FACTOR,
   RISKY_PATTERNS,
   STANDARDS
 } = _VectorTaxonomy;
@@ -345,7 +347,8 @@ function project(report, accepted) {
   }
 
   const ratio = missingWeight / Math.max(1, report.totalWeight || 1);
-  const riskScore = Math.min(100, Math.round(100 * Math.pow(ratio, 1.5) + Math.min(55, riskyWeight * 9)));
+  const base = Math.min(100, Math.round(100 * Math.pow(ratio, 1.5) + Math.min(55, riskyWeight * 9)));
+  const riskScore = Math.min(100, Math.round(base * (report.envFactor || 1)));
 
   const total = report.stats.mentioned + report.stats.missing;
   let covered = report.stats.mentioned;
@@ -376,6 +379,13 @@ function analyze(prompt, options) {
   // Azure/GCP prompt (which would be misleading).
   const nonAwsTerm = NON_AWS_TERMS.find((t) => new RegExp(t, "i").test(normalized)) || null;
   const nonAwsLikely = !!nonAwsTerm;
+
+  // Environment context (rule-based cues) adjusts the risk weight: a dev
+  // sandbox is lower risk than production.
+  const isDev = CONTEXT_CUES.dev.some((c) => new RegExp(c, "i").test(normalized));
+  const isProd = CONTEXT_CUES.prod.some((c) => new RegExp(c, "i").test(normalized));
+  const environment = isProd ? "prod" : isDev ? "dev" : "unknown";
+  const envFactor = ENV_FACTOR[environment] || 1;
 
   const relevantIds = new Set();
   const appliesTo = new Map();
@@ -430,6 +440,7 @@ function analyze(prompt, options) {
         dimension: DIMENSIONS[req.dimension] || req.dimension,
         severity: req.severity,
         tier: tier,
+        tf: req.tf,
         description: req.description,
         standards: req.standards
       });
@@ -441,6 +452,7 @@ function analyze(prompt, options) {
         severity: req.severity,
         tier: tier,
         weight: weight,
+        tf: req.tf,
         description: req.description,
         clause: req.clause,
         standards: req.standards,
@@ -479,7 +491,8 @@ function analyze(prompt, options) {
   const riskyFindings = dedupeRiskyFindings(normalized, risky);
   riskyFindings.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
 
-  const riskScore = computeRisk(relevantCounts, riskyFindings);
+  let riskScore = computeRisk(relevantCounts, riskyFindings);
+  riskScore = Math.min(100, Math.round(riskScore * envFactor));
   const riskMeta = riskLevelFromScore(riskScore);
 
   const baselineOnly = resources.length === 0;
@@ -519,6 +532,11 @@ function analyze(prompt, options) {
   if (!missing.length && !riskyFindings.length) {
     feedback.push("No missing security constraints detected for the recognised resources. Review organisation-specific rules.");
   }
+  if (environment === "dev") {
+    feedback.push("This looks like a development/sandbox prompt, so the risk score is reduced. Harden before production.");
+  } else if (environment === "prod") {
+    feedback.push("This looks like a production prompt, so the risk score is weighted higher.");
+  }
 
   return {
     prompt: raw,
@@ -539,6 +557,8 @@ function analyze(prompt, options) {
     tierCounts: tierCounts,
     semanticRelated: semanticRelated,
     nonAwsLikely: nonAwsLikely,
+    environment: environment,
+    envFactor: envFactor,
     disclaimer: "Diagnostic aid for AWS prompts. Findings are advisory, not a guarantee - verify before deploying.",
     confidence: confidence.label,
     confidenceScore: confidence.score,
@@ -581,6 +601,7 @@ function mergeFindings(report, external) {
       severity: m.severity || "medium",
       tier: m.tier || "clarify",
       weight: severityRank(m.severity || "medium") * (TIER_MULT[m.tier || "clarify"] || 1),
+      tf: "",
       description: m.description || "Identified by deep scan.",
       clause: m.clause || m.description || m.label,
       standards: m.standards || ["Deep scan"],

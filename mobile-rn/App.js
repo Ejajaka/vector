@@ -297,6 +297,7 @@ export default function App() {
                         title={m.label}
                         desc={m.description}
                         clause={m.clause}
+                        tf={m.tf}
                       />
                     ))}
                   </View>
@@ -320,7 +321,7 @@ export default function App() {
   );
 }
 
-function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause }) {
+function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause, tf }) {
   const on = !!accepted[id];
   return (
     <View style={[styles.card, { borderLeftColor: color }, on && styles.cardOn]}>
@@ -332,6 +333,7 @@ function FindingCard({ id, accepted, onToggle, color, badge, title, desc, clause
       </View>
       {desc ? <Text style={styles.cardDesc}>{desc}</Text> : null}
       {clause ? <Text style={styles.clause}>{clause}</Text> : null}
+      {tf ? <Text style={styles.tf}>Terraform: {tf}</Text> : null}
       <Pressable style={[styles.smallBtn, on && styles.smallBtnOn]} onPress={() => onToggle(id)}>
         <Text style={[styles.smallBtnText, on && styles.smallBtnTextOn]}>
           {on ? "Added ✓" : "+ Add clause"}
@@ -407,6 +409,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: "700", color: "#f9fafb", flexShrink: 1 },
   cardDesc: { fontSize: 12, color: "#cbd5e1", marginTop: 6, lineHeight: 17 },
   clause: { fontFamily: "monospace", fontSize: 11.5, color: "#e2e8f0", backgroundColor: "#0b1220", padding: 9, borderRadius: 8, marginTop: 8, lineHeight: 17 },
+  tf: { fontSize: 11, color: "#94a3b8", marginTop: 6, lineHeight: 15 },
   smallBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: "#6366f1", borderRadius: 8, paddingVertical: 7, paddingHorizontal: 12, marginTop: 10 },
   smallBtnOn: { borderColor: "#16a34a", backgroundColor: "#052e16" },
   smallBtnText: { color: "#a5b4fc", fontWeight: "700", fontSize: 12 },
