@@ -568,6 +568,22 @@ const CONTEXT_CUES = {
 
 const ENV_FACTOR = { dev: 0.75, prod: 1.1, unknown: 1 };
 
+/**
+ * Vocabulary that indicates the text is about cloud infrastructure at all.
+ * Used to reject off-topic input ("i will kill u") instead of scoring it.
+ */
+const INFRA_TERMS = [
+  "aws", "amazon web services", "terraform", "cloudformation", "\\bhcl\\b", "\\biac\\b",
+  "infrastructure", "cloud", "bucket", "storage", "database", "\\bdb\\b", "server",
+  "instance", "\\bvm\\b", "vpc", "subnet", "network", "lambda", "serverless", "function",
+  "container", "kubernetes", "cluster", "load balancer", "balancer", "\\bapi\\b", "gateway",
+  "queue", "topic", "stream", "\\bcdn\\b", "\\bdns\\b", "domain", "firewall", "security group",
+  "\\biam\\b", "role", "policy", "encryption", "certificate", "logging", "monitoring",
+  "backup", "snapshot", "pipeline", "deploy", "region", "availability zone", "endpoint",
+  "s3", "ec2", "rds", "eks", "ecs", "dynamodb", "cloudfront", "kms", "sns", "sqs",
+  "redis", "kafka", "postgres", "mysql", "elasticsearch", "opensearch", "sagemaker"
+];
+
 
 /**
  * Terms that indicate a NON-AWS cloud. Used to warn instead of silently
@@ -869,6 +885,7 @@ const VectorTaxonomy = {
   TF_HINTS,
   CONTEXT_CUES,
   ENV_FACTOR,
+  INFRA_TERMS,
   NON_AWS_TERMS,
   DEFAULT_REQUIRED,
   RESOURCES,

@@ -436,6 +436,29 @@ test("harden: every clause is self-satisfying (no residual misses)", () => {
   assert.strictEqual(h.report.missing.length, 0, "still missing: " + h.report.missing.map((m) => m.id).join(","));
 });
 
+// ---- Scope guard ----
+test("scope: off-topic input is rejected with no findings", () => {
+  for (const t of ["i will kill u", "hello world", "what is 2+2", "tell me a joke"]) {
+    const r = analyze(t);
+    assert.strictEqual(r.outOfScope, true, "should be out of scope: " + t);
+    assert.strictEqual(r.missing.length, 0);
+    assert.strictEqual(r.riskyFindings.length, 0);
+    assert.strictEqual(r.riskScore, 0);
+  }
+});
+
+test("scope: a vague but infrastructure prompt is still analysed", () => {
+  const r = analyze("Build an internal tool for the team.");
+  assert.ok(!r.outOfScope, "should remain in scope");
+  assert.ok(r.missing.length > 0);
+});
+
+test("scope: harden leaves an off-topic prompt unchanged", () => {
+  const h = harden("i will kill u");
+  assert.strictEqual(h.clauses.length, 0);
+  assert.strictEqual(h.prompt, "i will kill u");
+});
+
 (async function run() {
   for (const t of queue) {
     try {

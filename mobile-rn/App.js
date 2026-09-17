@@ -225,7 +225,13 @@ export default function App() {
 
           {status ? <Text style={styles.status}>{status}</Text> : null}
 
-          {report ? (
+          {report && report.outOfScope ? (
+            <View style={styles.results}>
+              <View style={styles.warn}>
+                <Text style={styles.warnText}>{report.feedback[0]}</Text>
+              </View>
+            </View>
+          ) : report ? (
             <View style={styles.results}>
               {report.nonAwsLikely ? (
                 <View style={styles.warn}>

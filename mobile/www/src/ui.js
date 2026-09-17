@@ -224,6 +224,16 @@
   function render(container, report, state, handlers) {
     handlers = handlers || {};
     const accepted = (state && state.accepted) || {};
+
+    // Out of scope: not an infrastructure prompt, so nothing to diagnose.
+    if (report && report.outOfScope) {
+      container.innerHTML =
+        '<div class="v-banner warn">' +
+        escapeHtml((report.feedback && report.feedback[0]) || "Not an AWS infrastructure prompt.") +
+        "</div>";
+      return;
+    }
+
     container.innerHTML =
       bannerHtml(report) +
       riskHtml(report, coverage(report, state)) +

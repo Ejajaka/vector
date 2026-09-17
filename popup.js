@@ -67,6 +67,11 @@
   }
 
   function setHint() {
+    if (!report) return;
+    if (report.outOfScope) {
+      el.hint.textContent = "Not an AWS infrastructure prompt";
+      return;
+    }
     el.hint.innerHTML =
       report.riskLevel + " risk &middot; " + report.stats.missing + " missing &middot; confidence " +
       report.confidenceScore + "% (" + report.confidence + ")" +

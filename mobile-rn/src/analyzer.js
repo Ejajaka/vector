@@ -38,6 +38,7 @@ const {
   NON_AWS_TERMS,
   CONTEXT_CUES,
   ENV_FACTOR,
+  INFRA_TERMS,
   RISKY_PATTERNS,
   STANDARDS
 } = _VectorTaxonomy;
@@ -375,6 +376,50 @@ function analyze(prompt, options) {
 
   const resources = detectResources(expanded);
 
+  // Scope guard: if the text has no AWS resource, no infrastructure vocabulary
+  // and no infrastructure intent, it is not an infrastructure prompt at all.
+  // Return a clean "out of scope" report instead of inventing findings.
+  const hasInfraTerm = INFRA_TERMS.some((t) => {
+    try {
+      return new RegExp("(^|[^a-z0-9])" + t + "([^a-z0-9]|$)", "i").test(expanded);
+    } catch (e) {
+      return false;
+    }
+  });
+  if (resources.length === 0 && !hasInfraTerm && intents.length === 0) {
+    return {
+      prompt: raw,
+      tokens: tokens,
+      intents: intents,
+      resources: [],
+      mentioned: [],
+      missing: [],
+      riskyFindings: [],
+      riskScore: 0,
+      riskLevel: "MINIMAL",
+      riskColor: "#16a34a",
+      coverage: "out-of-scope",
+      coverageScore: 0,
+      totalWeight: 0,
+      tierCounts: { core: 0, clarify: 0, harden: 0 },
+      semanticRelated: [],
+      nonAwsLikely: false,
+      outOfScope: true,
+      environment: "unknown",
+      envFactor: 1,
+      feedback: [
+        "This does not look like an AWS infrastructure prompt, so there is nothing to diagnose. Describe the AWS resources you want, for example \"an S3 bucket for user documents\" or \"an RDS database for the app\"."
+      ],
+      disclaimer: "Diagnostic aid for AWS prompts. Findings are advisory, not a guarantee - verify before deploying.",
+      confidence: "low",
+      confidenceScore: 0,
+      needsDeepScan: false,
+      standards: STANDARDS.sources,
+      dimensions: DIMENSIONS,
+      stats: { resources: 0, mentioned: 0, missing: 0, risky: 0 }
+    };
+  }
+
   // Non-AWS guard: warn instead of silently applying AWS baseline to an
   // Azure/GCP prompt (which would be misleading).
   const nonAwsTerm = NON_AWS_TERMS.find((t) => new RegExp(t, "i").test(normalized)) || null;
@@ -688,6 +733,13 @@ function neutralizeRisky(text) {
 function harden(prompt, maxIterations) {
   const limit = maxIterations || 8;
   const base = neutralizeRisky(String(prompt || "").trim());
+
+  // Nothing to harden if it is not an infrastructure prompt.
+  const first = analyze(base);
+  if (first.outOfScope) {
+    return { prompt: base, clauses: [], report: first };
+  }
+
   const clauses = [];
   let current = base;
 
