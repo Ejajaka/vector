@@ -37,6 +37,11 @@
 
   function updateImproved() {
     if (!report) return;
+    // No improved prompt for input that is not an infrastructure prompt.
+    if (report.outOfScope) {
+      el.improvedWrap.classList.add("hidden");
+      return;
+    }
     const clauses = VectorUI.acceptedClauses(report, state);
     el.improved.textContent = VectorUI.buildImprovedPrompt(report.prompt, clauses);
     el.improvedWrap.classList.remove("hidden");
@@ -72,6 +77,10 @@
       el.hint.textContent = "Not an AWS infrastructure prompt";
       return;
     }
+    if (report.aiClean && !report.missing.length && !report.riskyFindings.length) {
+      el.hint.textContent = "No issues found";
+      return;
+    }
     el.hint.innerHTML =
       report.riskLevel + " risk &middot; " + report.stats.missing + " missing &middot; confidence " +
       report.confidenceScore + "% (" + report.confidence + ")" +
@@ -103,16 +112,27 @@
       el.hint.innerHTML = "Deep scan needs the on-device model or an API key (see Settings).";
       return;
     }
+    if (!report) report = VectorSettings.analyze(prompt, settings);
+    const base = report; // keep the rule-only result until the AI answers
+
     el.deep.disabled = true;
     el.deep.textContent = "Scanning...";
+    // Hide the rule-based answer and the improved prompt while the AI runs, so
+    // the two results never appear side by side. Everything shows together after.
+    el.results.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
+    el.improvedWrap.classList.add("hidden");
+    el.hint.textContent = "Deep scan in progress...";
+
     try {
       const result = await VectorLLM.deepScan(prompt, settings);
-      if (!report) report = VectorSettings.analyze(prompt, settings);
-      report = VectorAnalyzer.mergeFindings(report, result.findings);
+      report = VectorAnalyzer.mergeFindings(base, result.findings);
       render();
       setHint();
-      toast("Deep scan merged (" + result.via + ")");
+      toast(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");
     } catch (err) {
+      report = base; // restore the rule-based answer on failure
+      render();
+      setHint();
       toast(err.message || "Deep scan failed");
     } finally {
       el.deep.disabled = false;

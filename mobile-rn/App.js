@@ -53,6 +53,7 @@ export default function App() {
   const [settings, setSettings] = useState(DEFAULTS);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [status, setStatus] = useState("");
   const [toast, setToast] = useState("");
   const [showClarify, setShowClarify] = useState(false);
@@ -225,11 +226,26 @@ export default function App() {
 
           {status ? <Text style={styles.status}>{status}</Text> : null}
 
-          {report && report.outOfScope ? (
+          {scanning ? (
+            <View style={styles.results}>
+              <View style={styles.warn}>
+                <Text style={styles.warnText}>Running deep scan on this prompt…</Text>
+              </View>
+            </View>
+          ) : report && report.outOfScope ? (
             <View style={styles.results}>
               <View style={styles.warn}>
                 <Text style={styles.warnText}>{report.feedback[0]}</Text>
               </View>
+            </View>
+          ) : report && report.aiClean && !report.missing.length && !report.riskyFindings.length ? (
+            <View style={styles.results}>
+              <View style={styles.ok}>
+                <Text style={styles.okText}>
+                  No issues found. This prompt already covers the required AWS security controls.
+                </Text>
+              </View>
+              <Text style={styles.disclaimer}>{report.disclaimer}</Text>
             </View>
           ) : report ? (
             <View style={styles.results}>
@@ -335,7 +351,6 @@ export default function App() {
                 </Pressable>
               </View>
               <Text style={styles.improved}>{improved}</Text>
-
               <Text style={styles.disclaimer}>{report.disclaimer}</Text>
             </View>
           ) : null}
@@ -401,6 +416,8 @@ const styles = StyleSheet.create({
   results: { marginTop: 16 },
   warn: { backgroundColor: "#78350f", borderRadius: 10, padding: 12, marginBottom: 12 },
   warnText: { color: "#fde68a", fontSize: 12 },
+  ok: { backgroundColor: "#052e16", borderWidth: 1, borderColor: "#16a34a", borderRadius: 10, padding: 12, marginBottom: 12 },
+  okText: { color: "#4ade80", fontSize: 12.5 },
 
   riskCard: { borderWidth: 1, borderColor: "#1f2937", borderLeftWidth: 5, borderRadius: 12, padding: 14, backgroundColor: "#111827" },
   riskTop: { flexDirection: "row", alignItems: "center" },

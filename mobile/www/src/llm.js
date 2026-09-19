@@ -19,6 +19,8 @@
     "Reply with STRICT JSON only: " +
     '{"missing":[{"label":"","severity":"high|medium|low","description":"","clause":""}],' +
     '"risky":[{"label":"","severity":"high|medium|low","description":"","fix":""}]}. ' +
+    "If nothing is missing and nothing is risky, return empty arrays: " +
+    '{"missing":[],"risky":[]}. ' +
     "At most 10 missing and 5 risky. Each clause is one imperative sentence.";
 
   function normSeverity(s) {
@@ -54,7 +56,10 @@
         source: "ai"
       }));
 
-    return { missing: missing, risky: risky };
+    // The model is told to return empty arrays when nothing is missing.
+    // Mark that as "clean" so the UI can say "no issues" rather than showing
+    // an empty, confusing report.
+    return { missing: missing, risky: risky, clean: missing.length === 0 && risky.length === 0 };
   }
 
   // --- Tier 1: on-device (Chrome built-in AI), no key and no network ---

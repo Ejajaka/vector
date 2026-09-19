@@ -55,6 +55,10 @@
 
   function updateImproved() {
     if (!report) return;
+    if (report.outOfScope) {
+      el.improvedWrap.classList.add("hidden");
+      return;
+    }
     const clauses = VectorUI.acceptedClauses(report, state);
     el.improved.textContent = VectorUI.buildImprovedPrompt(report.prompt, clauses);
     el.improvedWrap.classList.remove("hidden");
@@ -101,14 +105,20 @@
     }
     el.deep.disabled = true;
     el.deep.textContent = "Scanning...";
+    if (!report) report = VectorAnalyzer.analyze(prompt, { strictMode: false });
+    const base = report;
+    el.results.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
+    el.improvedWrap.classList.add("hidden");
     try {
       const result = await VectorLLM.deepScan(prompt, settings);
-      if (!report) report = VectorAnalyzer.analyze(prompt, { strictMode: false });
-      report = VectorAnalyzer.mergeFindings(report, result.findings);
+      report = VectorAnalyzer.mergeFindings(base, result.findings);
       render();
       setHint();
-      toast("Deep scan merged (" + result.via + ")");
+      toast(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");
     } catch (err) {
+      report = base;
+      render();
+      setHint();
       const m = String((err && err.message) || "");
       if (/failed to fetch|network|load failed/i.test(m)) {
         toast("Deep scan is blocked by the browser (CORS). Use the extension or the mobile app for deep scan.");

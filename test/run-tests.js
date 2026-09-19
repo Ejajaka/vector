@@ -487,6 +487,33 @@ test("scope: a risky statement alone is still in scope", () => {
   assert.ok(b.riskyFindings.some((f) => f.id === "no_encryption"));
 });
 
+// ---- Deep scan "clean" handling ----
+const VectorLLMTests = require("../src/llm");
+
+test("deep scan: empty result is marked clean", () => {
+  const out = VectorLLMTests.parseFindings('{"missing":[],"risky":[]}');
+  assert.strictEqual(out.clean, true);
+  const out2 = VectorLLMTests.parseFindings('{"missing":[{"label":"X"}],"risky":[]}');
+  assert.strictEqual(out2.clean, false);
+});
+
+test("mergeFindings: a clean AI result sets aiClean", () => {
+  const base = analyze("Create an S3 bucket.");
+  const empty = { missing: [], risky: [], clean: true };
+  const merged = require("../src/analyzer").mergeFindings(base, empty);
+  assert.strictEqual(merged.aiClean, true);
+});
+
+test("mergeFindings: an AI finding is labelled ai", () => {
+  const base = analyze("Create an S3 bucket.");
+  const merged = require("../src/analyzer").mergeFindings(base, {
+    missing: [{ label: "Object Lock", severity: "low", clause: "Enable object lock." }],
+    risky: [],
+    clean: false
+  });
+  assert.ok(merged.missing.some((m) => m.source === "ai"));
+});
+
 (async function run() {
   for (const t of queue) {
     try {

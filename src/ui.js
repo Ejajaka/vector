@@ -234,6 +234,14 @@
       return;
     }
 
+    // Deep scan reported nothing further to flag, and no risky statements.
+    if (report && report.aiClean && !report.missing.length && !report.riskyFindings.length) {
+      container.innerHTML =
+        '<div class="v-banner ok">No issues found. This prompt already covers the required AWS security controls for the recognised resources.</div>' +
+        disclaimerHtml(report);
+      return;
+    }
+
     container.innerHTML =
       bannerHtml(report) +
       riskHtml(report, coverage(report, state)) +

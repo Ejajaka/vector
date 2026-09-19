@@ -64,6 +64,11 @@
   }
 
   function updateImproved() {
+    if (!report) return;
+    if (report.outOfScope) {
+      panel.querySelector("#vector-improved-wrap").classList.add("hidden");
+      return;
+    }
     const clauses = VectorUI.acceptedClauses(report, state);
     improvedEl.textContent = VectorUI.buildImprovedPrompt(report.prompt, clauses);
     panel.querySelector("#vector-improved-wrap").classList.remove("hidden");
@@ -105,15 +110,19 @@
   async function deepScan() {
     if (!report) { analyze(); if (!report) return; }
     if (!VectorLLM.localAvailable() && !settings.apiKey) return;
+    const base = report;
     const btn = panel.querySelector("#vector-deep");
     btn.disabled = true;
     btn.textContent = "Scanning...";
+    resultsEl.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
+    panel.querySelector("#vector-improved-wrap").classList.add("hidden");
     try {
-      const result = await VectorLLM.deepScan(report.prompt, settings);
-      report = VectorAnalyzer.mergeFindings(report, result.findings);
+      const result = await VectorLLM.deepScan(base.prompt, settings);
+      report = VectorAnalyzer.mergeFindings(base, result.findings);
       render();
     } catch (e) {
-      // keep rule results
+      report = base;
+      render();
     } finally {
       btn.disabled = false;
       btn.textContent = "Deep scan";

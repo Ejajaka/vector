@@ -660,6 +660,7 @@ function analyze(prompt, options) {
  * Merge external (e.g. LLM deep-scan) findings into a report.
  * @param {object} report
  * @param {{missing?:Array, risky?:Array}} external
+ * @param {boolean} [external.clean]  the model reported no remaining issues
  */
 function mergeFindings(report, external) {
   if (!external) return report;
@@ -729,6 +730,13 @@ function mergeFindings(report, external) {
   merged.feedback = report.feedback.concat(
     extra > 0 ? ["Deep scan added " + (missing.filter((m) => m.source === "ai").length + riskyFindings.filter((r) => r.source === "ai").length) + " additional finding(s)."] : []
   );
+
+  // If the model says there is nothing further to flag AND the rules found
+  // nothing risky, present a clean state.
+  merged.aiClean = !!external.clean && riskyFindings.length === 0;
+  if (merged.aiClean) {
+    merged.feedback = merged.feedback.concat(["Deep scan found no additional issues."]);
+  }
   return merged;
 }
 
