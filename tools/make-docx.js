@@ -357,39 +357,46 @@ const PROGRESS = [
   LI("Roshna George - bl.sc.u4cse24043"),
   LI("Sanjeev Vakalapudi - bl.sc.u4cse24054"),
   LI("Team name: Vector - Directing intent toward optimal output."),
-  LI("Report date: 16 September 2026. Time remaining: about six weeks."),
+  LI("Report date: 17 September 2026. Current build: v0.5.7. Time remaining: about six weeks."),
 
   H1("1. Where we are"),
-  P("The core is built and running. Vector reads a plain-English AWS prompt, finds the security controls the prompt never states, flags risky statements, and turns every omission into a clause the user can add in one click."),
-  LI("Engine: rule-based NLP, no ML and no network. 78 AWS resources, 30 controls, a negation and double-negation guard."),
-  LI("Scoring: risk 0-100 with severity levels, confidence 0-100 with a baseline mode, and our own Prompt Security Coverage Score."),
-  LI("Shipped surfaces: a Chrome extension (Manifest V3) with a popup and an in-page button on ChatGPT, Claude and Gemini, plus a CLI with a CI hook."),
-  LI("Evidence: 29 unit tests, an evaluation harness over 112 hand-labelled prompts, and a downstream demo where insecure Terraform drops from 6 findings to 0."),
+  P("The core is built, tested and running, and the extension is submitted to the Microsoft Edge Add-ons store. Vector reads a plain-English AWS prompt, finds the security controls the prompt never states, flags risky statements, and turns every omission into a clause the user can add in one click. One button rewrites the prompt into a hardened version that re-analyses to risk 0 and coverage 100 percent."),
+  LI("Engine: rule-based NLP, no ML and no network. 78 AWS resources, 30 controls, 9 risky patterns, a negation and double-negation guard, and paraphrase handling for common alternative wording."),
+  LI("Scoring: risk 0-100 with severity levels, confidence 0-100 with a baseline mode, and our own Prompt Security Coverage Score, which updates live as clauses are accepted (risk 100 to 0, coverage 0 to 100 percent)."),
+  LI("Interactive helpers: project (live score projection), harden (one-tap hardening that neutralises risky phrasing and iterates until clean), and merge (deep-scan findings)."),
+  LI("Relevance tiers: findings are grouped into Confirmed gaps, Needs clarification and Optional hardening, so the output reads as prioritised reasoning rather than a checklist."),
+  LI("Context awareness: rule-based cues distinguish a development or sandbox prompt from a production one and adjust the risk score accordingly."),
+  LI("Terraform hints: every control carries the concrete attribute to set, for example storage_encrypted = true."),
+  LI("Scope guard: input that is not an AWS infrastructure prompt, such as a bucket of water, is rejected with a message instead of being scored."),
+  LI("Shipped surfaces: a Chrome and Edge extension (Manifest V3) with a popup and an in-page button on ChatGPT, Claude and Gemini, a CLI with a CI hook and a post-generation verify command, a React Native (Expo) mobile app for iOS and Android, a Capacitor Android build, and a public browser demo on GitHub Pages."),
+  LI("Evidence: 63 unit tests, an evaluation harness over 112 hand-labelled prompts reporting precision, recall, F1 and negation-trap accuracy, a downstream demo where insecure Terraform drops from 6 findings to 0, an LLM downstream study harness, and a Cohen's kappa inter-annotator agreement harness."),
   LI("Grounding: CIS AWS Foundations, AWS Well-Architected (Security), AWS Foundational Security Best Practices, NIST SP 800-53 Rev.5, GDPR Art. 5 and 32, and the India DPDP Act 2023."),
+  LI("Documentation: a build manual, an architecture and pipeline document, a feature list, and this progress report, all regenerated from source."),
 
   H1("2. Model strategy - extend, do not train"),
   P("We are not training a model. The deterministic rule engine stays the backbone and any AI is optional and additive."),
   LI("The deep scan asks an existing model only for controls the rules may have missed, merges the answer back, and badges every finding as rule or AI."),
-  LI("Tier 1 is the browser's built-in model (Gemini Nano): no API key and no network. Tier 2 is any OpenAI-compatible endpoint with the user's own key."),
+  LI("Tier 1 is the browser's built-in model (Gemini Nano): no API key and no network. Tier 2 is any OpenAI-compatible endpoint with the user's own key; the supported providers are Gemini, OpenAI and OpenCode Zen."),
   LI("If neither tier is available the product still works, rules only. That fallback is a design requirement, not a nice-to-have."),
+  LI("When deep scan runs, the rule-based answer is hidden until the AI returns, then both are shown together, so the two results are never presented as competing answers. If the model reports nothing further, the UI says no issues found rather than showing an empty report."),
   LI("Fine-tuning or shipping our own weights is out of scope for the remaining time."),
 
   H1("3. Platform decisions from this review"),
   LI("PC: the Chrome extension stays the primary PC surface. It already runs in Chrome and Edge, and the CLI covers terminals and CI."),
-  LI("Mobile: we are consolidating onto a single Expo (React Native) app that covers both iOS and Android from one codebase."),
-  LI("Reason: we had two mobile attempts diverging, a Capacitor build and a standalone React Native project. Expo removes the duplication, gives both platforms from one codebase, and lets us test on a real phone through Expo Go without a store release."),
-  LI("The engine is reused unchanged. Both the extension and the mobile app are clients of the same analyzer."),
+  LI("Mobile: a single Expo (React Native) app covers both iOS and Android from one codebase, alongside the Capacitor Android build for an installable APK."),
+  LI("Reason: Expo removes the duplication between the two mobile attempts, gives both platforms from one codebase, and lets us test on a real phone through Expo Go without a store release."),
+  LI("The engine is reused unchanged. Every surface is a client of the same analyzer, which is why results are identical everywhere."),
 
   H1("4. Features - what matters and what does not"),
-  H2("Core, must ship in the remaining time"),
+  H2("Core, shipped"),
   LI("Prompt analysis engine: resource detection, control detection and negation-safe matching."),
   LI("Missing-constraint detection against the standards-grounded taxonomy."),
   LI("Risky-statement detection: 0.0.0.0/0, public buckets, wildcard IAM, hard-coded secrets, and disabled logging or backups."),
   LI("Risk score, confidence score and Prompt Security Coverage Score."),
-  LI("One-click clauses and the improved (hardened) prompt, with copy."),
-  LI("PC: Chrome extension with popup and in-page button, plus the CLI with CI exit codes."),
-  LI("Mobile: Expo app that takes a prompt, shows the diagnosis, accepts clauses and copies the hardened prompt."),
-  LI("Optional AI deep scan with rule and AI badges, and a rules-only fallback."),
+  LI("One-click clauses, the hardened prompt, and a one-tap harden that reaches risk 0 and coverage 100 percent."),
+  LI("PC: Chrome and Edge extension with popup and in-page button, plus the CLI with CI exit codes and the verify command."),
+  LI("Mobile: Expo app that takes a prompt, shows the tiered diagnosis, accepts clauses and shares the hardened prompt."),
+  LI("Optional AI deep scan with rule and AI badges, a rules-only fallback, and a clean no-issues state."),
   LI("Evaluation harness and unit tests, so every claim has a number behind it."),
 
   H2("Secondary, only if the core finishes early"),
@@ -402,34 +409,36 @@ const PROGRESS = [
   H2("Not important - dropped or deferred"),
   LI("Training or fine-tuning our own model, or shipping model weights. We extend existing models."),
   LI("Generating infrastructure code. We diagnose the prompt before generation, so code generation stays the LLM's job. This keeps the pre-generation thesis clean."),
-  LI("Post-deployment scanning, or reading live cloud accounts. That is precisely the problem we are replacing."),
+  LI("Post-deployment scanning, or reading live cloud accounts. That is precisely the problem we are replacing, although we now offer a post-generation verify command as a complement, never a replacement."),
   LI("Multi-cloud support. AWS first, and we only warn when a prompt targets Azure or GCP."),
   LI("Accounts, a backend server, analytics or telemetry. They break the offline and privacy stance that makes the tool easy to trust and easy to install."),
   LI("Multi-tenant SaaS, billing and role-based access control."),
   LI("An IDE plugin for VS Code. It is a third client, deferred past this term."),
 
   H1("5. Plan for the remaining six weeks"),
-  LI("Week 1 - lock the mobile spec and the shared analysis payload, and expand the evaluation sets with adversarial paraphrases, targeting 150 or more cases."),
-  LI("Week 2 - finish the Expo app: prompt input, report view, clause acceptance, copy and history."),
-  LI("Week 3 - wire the app to the same engine, add offline caching and the deep-scan toggle."),
-  LI("Week 4 - end-to-end testing on real Android and iOS phones, and fix detection gaps found on paraphrased prompts."),
-  LI("Week 5 - re-run the evaluation, document the numbers honestly, and prepare the demo script."),
-  LI("Week 6 - buffer: polish, update the README and this report, rehearse the demo, final submission."),
+  LI("Week 1 - expand the evaluation sets with adversarial paraphrases, targeting 150 or more cases, and freeze the patterns before the final held-out run."),
+  LI("Week 2 - run the LLM downstream study (raw versus hardened prompts) and the inter-annotator agreement study with a second labeler."),
+  LI("Week 3 - capture store screenshots and finish the mobile polish; verify the Expo app end to end on a real iPhone and an Android device."),
+  LI("Week 4 - fix detection gaps found on paraphrased prompts, and record the honest precision and recall numbers."),
+  LI("Week 5 - prepare the demo script and the report, and rehearse the prompt to hardened prompt walkthrough."),
+  LI("Week 6 - buffer: polish, final submission, and the store review turnaround for the latest version."),
 
   H1("6. Risks"),
-  LI("The evaluation sets are small and were tuned after seeing failures, so the current F1 is optimistic. Fixing that with a larger, harder set is week 1 work."),
+  LI("The evaluation sets are small and were tuned after seeing failures, so the current F1 is optimistic. Expanding them with a frozen final set is week 1 and week 2 work."),
+  LI("Rule-based recall has a ceiling on arbitrary paraphrase. The optional deep scan covers the long tail, and the limitation is documented rather than hidden."),
   LI("The on-device model is only available on some Chrome versions and machines. The rules-only fallback covers this."),
-  LI("Mobile is the newest surface, so scope creep is the main threat. Anything in the secondary list can be dropped without weakening the core claim."),
+  LI("Browser pages are subject to CORS, so the hosted deep scan works in the extension and the mobile app but not on the public demo page, which uses the rule engine only."),
   LI("Store submissions add delay and review risk, so the mobile build ships as an installable APK and through Expo Go for the demo, not as a store listing."),
+  LI("Mobile is the newest surface, so scope creep is the main threat. Anything in the secondary list can be dropped without weakening the core claim."),
 
   H1("7. Next review"),
-  P("We will report expanded evaluation results, the Expo app running on both platforms, a live demo from prompt to hardened prompt, and any detection gaps found on paraphrased prompts.")
+  P("We will report expanded evaluation results with a frozen held-out set, the LLM downstream study and inter-annotator agreement numbers, the Expo app running on both platforms, a live demo from prompt to hardened prompt, and the store listing link.")
 ];
 
 // ========================================================== ARCHITECTURE DOC
 const ARCHITECTURE = [
   T("Vector - Architecture & Pipeline"),
-  S("Detailed system design for the pre-generation security diagnosis engine (v0.5.6, AWS-only, rule-based, offline)."),
+  S("Detailed system design for the pre-generation security diagnosis engine (v0.5.7, AWS-only, rule-based, offline)."),
 
   H1("1. Executive summary"),
   P("Vector sits between a user's natural-language prompt and the LLM that turns it into infrastructure code. It detects the AWS resources being described, looks up the security controls those resources require, subtracts the controls the prompt already states, and reports the rest as missing constraints, together with any risky statements. Every finding carries a ready-to-add clause and the Terraform attribute to set. One tap rewrites the prompt into a hardened version that re-analyses to risk 0 and coverage 100 percent."),
@@ -616,7 +625,8 @@ const ARCHITECTURE = [
   LI("0.5.3 List models for my key."),
   LI("0.5.4 OpenCode Zen host permission."),
   LI("0.5.5 low-confidence indicator and Deep scan guidance."),
-  LI("0.5.6 scope guard tightened; risky-only prompts remain in scope; demo cache-buster.")
+  LI("0.5.6 scope guard tightened; risky-only prompts remain in scope; demo cache-buster."),
+  LI("0.5.7 deep scan hides the rule answer then reveals the merged result at once; a clean AI result shows a no-issues state; the improved prompt is hidden for out-of-scope input.")
 ];
 
 // ------------------------------------------------------------------- output
@@ -626,7 +636,8 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 const docs = [
   ["Vector-Features.docx", FEATURES],
   ["Vector-Pipeline.docx", PIPELINE],
-  ["Vector-Architecture.docx", ARCHITECTURE]
+  ["Vector-Architecture.docx", ARCHITECTURE],
+  ["Vector-Progress-Report.docx", PROGRESS]
 ];
 
 for (const [name, blocks] of docs) {
