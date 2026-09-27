@@ -41,10 +41,18 @@ function inline(text) {
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/<[^>]+>/g, "")
     .replace(/&hellip;/g, "...")
-    .replace(/&middot;/g, "Â·")
+    .replace(/&middot;/g, "·")
     .replace(/&rarr;/g, "->")
     .replace(/&amp;/g, "&")
     .replace(/\s+$/, "");
+}
+
+// Markdown heading level -> docx block type
+function headingType(level) {
+  if (level === 1) return "title";
+  if (level === 2) return "h1";
+  if (level === 3) return "h1";   // treated as a major section
+  return "h2";                     // level 4+ becomes a sub-heading
 }
 
 function mdToBlocks(md) {
@@ -85,10 +93,9 @@ function mdToBlocks(md) {
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) continue;
 
     // headings
-    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h) {
-      const level = h[1].length;
-      push(level === 1 ? "title" : level === 2 ? "h1" : "h2", h[2]);
+      push(headingType(h[1].length), h[2]);
       continue;
     }
 
