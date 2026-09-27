@@ -12,6 +12,7 @@
     "verify": "node cli/vector-cli.js verify",
     "icons": "node tools/make-icons.js",
     "docx": "node tools/make-docx.js",
+    "docs": "node tools/md-to-docx.js",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1",
     "analyze": "node cli/vector-cli.js analyze",
     "improved": "node cli/vector-cli.js improved"
