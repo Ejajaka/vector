@@ -18,14 +18,14 @@ deterministic and explainable.
 
 | Course area | Covered by Vector | Where in the code |
 |---|---|---|
-| Text preprocessing | tokenisation, normalisation, stopwords | `src/analyzer.js` steps 1Ã¢â‚¬â€œ2 |
-| Lexical resources | synonyms, paraphrase lexicon, negation lexicon | `src/taxonomy.js` |
-| Morphology | light stemming in the IR pass | `src/semantic.js` |
-| Information extraction | resource + control (entity/attribute) extraction | `src/analyzer.js` steps 6, 10 |
-| Negation & scope | 3-guard negation algorithm | `src/analyzer.js` `isNegatedBefore/After` |
-| Information retrieval | TF-IDF index, cosine similarity | `src/semantic.js` |
-| Text classification | resource Ã¢â€ â€™ control-set mapping | `src/taxonomy.js` `RESOURCES` |
-| Evaluation of NLP systems | precision, recall, F1, negation-trap rate, ÃŽÂº | `eval/` |
+| Text preprocessing | tokenisation, normalisation, stopwords | `engine/src/analyzer.js` steps 1Ã¢â‚¬â€œ2 |
+| Lexical resources | synonyms, paraphrase lexicon, negation lexicon | `engine/src/taxonomy.js` |
+| Morphology | light stemming in the IR pass | `engine/src/semantic.js` |
+| Information extraction | resource + control (entity/attribute) extraction | `engine/src/analyzer.js` steps 6, 10 |
+| Negation & scope | 3-guard negation algorithm | `engine/src/analyzer.js` `isNegatedBefore/After` |
+| Information retrieval | TF-IDF index, cosine similarity | `engine/src/semantic.js` |
+| Text classification | resource Ã¢â€ â€™ control-set mapping | `engine/src/taxonomy.js` `RESOURCES` |
+| Evaluation of NLP systems | precision, recall, F1, negation-trap rate, ÃŽÂº | `engine/eval/` |
 | Applications of NLP | applied security diagnosis tool | whole project |
 
 ---
@@ -73,7 +73,7 @@ deterministic and explainable.
 |---|---|
 | Rule-based classification | requirement *present / missing* decision |
 | Feature-based classification | severity + tier weighting feeding the risk score |
-| Evaluate a classifier | P/R/F1 in `eval/run-eval.js` |
+| Evaluate a classifier | P/R/F1 in `engine/eval/run-eval.js` |
 
 ### Module 7 Ã¢â‚¬â€ Information retrieval / vector space models
 | Learning outcome | How Vector meets it |
@@ -85,9 +85,9 @@ deterministic and explainable.
 ### Module 8 Ã¢â‚¬â€ Evaluation of NLP systems
 | Learning outcome | How Vector meets it |
 |---|---|
-| Compute precision, recall, F1 | `eval/run-eval.js` over 112 labelled prompts |
+| Compute precision, recall, F1 | `engine/eval/run-eval.js` over 112 labelled prompts |
 | Design a labelled dataset | `dataset.json`, `dataset2.json`, `heldout.json` |
-| Measure annotator agreement | Cohen's ÃŽÂº in `eval/kappa.js` |
+| Measure annotator agreement | Cohen's ÃŽÂº in `engine/eval/kappa.js` |
 | Report limitations honestly | "all 112 prompts were seen during development" note |
 
 ### Module 9 Ã¢â‚¬â€ Applications / project work
@@ -104,11 +104,11 @@ deterministic and explainable.
 | Typical requirement | Vector artefact |
 |---|---|
 | Problem statement & motivation | `MARKET-ANALYSIS.md` Ã‚Â§2 + benchmarks |
-| Literature / prior art | `MARKET-ANALYSIS.md` Ã‚Â§3, `references/` |
+| Literature / prior art | `MARKET-ANALYSIS.md` Ã‚Â§3, `docs/references/` |
 | System design | `ARCHITECTURE.md` Ã‚Â§1Ã¢â‚¬â€œÃ‚Â§7 |
 | Methodology | `ARCHITECTURE.md` Ã‚Â§4 (18-step pipeline) + Ã‚Â§5 (scoring) |
-| Implementation | `src/`, `extension/`, `cli/`, `mobile-expo/`, `mobile-native/` |
-| Evaluation & results | `eval/`, results table in Ã‚Â§4 below |
+| Implementation | `engine/src/`, `ui/extension/`, `engine/cli/`, `ui/mobile-expo/`, `ui/mobile-native/` |
+| Evaluation & results | `engine/eval/`, results table in Ã‚Â§4 below |
 | Novelty statement | "intervention point" framing Ã¢â‚¬â€ `MARKET-ANALYSIS.md` Ã‚Â§6 |
 | Limitations & future work | `ARCHITECTURE.md` Ã‚Â§10, `ROADMAP.md` risks |
 | Demo | web demo link + extension + Expo app |

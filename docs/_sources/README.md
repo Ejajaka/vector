@@ -39,7 +39,7 @@ prompt
 ```
 
 The engine is deterministic and explainable. No training, no weights, no model
-files - the "knowledge" is the curated taxonomy in `src/taxonomy.js`.
+files - the "knowledge" is the curated taxonomy in `engine/src/taxonomy.js`.
 
 ## Deep scan (optional AI)
 
@@ -87,7 +87,7 @@ surface the prompt already states.
 
 ## Semantic relevance (TF-IDF)
 
-`src/semantic.js` treats each control as a document and ranks them by cosine
+`engine/src/semantic.js` treats each control as a document and ranks them by cosine
 similarity to the prompt (top 3 shown as "topically related controls"). This is
 deliberately **informational only**: measurement (`tools/calibrate.js`) showed
 cosine similarity is polarity-blind ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â "open all ports" scores 0.49 against the
@@ -128,23 +128,23 @@ npm run downstream    # insecure vs hardened Terraform demo
 
 | Set | Missing-constraint F1 | Risky F1 | Negation failures |
 |---|---|---|---|
-| `eval/dataset.json` (39) | 1.000 | 1.000 | 0 |
-| `eval/dataset2.json` (59) | 1.000 | 1.000 | 0 |
-| `eval/heldout.json` (14) | 1.000 | 1.000 | 0 |
+| `engine/eval/dataset.json` (39) | 1.000 | 1.000 | 0 |
+| `engine/eval/dataset2.json` (59) | 1.000 | 1.000 | 0 |
+| `engine/eval/heldout.json` (14) | 1.000 | 1.000 | 0 |
 
 **Honest caveat:** these are small, hand-labelled sets and patterns were improved
 after seeing failures, so the numbers are optimistic. Treat them as indicative.
 Expand the sets (100+ cases, adversarial paraphrase) before quoting them.
-`eval/downstream/run-downstream.js` shows 6 issues -> 0 for hardened Terraform.
+`engine/eval/downstream/run-downstream.js` shows 6 issues -> 0 for hardened Terraform.
 
 ## CLI
 
 ```powershell
-node cli/vector-cli.js analyze "Create an S3 bucket and an EC2 instance"
-node cli/vector-cli.js improved "Create an S3 bucket"
-node cli/vector-cli.js hook "Deploy an S3 bucket open to the public"   # exit 2/1
-node cli/vector-cli.js verify "eval/downstream/insecure.tf"           # post-generation check
-node cli/vector-cli.js analyze --policy examples/policy-cis.json "Deploy in us-east-1"
+node engine/cli/vector-cli.js analyze "Create an S3 bucket and an EC2 instance"
+node engine/cli/vector-cli.js improved "Create an S3 bucket"
+node engine/cli/vector-cli.js hook "Deploy an S3 bucket open to the public"   # exit 2/1
+node engine/cli/vector-cli.js verify "engine/eval/downstream/insecure.tf"           # post-generation check
+node engine/cli/vector-cli.js analyze --policy docs/examples/policy-cis.json "Deploy in us-east-1"
 ```
 
 ## Custom organisation policy
@@ -173,21 +173,21 @@ manifest.json         Chrome MV3 manifest (popup + content script + options)
 popup.html/.css/.js   toolbar popup
 content.js/.css       floating in-page button
 options.html/.js      settings, policy and history
-src/taxonomy.js       resources, controls, risky patterns, synonyms
-src/analyzer.js       rule engine (negation guard, scoring, merge)
-src/settings.js       chrome.storage helpers (shared by all UIs)
-src/ui.js/.css        shared results renderer
-src/llm.js            optional deep scan (on-device + hosted)
-cli/vector-cli.js     CLI + CI hook + `verify` (post-generation)
-eval/                 labelled sets + metrics + downstream demo
-test/run-tests.js     29 unit tests
+engine/src/taxonomy.js       resources, controls, risky patterns, synonyms
+engine/src/analyzer.js       rule engine (negation guard, scoring, merge)
+engine/src/settings.js       chrome.storage helpers (shared by all UIs)
+engine/src/ui.js/.css        shared results renderer
+engine/src/llm.js            optional deep scan (on-device + hosted)
+engine/cli/vector-cli.js     CLI + CI hook + `verify` (post-generation)
+engine/eval/                 labelled sets + metrics + downstream demo
+engine/test/run-tests.js     29 unit tests
 tools/                icon generator, packaging script
 ```
 
 ## To keep the code small for a rewrite
 
 Everything extra is isolated. If you need fewer files, you can delete
-`tools/`, `eval/downstream/`, `options.*`, `src/llm.js` and `src/settings.js` and
+`tools/`, `engine/eval/downstream/`, `options.*`, `engine/src/llm.js` and `engine/src/settings.js` and
 still have a working rule-based popup + content script + CLI.
 
 ## Manual Chrome test checklist

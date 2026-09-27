@@ -15,7 +15,7 @@
                  |
                  v
      ┌───────────────────────────────┐
-     │        src/analyzer.js        │  <- THE BRAIN
+     │        engine/src/analyzer.js        │  <- THE BRAIN
      │  reads the prompt, finds the  │
      │  missing security controls    │
      └───────────────┬───────────────┘
@@ -31,7 +31,7 @@
                      │
      ┌───────────────┼──────────────────────────┐
      v               v                          v
-  extension/      cli/                  mobile-expo/ + mobile-native/ + web/
+  ui/extension/      engine/cli/                  ui/mobile-expo/ + ui/mobile-native/ + ui/web/
   (browser)       (terminal)            (phones / public page)
 ```
 
@@ -40,9 +40,9 @@ because they all call the same `analyze()` function. Nothing is duplicated.
 
 ---
 
-## 2. `src/` — the engine (read these in this order)
+## 2. `engine/src/` — the engine (read these in this order)
 
-### 2.1 `src/taxonomy.js` — the knowledge base (pure data)
+### 2.1 `engine/src/taxonomy.js` — the knowledge base (pure data)
 **What it is:** lists, not logic. Think of it as the "textbook contents".
 **What's inside:**
 | Item | Count | Meaning |
@@ -57,7 +57,7 @@ because they all call the same `analyze()` function. Nothing is duplicated.
 **Say this if asked:** *"The taxonomy is the domain knowledge, separated from the
 code. Adding a new check means adding a row here, not writing new logic."*
 
-### 2.2 `src/analyzer.js` — the brain (the pipeline)
+### 2.2 `engine/src/analyzer.js` — the brain (the pipeline)
 **What it is:** the function that does the actual analysis.
 **The one function that matters:**
 ```js
@@ -78,7 +78,7 @@ analyze(prompt)  ->  report
 **Say this if asked:** *"analyzer.js is a set difference: the controls an S3 bucket
 needs, minus the controls your prompt already states."*
 
-### 2.3 `src/semantic.js` — word-similarity helper (small, optional)
+### 2.3 `engine/src/semantic.js` — word-similarity helper (small, optional)
 **What it is:** classic TF-IDF + cosine similarity.
 **What it does:** finds which controls are "topically related" to the prompt.
 **Important honesty point:** we measured it and found it is **polarity-blind** —
@@ -87,25 +87,25 @@ hint**, never to decide a control is satisfied.
 **Say this if asked:** *"We implemented it, measured it, found its limitation, and
 restricted its role. That negative result is in the architecture document."*
 
-### 2.4 `src/llm.js` — optional AI second opinion
+### 2.4 `engine/src/llm.js` — optional AI second opinion
 **What it is:** the deep-scan feature.
 **What it does:** asks an existing model *only* for controls the rules may have
 missed, then merges the answer (badged "AI").
 **Say this if asked:** *"It is off by default, needs a key, and is not our
 contribution — the deterministic engine is."*
 
-### 2.5 `src/tfcheck.js` — checks generated Terraform
+### 2.5 `engine/src/tfcheck.js` — checks generated Terraform
 **What it is:** 11 simple visual checks on a `.tf` file (public ACL, no
 encryption, `0.0.0.0/0`…).
 **Why it exists:** to show the honest pipeline — we check the prompt *first*, but
 you should still scan the generated code. Complementary, not a replacement.
 
-### 2.6 `src/ui.js` — draws the report (browser only)
+### 2.6 `engine/src/ui.js` — draws the report (browser only)
 **What it is:** turns the `report` object into the cards you see.
 **Not used by:** the React Native app (which has its own UI), so it lives beside
 the engine rather than inside it.
 
-### 2.7 `src/settings.js` — small shared helpers
+### 2.7 `engine/src/settings.js` — small shared helpers
 **What it is:** saving settings, parsing a policy file, reading history.
 
 ---
@@ -114,11 +114,11 @@ the engine rather than inside it.
 
 | Folder | What it is | How to run |
 |---|---|---|
-| `extension/` | the browser extension (popup, in-page button, options) | load unpacked |
-| `cli/` | terminal version | `node cli/vector-cli.js analyze "..."` |
-| `mobile-expo/` | React Native app for iOS + Android | `npm run start:device` |
-| `mobile-native/` | Capacitor app (Android APK) | `gradlew assembleDebug` |
-| `web/` | public demo page | https://ejajaka.github.io/vector/web/ |
+| `ui/extension/` | the browser extension (popup, in-page button, options) | load unpacked |
+| `engine/cli/` | terminal version | `node engine/cli/vector-cli.js analyze "..."` |
+| `ui/mobile-expo/` | React Native app for iOS + Android | `npm run start:device` |
+| `ui/mobile-native/` | Capacitor app (Android APK) | `gradlew assembleDebug` |
+| `ui/web/` | public demo page | https://ejajaka.github.io/vector/ui/web/ |
 
 **Key point:** none of these contain analysis logic. They collect a prompt, call
 `analyze()`, and draw the result. That is why they never disagree.
@@ -129,13 +129,13 @@ the engine rather than inside it.
 
 | Folder | Purpose |
 |---|---|
-| `eval/` | the evidence: labelled prompts, precision/recall harness, κ, downstream study |
-| `test/` | 63 unit tests — run `npm test` |
+| `engine/eval/` | the evidence: labelled prompts, precision/recall harness, κ, downstream study |
+| `engine/test/` | 63 unit tests — run `npm test` |
 | `tools/` | build scripts: `make-docx.js` (docs), `package.ps1` (zip), `sync-*.ps1` |
 | `docs/` | the Word documents |
-| `store/` | Edge listing text, privacy policy, publishing steps |
-| `references/` | the papers and articles we cite |
-| `examples/` | sample organisation policy packs |
+| `ui/store/` | Edge listing text, privacy policy, publishing steps |
+| `docs/references/` | the papers and articles we cite |
+| `docs/examples/` | sample organisation policy packs |
 
 ---
 
@@ -146,7 +146,7 @@ npm test        # 63 tests
 npm run eval    # precision / recall / F1
 npm run docx    # regenerate all Word documents
 npm run package # build the extension zip
-node cli/vector-cli.js analyze "Create an S3 bucket for user documents"
+node engine/cli/vector-cli.js analyze "Create an S3 bucket for user documents"
 ```
 
 ---
@@ -163,7 +163,7 @@ Use this 60-second script:
 3. *"Everything else is a client. The extension, the CLI, both mobile apps and the
    web page all call the same function, so they always agree."*
 4. *"`harden()` closes the loop: it rewrites the prompt until it scores zero risk."*
-5. *"The evidence is in `eval/` — 112 labelled prompts, and 63 unit tests."*
+5. *"The evidence is in `engine/eval/` — 112 labelled prompts, and 63 unit tests."*
 
 ---
 
@@ -171,9 +171,9 @@ Use this 60-second script:
 
 | Question | Answer |
 |---|---|
-| Which file has the logic? | `src/analyzer.js` |
-| Where are the rules? | `src/taxonomy.js` (data, not code) |
-| Where is the ML? | There is none. Optional AI is in `src/llm.js` and is not the core. |
+| Which file has the logic? | `engine/src/analyzer.js` |
+| Where are the rules? | `engine/src/taxonomy.js` (data, not code) |
+| Where is the ML? | There is none. Optional AI is in `engine/src/llm.js` and is not the core. |
 | What if a prompt isn't AWS? | A scope guard in `analyzer.js` rejects it instead of guessing |
 | How do you know it's correct? | `npm test` (63 tests) and `npm run eval` (P/R/F1) |
 | Why so many folders? | One engine, many clients — each surface is its own folder |

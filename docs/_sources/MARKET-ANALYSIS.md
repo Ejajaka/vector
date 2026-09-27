@@ -209,4 +209,4 @@ reaches them.
   AWS Foundational Security Best Practices Ã‚Â· NIST SP 800-53 Rev.5 Ã‚Â·
   GDPR Art. 5/32 Ã‚Â· India DPDP Act 2023
 
-Full extracts and the positioning caution are stored in `references/`.
+Full extracts and the positioning caution are stored in `docs/references/`.

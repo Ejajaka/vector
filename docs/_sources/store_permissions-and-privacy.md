@@ -41,6 +41,6 @@ package. (`remote code` answer: No.)
 
 ## Privacy policy URL
 
-Host `store/privacy-policy.md` somewhere public (GitHub Pages, Gist, your site)
+Host `ui/store/privacy-policy.md` somewhere public (GitHub Pages, Gist, your site)
 and paste the URL. A privacy policy is required because the extension handles
 prompt text.

@@ -6,10 +6,10 @@ Center. I cannot do that step - it needs your Microsoft account.
 ## Prerequisites (already done)
 - Upload package: `dist/vector-extension.zip` (built by `npm run package`).
   It is a Chromium Manifest V3 extension, so it runs on Edge unchanged.
-- Logo (300x300): `media/store-logo-300.png`.
-- Listing text: `store/listing.md`.
-- Privacy policy: `store/privacy-policy.md` (host it publicly first).
-- Privacy/permission answers: `store/permissions-and-privacy.md`.
+- Logo (300x300): `ui/media/store-logo-300.png`.
+- Listing text: `ui/store/listing.md`.
+- Privacy policy: `ui/store/privacy-policy.md` (host it publicly first).
+- Privacy/permission answers: `ui/store/permissions-and-privacy.md`.
 
 If you changed any code since packaging, re-run `npm run package`.
 
@@ -34,16 +34,16 @@ If you changed any code since packaging, re-run `npm run package`.
    - Category: **Developer tools**
    - Website / support: optional (your GitHub or project page)
 
-6. **Privacy** (paste from `store/permissions-and-privacy.md`)
+6. **Privacy** (paste from `ui/store/permissions-and-privacy.md`)
    - Single purpose description
    - Permission justification for `storage`, `clipboardWrite`, and each host
    - Remote code: **No, I am not using remote code**
    - Data usage: leave all "collect" boxes unchecked (we collect nothing)
-   - Privacy policy URL: paste the public URL of `store/privacy-policy.md`
+   - Privacy policy URL: paste the public URL of `ui/store/privacy-policy.md`
 
 7. **Store listing**
-   - Extension logo: upload `media/store-logo-300.png`
-   - Description: paste from `store/listing.md` (min 250 chars)
+   - Extension logo: upload `ui/media/store-logo-300.png`
+   - Description: paste from `ui/store/listing.md` (min 250 chars)
    - Screenshots: optional but recommended (640x480 or 1280x800) - see below
    - Search terms: `aws`, `terraform`, `cloud security`, `prompt`, `iam`,
      `encryption`, `s3`

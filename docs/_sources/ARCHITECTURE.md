@@ -14,7 +14,7 @@ Version 0.5.7 Ã‚Â· AWS-only Ã‚Â· rule-based NLP Ã‚Â· fully offlin
 Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â
 Ã¢â€â€š                          USER SURFACES (clients)                          Ã¢â€â€š
 Ã¢â€â€š                                                                          Ã¢â€â€š
-Ã¢â€â€š   extension/        cli/          mobile-expo/       mobile-native/  web/ Ã¢â€â€š
+Ã¢â€â€š   ui/extension/        engine/cli/          ui/mobile-expo/       ui/mobile-native/  ui/web/ Ã¢â€â€š
 Ã¢â€â€š   (popup,           (analyze,     (React Native /    (Capacitor,    (demo)Ã¢â€â€š
 Ã¢â€â€š    in-page,          improved,     Expo, iOS +        Android)             Ã¢â€â€š
 Ã¢â€â€š    options)          verify, hook) Android)                                Ã¢â€â€š
@@ -22,7 +22,7 @@ Version 0.5.7 Ã‚Â· AWS-only Ã‚Â· rule-based NLP Ã‚Â· fully offlin
                                Ã¢â€â€š  all call the same functions
                                Ã¢â€“Â¼
 Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â
-Ã¢â€â€š                        SHARED ENGINE  (src/)                               Ã¢â€â€š
+Ã¢â€â€š                        SHARED ENGINE  (engine/src/)                               Ã¢â€â€š
 Ã¢â€â€š                                                                            Ã¢â€â€š
 Ã¢â€â€š  taxonomy.js   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº analyzer.js Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº report   ui.js/.css  (DOM renderer)    Ã¢â€â€š
 Ã¢â€â€š  semantic.js   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº                 object   llm.js      (optional AI)     Ã¢â€â€š
@@ -52,7 +52,7 @@ project_NLP/                     <- open THIS in VS Code
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Features.docx
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Progress-Report.docx
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/                         Ã°Å¸Â§Â  SHARED ENGINE (the product)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ engine/src/                         Ã°Å¸Â§Â  SHARED ENGINE (the product)
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ taxonomy.js              knowledge base: 78 resources, 30 controls
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ analyzer.js              the pipeline + scoring + harden
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ semantic.js              TF-IDF relevance (advisory only)
@@ -61,43 +61,43 @@ project_NLP/                     <- open THIS in VS Code
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ settings.js              shared storage/policy helpers
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ ui.js / ui.css           shared results renderer
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ extension/                   Ã°Å¸Å’Â BROWSER EXTENSION CLIENT
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui/extension/                   Ã°Å¸Å’Â BROWSER EXTENSION CLIENT
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ manifest.json
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ popup.html/.css/.js
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ content.js/.css
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ options.html/.js
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ cli/                         Ã¢Å’Â¨Ã¯Â¸Â  COMMAND-LINE CLIENT
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ engine/cli/                         Ã¢Å’Â¨Ã¯Â¸Â  COMMAND-LINE CLIENT
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ vector-cli.js
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile-expo/                 Ã°Å¸â€œÂ± REACT NATIVE (iOS + Android) CLIENT
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui/mobile-expo/                 Ã°Å¸â€œÂ± REACT NATIVE (iOS + Android) CLIENT
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ App.js, app.json, package.json
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/  (generated copies of the engine)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ engine/src/  (generated copies of the engine)
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ sync-engine.ps1
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile-native/               Ã°Å¸â€œÂ± CAPACITOR (Android) CLIENT
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ www/  (index.html, app.js, style.css, src/)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui/mobile-native/               Ã°Å¸â€œÂ± CAPACITOR (Android) CLIENT
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ www/  (index.html, app.js, style.css, engine/src/)
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ capacitor.config.json
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ sync-engine.ps1
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ web/                         Ã°Å¸â€“Â¥Ã¯Â¸Â  PUBLIC DEMO CLIENT
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (GitHub Pages build; synced from mobile-native/www)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui/web/                         Ã°Å¸â€“Â¥Ã¯Â¸Â  PUBLIC DEMO CLIENT
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (GitHub Pages build; synced from ui/mobile-native/www)
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ eval/                        Ã°Å¸â€œÅ  EVIDENCE
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ engine/eval/                        Ã°Å¸â€œÅ  EVIDENCE
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ dataset.json, dataset2.json, heldout.json
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ run-eval.js, kappa.js
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ downstream/
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ test/                        Ã¢Å“â€¦ UNIT TESTS
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ engine/test/                        Ã¢Å“â€¦ UNIT TESTS
 Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ run-tests.js
 Ã¢â€â€š
 Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tools/                       Ã°Å¸â€Â§ BUILD SCRIPTS
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ make-docx.js, make-icons.js, package.ps1
 Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ sync-demo.ps1, calibrate.js
 Ã¢â€â€š
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ store/                       Ã°Å¸ÂÂª PUBLISHING (Edge listing, privacy, steps)
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ references/                  Ã°Å¸â€œÅ¡ LITERATURE
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ examples/                    Ã°Å¸â€œÅ½ SAMPLE POLICY PACKS
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui/store/                       Ã°Å¸ÂÂª PUBLISHING (Edge listing, privacy, steps)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/references/                  Ã°Å¸â€œÅ¡ LITERATURE
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/examples/                    Ã°Å¸â€œÅ½ SAMPLE POLICY PACKS
 Ã¢â€â€š
 Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ MARKET-ANALYSIS.md           top-level reading order
 Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ARCHITECTURE.md
@@ -120,7 +120,7 @@ project_NLP/                     <- open THIS in VS Code
     "Create an S3 bucket for user documents"
               Ã¢â€â€š
               Ã¢â€“Â¼
- Ã¢â€˜Â¡ ANALYZE  (src/analyzer.js)
+ Ã¢â€˜Â¡ ANALYZE  (engine/src/analyzer.js)
     normalise Ã¢â€ â€™ tokenise Ã¢â€ â€™ synonyms Ã¢â€ â€™ intents Ã¢â€ â€™ resources Ã¢â€ â€™ scope guard
     Ã¢â€ â€™ map resources to required controls Ã¢â€ â€™ detect stated controls
       (regex + paraphrase + negation guard) Ã¢â€ â€™ MISSING = required Ã¢Ë†â€™ stated
@@ -134,7 +134,7 @@ project_NLP/                     <- open THIS in VS Code
               Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â£ REVIEW          user reads findings
               Ã¢â€â€š
               Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â¤ DEEP SCAN       optional; hides rule answer,
-              Ã¢â€â€š                 (src/llm.js)     reveals merged result at once
+              Ã¢â€â€š                 (engine/src/llm.js)     reveals merged result at once
               Ã¢â€â€š
               Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â¥ ADD CLAUSES     one click per finding
               Ã¢â€â€š
@@ -148,7 +148,7 @@ project_NLP/                     <- open THIS in VS Code
  Ã¢â€˜Â¨ LLM GENERATES Terraform / CloudFormation
               Ã¢â€â€š
               Ã¢â€“Â¼
- Ã¢â€˜Â© VERIFY  (src/tfcheck.js, `vector verify`)   optional post-generation check
+ Ã¢â€˜Â© VERIFY  (engine/src/tfcheck.js, `vector verify`)   optional post-generation check
 ```
 
 ---
@@ -238,10 +238,10 @@ needsDeepScan = confidence < 50  OR  coverageScore < 50
 | any surface | engine | `analyze(prompt, options) Ã¢â€ â€™ report` |
 | any surface | engine | `harden(prompt) Ã¢â€ â€™ { prompt, clauses, report }` |
 | any surface | engine | `project(report, accepted) Ã¢â€ â€™ { riskScore, coverageScore }` |
-| extension/mobile | engine | `mergeFindings(report, external) Ã¢â€ â€™ report` |
+| ui/extension/mobile | engine | `mergeFindings(report, external) Ã¢â€ â€™ report` |
 | engine | surface | `report` object (shape above) |
 | CLI | verifier | `verifyText(tfSource) Ã¢â€ â€™ issues[]` |
-| mobile/web | engine | engine **copied** into the client by `sync-engine.ps1` |
+| ui/mobile-native/web | engine | engine **copied** into the client by `sync-engine.ps1` |
 
 ---
 
@@ -267,7 +267,7 @@ needsDeepScan = confidence < 50  OR  coverageScore < 50
 | Artefact | Where | How |
 |---|---|---|
 | Extension | Microsoft Edge Add-ons (Store ID `0RDCKBP2L55J`) | `npm run package` Ã¢â€ â€™ upload zip |
-| CLI | local / CI | `node cli/vector-cli.js` |
+| CLI | local / CI | `node engine/cli/vector-cli.js` |
 | Mobile (Expo) | Expo Go (demo) / EAS build (store) | `npm run start:device`, `eas build` |
 | Mobile (Android) | installable APK | `gradlew assembleDebug` |
 | Web demo | GitHub Pages | push to `main` |

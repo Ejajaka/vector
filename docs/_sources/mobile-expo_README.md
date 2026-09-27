@@ -23,7 +23,7 @@ on a real device over the network:
 ```powershell
 cd mobile-native-expo
 npm install
-npm run sync        # copy the shared engine into src/
+npm run sync        # copy the shared engine into engine/src/
 npx expo start
 ```
 
@@ -55,18 +55,18 @@ eas submit -p ios
 eas submit -p android
 ```
 
-Store metadata can reuse `../store/privacy-policy.html` and `../store/listing.md`.
+Store metadata can reuse `../ui/store/privacy-policy.html` and `../ui/store/listing.md`.
 
 ## Files
 
 ```
-mobile-expo/
+ui/mobile-expo/
   App.js                 single-screen UI (React Native components)
   app.json               Expo config (bundle id com.vector.security)
   package.json           Expo SDK 57 (RN 0.86, React 19)
   babel.config.js
-  sync-engine.ps1        copies ../src engine files into src/
-  src/                   taxonomy.js, semantic.js, analyzer.js, llm.js (generated)
+  sync-engine.ps1        copies ../src engine files into engine/src/
+  engine/src/                   taxonomy.js, semantic.js, analyzer.js, llm.js (generated)
 ```
 
 ## Caveats

@@ -1,8 +1,8 @@
 # Publishing for free
 
 The Chrome Web Store costs US$5 (one-time). If you want free distribution, use
-one of these instead. The same `store/listing.md`, `store/privacy-policy.md` and
-`store/permissions-and-privacy.md` apply to all of them.
+one of these instead. The same `ui/store/listing.md`, `ui/store/privacy-policy.md` and
+`ui/store/permissions-and-privacy.md` apply to all of them.
 
 ## Microsoft Edge Add-ons (recommended, free)
 - Store: https://microsoftedge.microsoft.com

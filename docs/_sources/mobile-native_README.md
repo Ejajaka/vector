@@ -14,7 +14,7 @@ Google Play and the Apple App Store.
 ## Files
 
 ```
-mobile/
+ui/mobile-native/
   capacitor.config.json   app id / name / web dir
   package.json            Capacitor deps and scripts
   sync-engine.ps1         copies ../src into www/src (keep in sync)
@@ -22,7 +22,7 @@ mobile/
     index.html            single screen UI
     style.css             mobile styling
     app.js                app logic (reuses VectorAnalyzer / VectorUI / VectorLLM)
-    src/                  generated copies of the shared engine
+    engine/src/                  generated copies of the shared engine
 ```
 
 ## Build
@@ -60,9 +60,9 @@ Then:
 | Apple App Store | **$99/year** | Apple Developer Program. Xcode archive + App Store Connect. Stricter review. |
 
 Both listings can reuse:
-- Privacy policy: `../store/privacy-policy.html` (host it, e.g. GitHub Pages).
-- Description and permission notes: `../store/listing.md`,
-  `../store/permissions-and-privacy.md`.
+- Privacy policy: `../ui/store/privacy-policy.html` (host it, e.g. GitHub Pages).
+- Description and permission notes: `../ui/store/listing.md`,
+  `../ui/store/permissions-and-privacy.md`.
 
 ## Build status
 

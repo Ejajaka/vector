@@ -41,7 +41,7 @@ function inline(text) {
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/<[^>]+>/g, "")
     .replace(/&hellip;/g, "...")
-    .replace(/&middot;/g, "·")
+    .replace(/&middot;/g, "Â·")
     .replace(/&rarr;/g, "->")
     .replace(/&amp;/g, "&")
     .replace(/\s+$/, "");

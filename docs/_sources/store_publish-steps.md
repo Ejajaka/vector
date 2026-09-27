@@ -19,21 +19,21 @@ store requires exactly that).
 3. Wait for it to process.
 
 ## 3. Fill the Store listing tab
-Use `store/listing.md`:
+Use `ui/store/listing.md`:
 - Name, short description (<=132 chars), detailed description, category
   (Developer Tools), language.
 
 ## 4. Upload images
-- **Store icon**: already in `media/icon128.png` (the store also uses the
+- **Store icon**: already in `ui/media/icon128.png` (the store also uses the
   manifest icons).
 - **Screenshots**: 1-5 required, size 1280x800 or 640x400 (PNG/JPEG).
   I cannot generate these without a browser - capture the popup showing a risk
   panel, and the in-page panel on a chat site.
 
 ## 5. Privacy tab
-Use `store/permissions-and-privacy.md`:
+Use `ui/store/permissions-and-privacy.md`:
 - Single purpose, permission justifications, remote-code = No, data-usage boxes.
-- Host `store/privacy-policy.md` publicly and paste the URL.
+- Host `ui/store/privacy-policy.md` publicly and paste the URL.
 
 ## 6. Distribution tab
 - Visibility: **Public** (or Unlisted for a private demo).

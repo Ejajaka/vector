@@ -70,7 +70,7 @@ These decisions shaped everything and should be kept if reimplementing:
 
 # PART B - THE ENGINE (the actual product)
 
-## B1. The knowledge base - `src/taxonomy.js`
+## B1. The knowledge base - `engine/src/taxonomy.js`
 
 This file is **pure data**. It contains no logic. Structure:
 
@@ -147,7 +147,7 @@ const CONTEXT_CUES = { dev: ["dev","sandbox",...], prod: ["production","customer
 **Why this shape:** adding a new check = adding a row, not writing code. That is
 what makes the tool maintainable.
 
-## B2. The pipeline - `src/analyzer.js`
+## B2. The pipeline - `engine/src/analyzer.js`
 
 ### B2.1 Module wrapper (so it works in Node *and* the browser)
 ```js
@@ -397,17 +397,17 @@ function harden(prompt, maxIterations = 8) {
 CloudTrail), which the analyser then also finds missing. Two things were needed to
 reach convergence - see Part F4.
 
-## B6. Secondary NLP - `src/semantic.js`
+## B6. Secondary NLP - `engine/src/semantic.js`
 
 TF-IDF over the controls, cosine similarity to the prompt, top matches reported as
 "topically related". ~130 lines. **Measured and deliberately restricted** (Part F3).
 
-## B7. Optional AI - `src/llm.js`
+## B7. Optional AI - `engine/src/llm.js`
 
 Two tiers: on-device (Chrome Prompt API) then hosted (OpenAI-compatible). Returns
 `{ missing, risky, clean }`. Errors surface the provider's own message.
 
-## B8. Post-generation - `src/tfcheck.js`
+## B8. Post-generation - `engine/src/tfcheck.js`
 
 11 deterministic checks on a `.tf` file. Used by `vector verify`.
 
@@ -423,22 +423,22 @@ Build the store zip:
 npm run package     # -> dist/vector-extension.zip, manifest at the ZIP ROOT
 ```
 **Key requirement:** the store needs `manifest.json` at the zip root, so
-`tools/package.ps1` flattens `extension/` + `src/` + `media/` into a staging
+`tools/package.ps1` flattens `ui/extension/` + `engine/src/` + `ui/media/` into a staging
 folder before zipping.
 
 ## C2. CLI
 ```powershell
-node cli/vector-cli.js analyze "Create an S3 bucket"
-node cli/vector-cli.js improved "Create an S3 bucket"
-node cli/vector-cli.js verify eval/downstream/insecure.tf   # exit 2/1/0
-node cli/vector-cli.js hook "Deploy an S3 bucket public"    # CI gate
+node engine/cli/vector-cli.js analyze "Create an S3 bucket"
+node engine/cli/vector-cli.js improved "Create an S3 bucket"
+node engine/cli/vector-cli.js verify engine/eval/downstream/insecure.tf   # exit 2/1/0
+node engine/cli/vector-cli.js hook "Deploy an S3 bucket public"    # CI gate
 ```
 
 ## C3. React Native (Expo) app
 ```powershell
 cd mobile-expo
 npm install
-npm run sync            # copy the engine into src/
+npm run sync            # copy the engine into engine/src/
 npm run start:device    # advertises the correct LAN IP
 ```
 Bundles verified with `npx expo export --platform ios|android`.
@@ -454,24 +454,24 @@ cd android
 ```
 
 ## C5. Web demo
-`web/` is the same web app, published by GitHub Pages, with script cache-busting.
+`ui/web/` is the same web app, published by GitHub Pages, with script cache-busting.
 
 ---
 
 # PART D - EVIDENCE
 
-## D1. Unit tests - `test/run-tests.js`
+## D1. Unit tests - `engine/test/run-tests.js`
 63 tests covering the engine, the renderer, the deep-scan client, harden and the
 scope guard. Run: `npm test`.
 
-## D2. Evaluation harness - `eval/`
+## D2. Evaluation harness - `engine/eval/`
 Three labelled sets (39 + 59 + 14 = 112 prompts). Metrics: missing-constraint
 P/R/F1, risky P/R/F1, negation-trap failures. Run: `npm run eval`.
 
-## D3. Inter-annotator agreement - `eval/kappa.js`
+## D3. Inter-annotator agreement - `engine/eval/kappa.js`
 Cohen's kappa between two label files. Run: `npm run kappa -- a.json b.json`.
 
-## D4. Downstream studies - `eval/downstream/`
+## D4. Downstream studies - `engine/eval/downstream/`
 - `run-downstream.js` - hand-written insecure vs hardened Terraform (6 -> 0).
 - `run-llm-study.js` - generate Terraform with an LLM from raw vs hardened
   prompts and score both. Run: `npm run study -- --key <KEY>`.
@@ -568,7 +568,7 @@ guessed.
 (OpenCode Zen), and the extension also needed a `host_permissions` entry for
 `opencode.ai`.
 **Fix:** added the host permission; the demo explains that deep scan is blocked and
-points to the extension/mobile app.
+points to the ui/extension/mobile app.
 
 ## F10. Expo Go: "couldn't connect to the server"
 **Cause 1:** the wrong LAN IP was advertised (the machine had Ethernet, Wi-Fi,
@@ -608,27 +608,27 @@ npm run icons                # regenerate icons
 npm run package              # -> dist/vector-extension.zip
 
 # --- use ---
-node cli/vector-cli.js analyze "Create an S3 bucket for user documents"
-node cli/vector-cli.js improved "Create an S3 bucket"
-node cli/vector-cli.js verify eval/downstream/insecure.tf
+node engine/cli/vector-cli.js analyze "Create an S3 bucket for user documents"
+node engine/cli/vector-cli.js improved "Create an S3 bucket"
+node engine/cli/vector-cli.js verify engine/eval/downstream/insecure.tf
 
-# --- sync engine into the clients after editing src/ ---
-powershell -File mobile-expo/sync-engine.ps1
-powershell -File mobile-native/sync-engine.ps1
+# --- sync engine into the clients after editing engine/src/ ---
+powershell -File ui/mobile-expo/sync-engine.ps1
+powershell -File ui/mobile-native/sync-engine.ps1
 powershell -File tools/sync-demo.ps1
 
 # --- mobile ---
 cd mobile-expo; npm install; npm run start:device
 cd mobile-native; npm install; npm run add:android
-cd mobile-native/android; .\gradlew.bat assembleDebug --no-daemon
+cd ui/mobile-native/android; .\gradlew.bat assembleDebug --no-daemon
 ```
 
 ---
 
 # PART H - RULES TO FOLLOW IF REIMPLEMENTING
 
-1. **Edit only `src/`.** The copies inside `mobile-expo/src`,
-   `mobile-native/www/src` and `web/src` are generated by the sync scripts.
+1. **Edit only `engine/src/`.** The copies inside `ui/mobile-expo/src`,
+   `ui/mobile-native/www/src` and `ui/web/src` are generated by the sync scripts.
 2. **Never edit a `.docx`.** Edit `docs/_sources/*.md` and run `npm run docs`.
 3. **Bump `manifest.json`'s version before every store upload.** The store rejects a
    re-upload with the same version.

@@ -24,4 +24,4 @@ jobs:
         run: npm run downstream
 
       - name: Post-generation verification demo
-        run: npm run verify -- eval/downstream/insecure.tf || true
+        run: npm run verify -- engine/eval/downstream/insecure.tf || true
