@@ -1,556 +1,287 @@
-# Vector — Architecture & Pipeline (Detailed)
+# Vector Ã¢â‚¬â€ Finalized Architecture & Workflow
 
-Pre-Generation Security Diagnosis of Cloud Infrastructure Prompts Using NLP
-**Version 0.5.6 · AWS-only · rule-based NLP · fully offline**
+**Pre-Generation Security Diagnosis of Cloud Infrastructure Prompts Using NLP**
+Version 0.5.7 Ã‚Â· AWS-only Ã‚Â· rule-based NLP Ã‚Â· fully offline
 
----
-
-## 1. Executive summary
-
-Vector sits **between a user's natural-language prompt and the LLM that turns it
-into infrastructure code**. It reads the prompt, decides which AWS resources are
-being described, looks up the security controls those resources require, subtracts
-the controls the prompt already states, and reports the remainder as **missing
-constraints** together with any **risky statements**. Every finding carries a
-ready-to-add clause and the Terraform attribute to set. One tap rewrites the
-prompt into a hardened version that re-analyses to **risk 0 / coverage 100%**.
-
-No machine learning, no trained model, no network for the core path. The
-"knowledge" is a curated, standards-grounded taxonomy.
-
-```
-      user prompt
-          │
-          ▼
-   ┌─────────────┐     deterministic, offline, no key
-   │   VECTOR    │ ─────────────────────────────────────┐
-   └─────────────┘                                      │
-          │  missing controls · risky statements        │
-          │  risk score · coverage score                │
-          │  ready-to-add clauses + Terraform hints     │
-          ▼                                             ▼
-   hardened prompt ──►  LLM (Terraform / CloudFormation)
-          │
-          ▼
-   generated .tf ──►  vector verify   (post-generation check, closes the loop)
-```
+> Companion documents: `MARKET-ANALYSIS.md` (why), `ROADMAP.md` (plan),
+> `COURSE-PLAN-MAPPING.md` (syllabus links).
 
 ---
 
-## 2. System architecture
-
-### 2.1 Layers
-
-| Layer | Files | Responsibility |
-|---|---|---|
-| **Data / knowledge base** | `src/taxonomy.js` | Resources, controls, risky patterns, synonyms, paraphrase lexicon, tiers, Terraform hints, context cues, non-AWS terms, scope vocabularies |
-| **Core engine** | `src/analyzer.js` | The analysis pipeline (normalise → detect → omit → score → recommend) |
-| **Secondary NLP** | `src/semantic.js` | TF-IDF index + cosine similarity (topical relevance, advisory only) |
-| **Optional AI** | `src/llm.js` | Deep scan via an existing model (on-device or hosted) + merge |
-| **Post-generation** | `src/tfcheck.js` | Deterministic checks on generated Terraform |
-| **Shared utilities** | `src/settings.js`, `src/ui.js`, `src/ui.css` | Storage/policy helpers; shared results renderer |
-| **Surface: extension** | `manifest.json`, `popup.*`, `content.*`, `options.*` | Toolbar popup, in-page button, settings/policy/history |
-| **Surface: CLI** | `cli/vector-cli.js` | analyze / improved / verify / hook + policy packs |
-| **Surface: mobile** | `mobile/` (Capacitor), `mobile-rn/` (React Native/Expo) | Android + iOS |
-| **Surface: web demo** | `demo/` | Static GitHub Pages build |
-| **Quality** | `test/`, `eval/`, `.github/workflows/ci.yml` | Unit tests, metrics harnesses, CI |
-
-### 2.2 Layering rule
-
-The engine is **UI-agnostic and dependency-free**. Every surface loads the same
-files and calls the same functions (`analyze`, `harden`, `project`,
-`mergeFindings`). This is why the extension, CLI, mobile apps and web demo all
-produce identical results.
+## 1. Final architecture at a glance
 
 ```
-   src/taxonomy.js ─┐
-   src/semantic.js ─┼─► src/analyzer.js ──► report object ──┬─► src/ui.js (DOM)
-   src/settings.js ─┘                                       ├─► popup.js / content.js
-                                                            ├─► App.js (React Native)
-                                                            ├─► cli/vector-cli.js
-                                                            └─► app.js / demo
-   src/llm.js ──► mergeFindings ──► same report object
-   src/tfcheck.js ──► independent post-generation path
+Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â
+Ã¢â€â€š                          USER SURFACES (clients)                          Ã¢â€â€š
+Ã¢â€â€š                                                                          Ã¢â€â€š
+Ã¢â€â€š   extension/        cli/          mobile-expo/       mobile-native/  web/ Ã¢â€â€š
+Ã¢â€â€š   (popup,           (analyze,     (React Native /    (Capacitor,    (demo)Ã¢â€â€š
+Ã¢â€â€š    in-page,          improved,     Expo, iOS +        Android)             Ã¢â€â€š
+Ã¢â€â€š    options)          verify, hook) Android)                                Ã¢â€â€š
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Ëœ
+                               Ã¢â€â€š  all call the same functions
+                               Ã¢â€“Â¼
+Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â
+Ã¢â€â€š                        SHARED ENGINE  (src/)                               Ã¢â€â€š
+Ã¢â€â€š                                                                            Ã¢â€â€š
+Ã¢â€â€š  taxonomy.js   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº analyzer.js Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº report   ui.js/.css  (DOM renderer)    Ã¢â€â€š
+Ã¢â€â€š  semantic.js   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº                 object   llm.js      (optional AI)     Ã¢â€â€š
+Ã¢â€â€š  settings.js   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº                          tfcheck.js  (post-gen checks) Ã¢â€â€š
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Ëœ
+                               Ã¢â€â€š
+                               Ã¢â€“Â¼
+               report { missing, risky, risk, coverage, tiers, ... }
 ```
 
-### 2.3 File map
+**One rule holds the whole design together:** every surface is a *client* of the
+same engine. That is why the extension, CLI, both mobile apps and the web demo
+return identical results for the same prompt.
+
+---
+
+## 2. Final folder structure
 
 ```
-project_NLP/
-├── manifest.json              MV3 manifest (v0.5.6)
-├── popup.html/.css/.js        toolbar popup
-├── content.js/.css            in-page floating button + panel
-├── options.html/.js           settings, org policy, history, "List models"
-├── src/
-│   ├── taxonomy.js            KNOWLEDGE BASE (78 resources, 30 controls, 9 risky)
-│   ├── analyzer.js            PIPELINE + scoring + harden + project + merge
-│   ├── semantic.js            TF-IDF relevance (advisory)
-│   ├── llm.js                 optional deep scan (on-device / hosted)
-│   ├── tfcheck.js             post-generation Terraform checks
-│   ├── settings.js            chrome.storage helpers + policy parse
-│   └── ui.js / ui.css         shared renderer (risk card, tiers, clauses)
-├── cli/vector-cli.js          CLI + CI hook + verify
-├── eval/
-│   ├── dataset.json           39 labelled prompts (tuning)
-│   ├── dataset2.json          59 labelled prompts (tuning)
-│   ├── heldout.json           14 labelled prompts
-│   ├── run-eval.js            precision / recall / F1 + negation traps
-│   ├── kappa.js               inter-annotator agreement
-│   └── downstream/            insecure vs hardened Terraform + LLM study
-├── test/run-tests.js          60 unit tests
-├── tools/                     icons, docx, package, sync, calibrate
-├── docs/                      Word documents
-├── store/                     listing, privacy, publishing steps
-├── references/                supporting literature
-├── mobile/                    Capacitor app (Android verified)
-├── mobile-rn/                 React Native app (iOS+Android bundles verified)
-└── demo/                      GitHub Pages build of the web app
+project_NLP/                     <- open THIS in VS Code
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/                        Ã°Å¸â€œâ€ž THE FOUR DELIVERABLE DOCUMENTS (+2 extra)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Market-Analysis.docx
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Architecture.docx
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Roadmap.docx
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Course-Plan-Mapping.docx
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Features.docx
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ Vector-Progress-Report.docx
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/                         Ã°Å¸Â§Â  SHARED ENGINE (the product)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ taxonomy.js              knowledge base: 78 resources, 30 controls
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ analyzer.js              the pipeline + scoring + harden
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ semantic.js              TF-IDF relevance (advisory only)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ llm.js                   optional deep scan
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tfcheck.js               post-generation Terraform checks
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ settings.js              shared storage/policy helpers
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ ui.js / ui.css           shared results renderer
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ extension/                   Ã°Å¸Å’Â BROWSER EXTENSION CLIENT
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ manifest.json
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ popup.html/.css/.js
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ content.js/.css
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ options.html/.js
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ cli/                         Ã¢Å’Â¨Ã¯Â¸Â  COMMAND-LINE CLIENT
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ vector-cli.js
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile-expo/                 Ã°Å¸â€œÂ± REACT NATIVE (iOS + Android) CLIENT
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ App.js, app.json, package.json
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/  (generated copies of the engine)
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ sync-engine.ps1
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile-native/               Ã°Å¸â€œÂ± CAPACITOR (Android) CLIENT
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ www/  (index.html, app.js, style.css, src/)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ capacitor.config.json
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ sync-engine.ps1
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ web/                         Ã°Å¸â€“Â¥Ã¯Â¸Â  PUBLIC DEMO CLIENT
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (GitHub Pages build; synced from mobile-native/www)
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ eval/                        Ã°Å¸â€œÅ  EVIDENCE
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ dataset.json, dataset2.json, heldout.json
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ run-eval.js, kappa.js
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ downstream/
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ test/                        Ã¢Å“â€¦ UNIT TESTS
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ run-tests.js
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tools/                       Ã°Å¸â€Â§ BUILD SCRIPTS
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ make-docx.js, make-icons.js, package.ps1
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ sync-demo.ps1, calibrate.js
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ store/                       Ã°Å¸ÂÂª PUBLISHING (Edge listing, privacy, steps)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ references/                  Ã°Å¸â€œÅ¡ LITERATURE
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ examples/                    Ã°Å¸â€œÅ½ SAMPLE POLICY PACKS
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ MARKET-ANALYSIS.md           top-level reading order
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ARCHITECTURE.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ROADMAP.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ COURSE-PLAN-MAPPING.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ MANUAL.md                    recreate-from-scratch build manual
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ README.md
+```
+
+**Deliverable documents (the four you asked for):** `docs/Vector-Market-Analysis.docx`,
+`docs/Vector-Architecture.docx`, `docs/Vector-Roadmap.docx`,
+`docs/Vector-Course-Plan-Mapping.docx` Ã¢â‚¬â€ with `.md` sources at the repo root.
+
+---
+
+## 3. Final workflow (end to end)
+
+```
+ Ã¢â€˜Â  USER WRITES A PROMPT
+    "Create an S3 bucket for user documents"
+              Ã¢â€â€š
+              Ã¢â€“Â¼
+ Ã¢â€˜Â¡ ANALYZE  (src/analyzer.js)
+    normalise Ã¢â€ â€™ tokenise Ã¢â€ â€™ synonyms Ã¢â€ â€™ intents Ã¢â€ â€™ resources Ã¢â€ â€™ scope guard
+    Ã¢â€ â€™ map resources to required controls Ã¢â€ â€™ detect stated controls
+      (regex + paraphrase + negation guard) Ã¢â€ â€™ MISSING = required Ã¢Ë†â€™ stated
+    Ã¢â€ â€™ risky patterns Ã¢â€ â€™ risk score Ã¢â€ â€™ coverage Ã¢â€ â€™ tiers Ã¢â€ â€™ feedback
+              Ã¢â€â€š
+              Ã¢â€“Â¼
+ Ã¢â€˜Â¢ REPORT
+    risk 100 CRITICAL Ã‚Â· coverage 0% Ã‚Â· 11 missing Ã‚Â· 2 risky
+    grouped: Confirmed gaps | Needs clarification | Optional hardening
+              Ã¢â€â€š
+              Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â£ REVIEW          user reads findings
+              Ã¢â€â€š
+              Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â¤ DEEP SCAN       optional; hides rule answer,
+              Ã¢â€â€š                 (src/llm.js)     reveals merged result at once
+              Ã¢â€â€š
+              Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â¥ ADD CLAUSES     one click per finding
+              Ã¢â€â€š
+              Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº Ã¢â€˜Â¦ HARDEN          one tap Ã¢â€ â€™ risk 0 / coverage 100%
+                                (analyzer.harden)
+              Ã¢â€â€š
+              Ã¢â€“Â¼
+ Ã¢â€˜Â§ IMPROVED PROMPT  Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Âº  copied into the LLM
+              Ã¢â€â€š
+              Ã¢â€“Â¼
+ Ã¢â€˜Â¨ LLM GENERATES Terraform / CloudFormation
+              Ã¢â€â€š
+              Ã¢â€“Â¼
+ Ã¢â€˜Â© VERIFY  (src/tfcheck.js, `vector verify`)   optional post-generation check
 ```
 
 ---
 
-## 3. The analysis pipeline (detailed)
+## 4. The 18-step pipeline (final)
 
-Entry point: `VectorAnalyzer.analyze(prompt, options)` in `src/analyzer.js`.
-`options = { policy, strictMode }`.
-
-### Step 0 — Input
-
-| Input | Type | Notes |
+| # | Step | What happens |
 |---|---|---|
-| `prompt` | string | the natural-language infrastructure request |
-| `options.policy` | object \| null | custom organisation rules (`requirements`, `riskyPatterns`) |
-| `options.strictMode` | boolean | promote medium severity to high in the weighting |
+| 0 | Input | prompt + optional policy + strict flag |
+| 1 | Normalise | lowercase, negation fixup (`unencrypted` Ã¢â€ â€™ `not encrypted`) |
+| 2 | Tokenise | split, drop stopwords (drives confidence) |
+| 3 | Synonym expansion | "website" Ã¢â€ â€™ ec2, "object storage" Ã¢â€ â€™ s3 (resource detection only) |
+| 4 | Intent detection | create/deploy/allow/restrict/secure/backup/monitor |
+| 5 | Policy merge | org rules appended; `alwaysRequired` always relevant |
+| 6 | Resource detection | 78 AWS resources (phrase + regex aliases) |
+| 7 | Scope guard | reject non-infrastructure input instead of scoring it |
+| 8 | Context detection | dev / prod / unknown Ã¢â€ â€™ risk factor 0.75 / 1.10 / 1.00 |
+| 9 | Relevant controls | union of resource controls + defaults (+ baseline) |
+| 10 | Requirement detection | regex + paraphrase + **3 negation guards** |
+| 11 | Omission analysis | `MISSING = relevant Ã¢Ë†â€™ stated` |
+| 12 | Risky detection | 9 patterns, negation-aware, de-duplicated |
+| 13 | Scoring | `missingRatio^1.5` + risky bump, scaled by env factor |
+| 14 | Confidence | tokens + resource clarity Ã¢â€ â€™ `needsDeepScan` |
+| 15 | Tiering + coverage | core / clarify / harden; `mentioned / total` |
+| 16 | Semantic relevance | TF-IDF top matches (advisory only) |
+| 17 | Report | single object consumed by every surface |
+| 18 | Render | UI cards, clauses, Terraform hints, one-click actions |
 
-### Step 1 — Normalisation
+---
 
-```
-"Store data UNENCRYPTED in the S3 bucket"
-   -> lowercase, quotes removed, whitespace collapsed
-   -> "store data unencrypted in the s3 bucket"
-   -> negation prefix fixup: "unencrypted" -> "not encrypted"
-   -> "store data not encrypted in the s3 bucket"
-```
-
-Purpose: give the negation guard a consistent form. `unsecured/unauthorized`
-are mapped similarly.
-
-### Step 2 — Tokenisation
-
-Split on non-alphanumerics, drop a stopword list. Tokens drive the
-token-count component of the **confidence** score and are returned in the report.
-
-### Step 3 — Synonym expansion
-
-Everyday words are mapped to canonical AWS nouns (from `SYNONYMS`).
+## 5. Scoring formulas (final)
 
 ```
-"website"        -> ec2, load balancer
-"object storage" -> s3
-"serverless"     -> lambda
-"container"      -> kubernetes/eks
-"relational db"  -> rds
-```
+severityWeight : high = 3 Ã‚Â· medium = 2 Ã‚Â· low = 1
+tierMultiplier : core = 1.0 Ã‚Â· clarify = 0.6 Ã‚Â· harden = 0.3
 
-Used **only** for resource detection. Deliberately excluded from the scope guard
-so that "a bucket of water" cannot become "an s3 bucket".
+weight        = severityWeight Ãƒâ€” tierMultiplier
+missingRatio  = ÃŽÂ£ weight(missing) / ÃŽÂ£ weight(relevant)
+base          = round(100 Ãƒâ€” missingRatio^1.5 + min(55, riskyWeight Ãƒâ€” 9))
+riskScore     = clamp(round(base Ãƒâ€” envFactor), 0, 100)
 
-### Step 4 — Intent detection
+coverageScore = round(100 Ãƒâ€” mentioned / (mentioned + missing))
 
-Verb groups matched on the expanded text:
-`create · deploy · store · allow · restrict · secure · connect · backup · monitor`.
-Intents are reported and count as a scope signal.
-
-### Step 5 — Policy merge (`applyPolicy`)
-
-Before detection, custom org policy is folded in:
-- `policy.requirements[]` → appended; `alwaysRequired: true` marks them relevant
-  regardless of which resources were detected.
-- `policy.riskyPatterns[]` → appended to the risky list.
-
-### Step 6 — Resource detection
-
-78 AWS resources, each with `aliases`. An alias is matched either as a
-**phrase** (word-boundary aware) or as a **regex** if it contains regex
-metacharacters — decided by `aliasMatches()`.
-
-```
-plain  alias : "s3 bucket"     -> word-boundary phrase match
-regex  alias : "\becr\b"       -> regex match
-```
-
-This distinction matters: escaping a regex alias would make it never match
-(a defect the evaluation harness caught).
-
-### Step 7 — Scope guard
-
-Decides whether this is an infrastructure prompt **at all**. In scope if any of:
-
-1. a **strong, unambiguous term** (`STRONG_TERMS`: `aws`, `s3`, `vpc`, `terraform`,
-   `iam`, `rds`, …), or
-2. an **infrastructure intent verb**, or
-3. **two or more** infrastructure terms (`INFRA_TERMS`), or
-4. a resource matched by a **non-ambiguous** alias (not `bucket`, `queue`,
-   `table`, `server`, `database` … from `AMBIGUOUS_ALIASES`), or
-5. a **risky** statement ("hard-code the password", "send plaintext").
-
-If out of scope, the function returns immediately with
-`outOfScope: true`, `riskScore: 0`, no findings and a short message.
-
-Tested boundaries:
-```
-OUT  "i want a bucket full of water"      IN  "Create an S3 bucket for user documents."
-OUT  "a bucket of water"                  IN  "Create a bucket for user files."
-OUT  "i need a queue for the tickets"     IN  "Deploy our application to the cloud."
-OUT  "i will kill u"                      IN  "Hard-code the database password in the application."
-```
-
-### Step 8 — Context detection
-
-Rule-based environment cues adjust the risk weight later:
-
-| Cue set | Terms | Factor |
-|---|---|---|
-| dev | dev, sandbox, test, staging, poc, prototype | **0.75** |
-| prod | production, live, customer data, PII, regulated, PCI, HIPAA | **1.10** |
-| unknown | — | 1.00 |
-
-Also detects **non-AWS** terms (`azure`, `gcp`, `bigquery`, …) and sets
-`nonAwsLikely` so the UI can warn instead of giving AWS-specific advice.
-
-### Step 9 — Relevant control set
-
-For each detected resource, the union of its `required` controls is collected.
-Resources may opt out of the shared defaults via `noDefaults` (identity and
-governance services where encryption does not apply).
-
-```
-DEFAULT_REQUIRED = encryption_at_rest, encryption_in_transit, least_privilege_iam,
-                   audit_logging, regional_restriction
-no resource detected  ->  baseline set (+ network_restricted, network_isolation,
-                           secrets_management, backup_recovery, monitoring_alerting)
-alwaysRequired policy rules are added unconditionally
-```
-
-### Step 10 — Requirement detection (with negation guard)
-
-Each control has regex `patterns` plus a curated **paraphrase lexicon**
-(`PARAPHRASES`). A control counts as **stated** only if at least one match
-survives three guards:
-
-| Guard | Rule | Example |
-|---|---|---|
-| **before** | the clause before the match (last 60 chars, split on `. , ; ! ?` and `and/but/or/then/so/while/however/except/unless/...`) must contain an **odd** number of negation words | "do **not** make it public" → not public |
-| **after** | the next 18 chars must not be `disabled/off/not enabled/inactive` | "logging **disabled**" → audit_logging not stated |
-| **notAfter** | a control may declare qualifiers that disqualify a match | "encryption **in transit**" does **not** satisfy *at rest* |
-
-Negation words include `not, no, never, without, avoid, disable, deny, cannot,
-except, rather than, instead of, as opposed to …`
-
-```
-"do not make it public"    -> public_access_block NOT counted as stated
-"not not encrypted"        -> encrypted IS stated (even count)
-"logging disabled"         -> audit_logging NOT stated
-"stored securely rather than hard-coded" -> no hardcoded_secret finding
-```
-
-### Step 11 — Omission analysis
-
-```
-MISSING = relevant controls  −  stated controls
-```
-
-Each missing control carries: `id, label, dimension, severity, tier, weight,
-tf (Terraform hint), description, clause, standards[], appliesTo[], source`.
-
-### Step 12 — Risky-statement detection
-
-Nine built-in risky patterns, matched negated-aware and de-duplicated by id:
-
-| id | Detects |
-|---|---|
-| `open_ssh` | `0.0.0.0/0`, "open to the internet", "all ports" |
-| `public_bucket` | "make the bucket public", "world-readable" |
-| `wildcard_iam` | `"*"`, admin/root/full access |
-| `no_encryption` | "without encryption", "unencrypted", "plaintext" |
-| `hardcoded_secret` | "hard-code", "password in the code" |
-| `disabled_logging` | "disable logging", "logging off" |
-| `weak_auth` | "without MFA", "no authentication" |
-| `public_database` | "publicly accessible database/RDS" |
-| `no_backup` | "without backups", "no snapshot" |
-
-Each pattern may define `neutralize` rewrite rules used by `harden()`.
-
-### Step 13 — Scoring
-
-```
-severityWeight : high = 3, medium = 2, low = 1
-tierMultiplier : core = 1.0, clarify = 0.6, harden = 0.3
-
-weight_i  = severityWeight(severity_i) × tierMultiplier(tier_i)
-missingWeight = Σ weight_i over missing controls
-maxWeight     = Σ weight_i over all relevant controls
-riskyWeight   = Σ (severityWeight × 1.5) over risky findings
-
-missingRatio = missingWeight / maxWeight
-base         = round( 100 × missingRatio^1.5  +  min(55, riskyWeight × 9) )
-riskScore    = clamp( round(base × envFactor), 0, 100 )
-```
-
-Risk levels: `≥75 CRITICAL · ≥50 HIGH · ≥25 MEDIUM · ≥1 LOW · else MINIMAL`.
-
-### Step 14 — Confidence
-
-```
-confidence = (baseline mode ? 34 : 78)
-           − 22 if tokens < 4  ·  − 8 if tokens < 8
-           − 20 if no controls matched
-           + 6  if ≥ 2 resources
-clamp 5…98   ·   label: ≥75 high · ≥45 medium · else low
+confidence    = (baseline ? 34 : 78)
+              Ã¢Ë†â€™ 22 (tokens < 4) Ã¢Ë†â€™ 8 (tokens < 8) Ã¢Ë†â€™ 20 (no controls matched)
+              + 6  (Ã¢â€°Â¥ 2 resources), clamped 5Ã¢â‚¬Â¦98
 needsDeepScan = confidence < 50  OR  coverageScore < 50
 ```
 
-### Step 15 — Tiering and coverage
-
-```
-TIERS: core (strongly implied) · clarify (context-dependent) · harden (optional)
-coverageScore = round( 100 × mentioned / (mentioned + missing) )
-tierCounts    = count of missing per tier
-```
-
-### Step 16 — Semantic relevance (secondary NLP)
-
-`src/semantic.js` builds a TF-IDF index over the controls (each control is a
-document: label + description + clause) and ranks them by cosine similarity to
-the prompt. The top matches are reported as **"topically related controls"**.
-
-It is **deliberately advisory only**. Measurement showed cosine similarity is
-polarity-blind:
-
-```
-"open all ports to the internet"  vs  restrict-ports control  -> 0.49  (wrong)
-"scrambled on disk"               vs  encryption at rest       -> 0.20  (right, low)
-```
-
-So similarity is **never** allowed to mark a control as stated. The negative
-result is documented rather than hidden.
-
-### Step 17 — Report
-
-```
-REPORT {
-  prompt, tokens, intents, resources,
-  mentioned[], missing[], riskyFindings[],
-  riskScore, riskLevel, riskColor,
-  coverageScore, tierCounts, totalWeight,
-  confidence, confidenceScore, needsDeepScan,
-  environment, envFactor, nonAwsLikely, outOfScope,
-  semanticRelated[], feedback[], disclaimer, stats{}, standards[], dimensions{}
-}
-```
-
-### Step 18 — Rendering
-
-`src/ui.js` draws the report: banner (non-AWS / out-of-scope), risk card with
-score + level + coverage + tier counts, risky section, and tier-grouped missing
-controls with clause + **Terraform hint** + one-click "Add clause".
+**Risk bands:** Ã¢â€°Â¥75 CRITICAL Ã‚Â· Ã¢â€°Â¥50 HIGH Ã‚Â· Ã¢â€°Â¥25 MEDIUM Ã‚Â· Ã¢â€°Â¥1 LOW Ã‚Â· else MINIMAL.
 
 ---
 
-## 4. Interactive helpers
+## 6. Data model (final)
 
-### 4.1 `project(report, accepted)`
-
-Recomputes risk and coverage for a hypothetical set of accepted clauses, without
-re-analysing. Powers the live feedback in the UI.
-
-```
-bare S3 bucket:  risk 100 CRITICAL  coverage 0%
-+3 clauses       risk  46 MEDIUM    coverage 27%
-+6 clauses       risk  15 LOW       coverage 55%
-all clauses      risk   0           coverage 100%
+### Control (30)
+```js
+{ id, label, dimension, severity, tier, standards[], description,
+  clause, patterns[], notAfter[], tf, paraphrase[] }
 ```
 
-### 4.2 `harden(prompt)` — one-tap hardening
-
-```
-harden(prompt):
-    base = neutralizeRisky(prompt)          # rewrite risky phrasing into safe wording
-    if analyze(base).outOfScope: return unchanged
-
-    clauses = []
-    repeat up to 8 times:
-        report = analyze(current)
-        found  = report.missing[].clause  +  report.riskyFindings[].fix
-        add any clause not already present
-        if none added: stop
-        current = base + "Security requirements:" + clauses
-
-    return { prompt: current, clauses, report: analyze(current) }
+### Resource (78)
+```js
+{ id, label, aliases[], required[] /* control ids */, noDefaults? }
 ```
 
-Why iterative: appended clauses can mention *other* services (KMS, CloudTrail,
-GuardDuty…), which the analyser then also finds missing. Why neutralisation:
-the original text may still say `0.0.0.0/0` or `admin access`, which would keep
-the risky finding alive.
-
-```
-"Create an S3 bucket for user documents."                         -> risk 0, coverage 100%
-"S3 + EC2 + SSH from 0.0.0.0/0 + IAM admin access"                -> risk 0, coverage 100%
-"RDS PostgreSQL database + S3 bucket for uploads"                 -> risk 0, coverage 100%
+### Risky pattern (9)
+```js
+{ id, label, pattern, severity, description, fix, neutralize[[regex, repl]] }
 ```
 
-### 4.3 `mergeFindings(report, external)`
-
-Merges deep-scan output: de-duplicates by label, marks `source: "ai"`, recomputes
-`stats`, `tierCounts`, `totalWeight` and risk.
+### Report
+```js
+{ prompt, tokens, intents, resources, mentioned[], missing[], riskyFindings[],
+  riskScore, riskLevel, riskColor, coverageScore, tierCounts, totalWeight,
+  confidence, confidenceScore, needsDeepScan, environment, envFactor,
+  nonAwsLikely, outOfScope, aiClean, semanticRelated[], feedback[],
+  disclaimer, stats{}, standards[], dimensions{} }
+```
 
 ---
 
-## 5. Optional AI deep scan
+## 7. Interfaces between components
 
-`src/llm.js`. **Off by default.** Two tiers, tried in order:
-
-| Tier | Endpoint | Key | Network |
-|---|---|---|---|
-| 1 · on-device | browser Prompt API (Gemini Nano) | no | no |
-| 2 · hosted | OpenAI-compatible `/chat/completions` | user's own | yes |
-
-Provider matrix (key, base URL and model must match):
-
-| Provider | Base URL | Example model |
+| From | To | Contract |
 |---|---|---|
-| Gemini (free tier, CORS-friendly) | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.5-flash` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
-| OpenCode Zen | `https://opencode.ai/zen/v1` | `deepseek-v4-flash` |
-
-Mechanics: the model is asked **only** for controls that appear missing and for
-risky statements, as strict JSON. `parseFindings` tolerates surrounding prose,
-normalises severity, caps results (10 missing, 5 risky) and marks them `ai`.
-Errors surface the provider's own message (Google returns an array-shaped error
-body, which is handled). Auto-trigger runs when `needsDeepScan` is true.
-
-**CORS reality:** a static web page (the demo) can only call providers that send
-CORS headers — Gemini does, OpenCode Zen does not. The **extension** (via
-`host_permissions`) and the **mobile app** (native networking) bypass CORS.
+| any surface | engine | `analyze(prompt, options) Ã¢â€ â€™ report` |
+| any surface | engine | `harden(prompt) Ã¢â€ â€™ { prompt, clauses, report }` |
+| any surface | engine | `project(report, accepted) Ã¢â€ â€™ { riskScore, coverageScore }` |
+| extension/mobile | engine | `mergeFindings(report, external) Ã¢â€ â€™ report` |
+| engine | surface | `report` object (shape above) |
+| CLI | verifier | `verifyText(tfSource) Ã¢â€ â€™ issues[]` |
+| mobile/web | engine | engine **copied** into the client by `sync-engine.ps1` |
 
 ---
 
-## 6. Post-generation loop
+## 8. Technology stack (final)
 
-`src/tfcheck.js` + `vector verify <file.tf>` runs 11 deterministic checks over
-generated HCL (public ACL, missing public-access block, S3/RDS encryption,
-`0.0.0.0/0`, wildcard IAM, hard-coded credential, missing trail/versioning/
-IMDSv2/backups), prints fixes and exits `2` (high), `1` (other) or `0`.
+| Layer | Choice | Reason |
+|---|---|---|
+| Engine | plain JavaScript (ES5-compatible, no deps) | runs identically in browser, Node, React Native |
+| Extension | Manifest V3 | Chrome + Edge, store-publishable |
+| CLI | Node.js stdlib only | zero install |
+| Mobile (iOS+Android) | React Native via Expo SDK 57 | one codebase, EAS cloud builds (no Mac needed) |
+| Mobile (Android) | Capacitor | installable APK, verified build |
+| Web demo | static files on GitHub Pages | shareable link, no install |
+| Docs | generated OOXML `.docx` from a Node script | reproducible, no manual Word edits |
+| CI | GitHub Actions | tests + eval on every push |
 
-This is the honest architecture: prompt-stage diagnosis is **complementary** to
-post-generation scanning, not a replacement.
-
----
-
-## 7. Surfaces
-
-### 7.1 Browser extension (primary)
-`popup` (typed prompt) and `content` (floating V on ChatGPT/Claude/Gemini).
-Buttons: Analyze · Deep scan · Harden prompt · Add clause · Accept all · Copy.
-Settings toggles: Auto deep scan, Strict mode, org policy JSON, history,
-"List models for my key".
-
-### 7.2 CLI
-```
-vector analyze "…"        vector analyze --json "…"
-vector analyze-file f.txt vector improved "…"
-vector hook "…"           (exit 2 CRITICAL, 1 HIGH, 0 otherwise)
-vector verify file.tf     (post-generation)
---policy file.json        --strict
-```
-
-### 7.3 Mobile
-`mobile/` (Capacitor, Android build verified) and `mobile-rn/` (React Native,
-Expo SDK 57, iOS + Android bundles verified). Both reuse the engine unchanged
-via `sync-engine.ps1`; `mobile-rn` rebuilds the UI in React Native components
-and adds `npm run start:device` to advertise the correct LAN IP.
-
-### 7.4 Web demo
-`demo/` — the same web app published by GitHub Pages, cache-busted with a
-version query so a new build is always picked up.
+**No ML library, no model weights, no backend, no database, no accounts.**
 
 ---
 
-## 8. Evaluation methodology
+## 9. Deployment architecture
 
-| Artifact | Purpose |
-|---|---|
-| `eval/dataset.json` (39) · `dataset2.json` (59) | tuning sets |
-| `eval/heldout.json` (14) | written before the last round of pattern fixes |
-| `eval/run-eval.js` | missing-constraint P/R/F1, risky P/R/F1, negation-trap failures |
-| `eval/kappa.js` | Cohen's κ between two independent labelers |
-| `eval/downstream/run-downstream.js` | hand-written insecure vs hardened Terraform |
-| `eval/downstream/run-llm-study.js` | generate Terraform with an LLM from **raw vs hardened** prompts and score both |
-
-**Honest status.** All 112 prompts were seen and used during development, so
-`F1 = 1.000` is **indicative, not a clean held-out result** — state it that way.
-Two results that would strengthen the claim are wired but need external inputs:
-the LLM downstream study (needs an API key) and inter-annotator agreement (needs
-a second human labeler).
+| Artefact | Where | How |
+|---|---|---|
+| Extension | Microsoft Edge Add-ons (Store ID `0RDCKBP2L55J`) | `npm run package` Ã¢â€ â€™ upload zip |
+| CLI | local / CI | `node cli/vector-cli.js` |
+| Mobile (Expo) | Expo Go (demo) / EAS build (store) | `npm run start:device`, `eas build` |
+| Mobile (Android) | installable APK | `gradlew assembleDebug` |
+| Web demo | GitHub Pages | push to `main` |
+| Source | https://github.com/Ejajaka/vector | git |
 
 ---
 
-## 9. Grounding and standards
+## 10. Design principles (final)
 
-CIS AWS Foundations Benchmark v3.0 · AWS Well-Architected Framework (Security
-Pillar) · AWS Foundational Security Best Practices · NIST SP 800-53 Rev.5
-(AC, SC, AU, CP, IA, SI, PM) · GDPR Art. 5/32 · India DPDP Act 2023 (s.16).
-
-Each control carries its `standards[]` citations, shown on the finding.
-
----
-
-## 10. Properties, limits and design decisions
-
-**Guarantees**
-- Deterministic: same prompt → same report. No temperature, no sampling.
-- Explainable: every finding traces to a named control and pattern.
-- Offline: no network for the core path; no account; no telemetry.
-- Never empty: unrecognised-but-in-scope prompts get baseline controls.
-
-**Known limits**
-- **AWS only.** Azure/GCP prompt → warning, not results.
-- **Rule-based recall ceiling** on arbitrary paraphrase; deep scan covers the
-  long tail and is optional.
-- **Ambiguity** is inherent to keyword matching; the scope guard removes the
-  obvious failures, not every odd sentence.
-- **Not a guarantee** — a diagnostic aid that complements post-generation
-  scanning.
-
-**Deliberate decisions**
-- TF-IDF is advisory only (polarity-blind) — documented negative result.
-- Risky phrases are rewritten by `harden()`; the improved prompt is what should
-  be handed to the generator.
-- Model names change; the UI offers "List models for my key" rather than a
-  hard-coded list.
-
----
-
-## 11. Version history
-
-| Version | Change |
-|---|---|
-| 0.2.0 | first Edge submission (AWS-only, rule engine) |
-| 0.3.0 | coverage score + TF-IDF semantic relevance |
-| 0.4.0 | paraphrase lexicon, non-AWS guard, disclaimer, UI banner, tests |
-| 0.4.1 | default to Gemini; drop `response_format` |
-| 0.4.2 | auto deep scan also on low coverage |
-| 0.4.3 | reworded clauses; fix credentials false positive |
-| 0.4.4 | relevance tiers, API Gateway fix, "rather than" negation, tier weighting |
-| 0.4.5 | public-database false positive; RN safe-area, live coverage, auto AI |
-| 0.4.6 | live risk/coverage projection; concise clauses |
-| 0.4.7 | context-aware risk, Terraform hints, `verify`, study + kappa harnesses |
-| 0.4.8 | 78 resources, scope-aware negation, CI, CIS policy pack |
-| 0.5.0 | one-tap `harden()` to risk 0 |
-| 0.5.1 | scope guard: reject non-infrastructure input |
-| 0.5.2 | deep-scan 404 fix (retired model) + error detail |
-| 0.5.3 | "List models for my key" |
-| 0.5.4 | OpenCode Zen host permission |
-| 0.5.5 | low-confidence indicator + Deep scan guidance |
-| 0.5.6 | scope guard tightened (ambiguous words alone); risky-only prompts in scope; demo cache-buster |
+1. **Deterministic over probabilistic** for the core path.
+2. **Explainable** Ã¢â‚¬â€ every finding traces to a control and a pattern.
+3. **Offline by default** Ã¢â‚¬â€ no network, no account, no telemetry.
+4. **One engine, many clients** Ã¢â‚¬â€ never fork the logic.
+5. **Fail safe** Ã¢â‚¬â€ unrecognised but in-scope input gets baseline controls;
+   out-of-scope input is refused; a failed deep scan restores the rule answer.
+6. **Never overclaim** Ã¢â‚¬â€ the tool is a diagnostic aid, complementary to
+   post-generation scanning.

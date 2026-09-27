@@ -5,7 +5,7 @@ static site so it can be opened from any browser with no install.
 
 Live link (GitHub Pages):
 
-**https://ejajaka.github.io/vector/demo/**
+**https://ejajaka.github.io/vector/web/**
 
 It reuses the shared engine (`src/`) unchanged. The rule engine runs fully
 offline, so the analysis works with no setup. The optional Deep scan needs an

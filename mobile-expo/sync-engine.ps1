@@ -14,4 +14,4 @@ foreach ($f in $files) {
   Copy-Item (Join-Path $root "src\$f") (Join-Path $dst $f) -Force
 }
 
-Write-Output ("Synced " + $files.Count + " engine files into mobile-rn\src")
+Write-Output ("Synced " + $files.Count + " engine files into mobile-expo\src")

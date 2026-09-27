@@ -6,8 +6,8 @@ engine as the extension and the Capacitor app.
 ## Verified in this repo
 
 - JSX parses cleanly (`@babel/parser`).
-- `npx expo export --platform ios` → **iOS bundle built** (Hermes bytecode, 1.5 MB).
-- `npx expo export --platform android` → **Android bundle built** (1.5 MB).
+- `npx expo export --platform ios` â†’ **iOS bundle built** (Hermes bytecode, 1.5 MB).
+- `npx expo export --platform android` â†’ **Android bundle built** (1.5 MB).
 
 Runs on **Expo SDK 57 / React Native 0.86 / React 19**, which matches the current
 **Expo Go** app (older SDKs are rejected by Expo Go).
@@ -21,7 +21,7 @@ A native `.ipa`/`.apk` still has to be produced (see below).
 on a real device over the network:
 
 ```powershell
-cd mobile-rn
+cd mobile-native-expo
 npm install
 npm run sync        # copy the shared engine into src/
 npx expo start
@@ -34,7 +34,7 @@ Or use the helper that advertises the correct LAN IP automatically (fixes the
 npm run start:device
 ```
 
-In the app: **Sample** → **Analyze** → **Harden prompt → risk 0** (one tap)
+In the app: **Sample** â†’ **Analyze** â†’ **Harden prompt â†’ risk 0** (one tap)
 produces a prompt that re-analyses to risk 0 / coverage 100%.
 
 Then install **Expo Go** on the phone and scan the QR code. Instant demo, no
@@ -60,7 +60,7 @@ Store metadata can reuse `../store/privacy-policy.html` and `../store/listing.md
 ## Files
 
 ```
-mobile-rn/
+mobile-expo/
   App.js                 single-screen UI (React Native components)
   app.json               Expo config (bundle id com.vector.security)
   package.json           Expo SDK 57 (RN 0.86, React 19)

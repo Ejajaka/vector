@@ -10,7 +10,7 @@ Ships as a **Chrome extension** (Manifest V3) plus a **CLI**. The core engine is
 **rule-based NLP** - no ML model and no network calls. An optional AI deep scan
 (preferring Chrome's built-in on-device model, so no API key) can be added.
 
-> **Full step-by-step build & usage manual:** [`MANUAL.md`](MANUAL.md) — recreate
+> **Full step-by-step build & usage manual:** [`MANUAL.md`](MANUAL.md) Ã¢â‚¬â€ recreate
 > the whole project (engine, CLI, extension, evaluation, mobile apps, publishing)
 > from a clean machine.
 >
@@ -77,7 +77,7 @@ where a paraphrased control may have been missed, still gets the AI pass).
 ## Coverage score
 
 `coverageScore = mentioned / (mentioned + missing)`, as a percentage. The popup
-shows it, and updates live as you accept clauses (e.g. `0% → 64%`). The CLI
+shows it, and updates live as you accept clauses (e.g. `0% Ã¢â€ â€™ 64%`). The CLI
 prints it too. It is the project's own metric: how much of the required security
 surface the prompt already states.
 
@@ -86,8 +86,8 @@ surface the prompt already states.
 `src/semantic.js` treats each control as a document and ranks them by cosine
 similarity to the prompt (top 3 shown as "topically related controls"). This is
 deliberately **informational only**: measurement (`tools/calibrate.js`) showed
-cosine similarity is polarity-blind — "open all ports" scores 0.49 against the
-*restrict ports* control — so it is never allowed to mark a control as already
+cosine similarity is polarity-blind Ã¢â‚¬â€ "open all ports" scores 0.49 against the
+*restrict ports* control Ã¢â‚¬â€ so it is never allowed to mark a control as already
 stated. That negative result is documented rather than hidden.
 
 ## One-tap harden

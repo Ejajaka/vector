@@ -34,7 +34,7 @@ Prerequisites: Node.js 18+, and:
   switch to Expo/EAS which builds iOS in the cloud).
 
 ```powershell
-cd mobile
+cd mobile-native
 npm install
 
 # keep the engine in sync with the extension
