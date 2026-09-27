@@ -347,6 +347,105 @@ const PIPELINE = [
   P("Control definitions live in src/taxonomy.js and map to CIS AWS Foundations Benchmark, AWS Well-Architected Framework (Security Pillar), AWS Foundational Security Best Practices, NIST SP 800-53 Rev.5, GDPR Article 5/32 and the India DPDP Act 2023.")
 ];
 
+// ============================================================ MARKET ANALYSIS
+const MARKET = [
+  T("Vector - Market & Competitive Analysis"),
+  S("Why Vector should exist: the problem, the landscape by pipeline stage, and the positioning. v0.5.7."),
+
+  H1("1. Purpose"),
+  P("This document establishes why Vector should exist before the architecture document describes how it works. It answers four questions: is the problem real and growing; who already addresses it and at which stage of the pipeline; where is the unoccupied space; and what is Vector's defensible position versus what is honestly not defensible."),
+
+  H1("2. The problem, evidenced"),
+  H2("2.1 Infrastructure is increasingly generated, not written"),
+  LI("Sonar's 2026 State of Code survey reports 42 percent of committed code is written or assisted by an AI agent, projected to reach 65 percent by 2027."),
+  LI("The same agents now scaffold Terraform, author resource blocks and fill IAM policies on the fly."),
+  H2("2.2 Generated IaC is frequently insecure even when it is valid"),
+  LI("IaC-Eval, NeurIPS 2024 Datasets and Benchmarks: GPT-4 pass@1 of 19.36 percent on 458 human-curated AWS Terraform scenarios, versus 86.6 percent on equivalent Python."),
+  LI("DPIaC-Eval, FSE 2026: six frontier LLMs across 153 real-world IaC tasks, 20.8 to 30.2 percent first-attempt deployment success, and 8.4 percent Checkov compliance."),
+  LI("TerraFormer, ICSE 2026: 17 frontier LLMs; HCL is harder than YAML or JSON IaC because it is less represented in training data."),
+  LI("Security-First Evaluation of Text-to-Terraform, SBSeg 2026, arXiv 2608.02672: syntactic validity and security compliance are largely orthogonal. WizardCoder-33B reached a 77.8 percent validate rate with zero Checkov compliance."),
+  H2("2.3 The failure modes are omission-shaped"),
+  P("Sonar's analysis names four recurring failure modes. The first two map directly onto Vector's taxonomy."),
+  LI("The reach-for-star problem: wildcard IAM, public S3 ACLs, security groups open to 0.0.0.0/0. The article's own reason is that restrictive configurations need boundary context that the prompt rarely supplies."),
+  LI("The silent omission problem: an aws_db_instance without storage_encrypted, or CloudFront without a logging_config. The resource comes up, the protection does not."),
+  LI("Hardcoded secrets and literals."),
+  LI("Stale provider patterns and deprecated attributes."),
+  H2("2.4 Post-hoc verification does not catch any of this"),
+  P("terraform validate checks that HCL is syntactically valid and explicitly does not validate provider APIs. terraform plan previews the state delta but does not evaluate whether the configuration is secure. A syntactically perfect S3 bucket with a public ACL passes both, and so does an IAM policy with Action star."),
+  P("Conclusion: the gap Vector targets, namely security requirements absent from the natural-language intent, is documented, measured and causally linked to real misconfiguration."),
+
+  H1("3. Competitive landscape by pipeline stage"),
+  P("The organising idea is where in the pipeline a tool intervenes."),
+  C("(1) INTENT        (2) GENERATION      (3) PLAN/CODE      (4) DEPLOYED"),
+  C("the prompt        the LLM writes      artefact exists    the account"),
+  C("  VECTOR   -->    Copilot, Q Dev  -->  Checkov, tfsec -->  AWS Config"),
+  C("  (nothing         insecure by         catches it         catches it in"),
+  C("   here today)     default             AFTER it exists    production"),
+  H2("3.1 Stage 1 - Intent, the prompt: Vector"),
+  LI("Prompt optimisers such as PromptPerfect and Promptfoo improve clarity and length for task performance, not security completeness."),
+  LI("LLM guardrails such as Lakera Guard, NeMo Guardrails and Prompt Shields defend the model against injection and unsafe content, not the infrastructure being described."),
+  LI("No deployed product was found that analyses a prompt for missing cloud-security controls against a standards taxonomy. We state this as to our knowledge the niche is unoccupied, not as a proven absence."),
+  H2("3.2 Stage 2 - Generation: adjacent, wrong stage"),
+  LI("Amazon Q Developer generates CloudFormation and CDK and scans the result, but only after generation."),
+  LI("GitHub Copilot writes Terraform and findings arrive on the generated code."),
+  LI("Gemini Code Assist and Terraform's AI features share the same shape."),
+  P("These share Vector's user and problem but act downstream. They are natural integration partners rather than competitors."),
+  H2("3.3 Stage 3 - Plan and artefact: the closest functional neighbours"),
+  LI("Checkov, tfsec (Trivy), KICS, Terrascan, cfn-nag and Snyk IaC statically scan written infrastructure code. No prompt awareness."),
+  LI("SonarQube IaC parses Terraform, ARM and CloudFormation into an AST and applies rules. Explicitly post-generation."),
+  LI("HashiCorp Sentinel, OPA and Conftest, Firefly, Spacelift and env0 apply policy at plan time. Shift-left, but on the artefact, and the user must author the policy."),
+  P("These are Vector's true comparison set, all seeking to secure IaC, and all working on something that already exists."),
+  H2("3.4 Stage 4 - Deployed: out of scope"),
+  P("AWS Config, Security Hub, GuardDuty and Prowler detect drift and misconfiguration in a running account. Vector does not replace them; it reduces what reaches them."),
+
+  H1("4. Positioning"),
+  H2("4.1 Position statement"),
+  P("Vector performs security diagnosis at the natural-language infrastructure prompt stage, before any IaC is generated, identifying omitted controls against a standards-grounded taxonomy, quantifying coverage, and interactively hardening the prompt."),
+  H2("4.2 Capability matrix"),
+  LI("Acts before generation: only Vector, the prompt optimisers and the guardrails."),
+  LI("Cloud-security semantics: Vector, the scanners and plan-time policy. Guardrails and optimisers no; Q Developer and Copilot only post-hoc."),
+  LI("Standards-grounded taxonomy: Vector, the scanners and plan-time policy."),
+  LI("No policy authoring required: Vector, the scanners, the optimisers and the generators. Plan-time policy requires it."),
+  LI("Coverage metric for a prompt: Vector only."),
+  LI("Interactive prompt hardening: Vector only."),
+  LI("Works offline with no account: Vector, and the scanners."),
+  LI("Deterministic and explainable: Vector, the scanners and plan-time policy."),
+  H2("4.3 Where Vector does not compete"),
+  LI("It does not generate infrastructure code."),
+  LI("It does not replace IaC scanners. arXiv 2608.02672 concludes that prompt engineering alone is insufficient and that scanning remains necessary. Vector positions upstream and complementary."),
+  LI("It does not read live cloud accounts."),
+  LI("It is AWS-only; Azure and GCP prompts receive a warning rather than results."),
+
+  H1("5. Target users"),
+  LI("A developer using an LLM for Terraform: does not know which controls to state. Vector gives the omissions and a one-tap hardened prompt."),
+  LI("A junior or student team: no cloud-security background. Vector gives plain-language findings with standards references."),
+  LI("A platform or DevOps team: inconsistent prompts across the organisation. Vector offers org policy packs and a CLI or CI gate on prompt files."),
+  LI("A security reviewer: reviews intent late and manually. Vector gives machine-readable coverage before generation."),
+
+  H1("6. Differentiation summary"),
+  LI("Intervention point: every comparable product evaluates an artefact; Vector evaluates intent."),
+  LI("Prompt Security Coverage Score: a metric no adjacent tool produces, shown before and after hardening, for example risk 100 to 0 and coverage 0 to 100 percent."),
+  LI("Interactive harden-to-zero: not just what you missed, but a rewritten prompt that re-analyses clean."),
+  LI("Determinism and auditability: the same prompt always gives the same report, with no sampling on the rule path."),
+  LI("Zero-friction distribution: offline, no account, no backend, one engine shared by the extension, CLI, mobile apps and the public web demo."),
+
+  H1("7. Honest weaknesses against the market"),
+  LI("Recall ceiling: rules miss arbitrary paraphrase. Mitigation is the optional AI deep scan, and the limitation is documented rather than hidden."),
+  LI("AWS-only: no Azure or GCP. Deliberate scope, with a warning instead of misleading output."),
+  LI("Not a proof of safety: it diagnoses prompts, not deployed posture. Positioned as a diagnostic aid that complements scanners."),
+  LI("Large vendors could absorb the capability: IaC scanning is a feature for Snyk, Sonar and Prisma. The moat is the prompt-stage metric and workflow, plus speed."),
+  LI("Evaluation is small: 112 labelled prompts, tuned during development. A frozen held-out set and an LLM downstream study are planned."),
+
+  H1("8. References"),
+  LI("Sonar, AI is writing more of your Terraform, 2026."),
+  LI("Vargas, Mansilha, Kreutz, Security-First Evaluation of Text-to-Terraform, SBSeg 2026, arXiv 2608.02672."),
+  LI("IaC-Eval, NeurIPS 2024 Datasets and Benchmarks Track."),
+  LI("DPIaC-Eval, FSE 2026, arXiv 2506.05623."),
+  LI("TerraFormer, ICSE 2026, arXiv 2601.08734."),
+  LI("CIS AWS Foundations Benchmark v3.0; AWS Well-Architected Security Pillar; AWS Foundational Security Best Practices; NIST SP 800-53 Rev.5; GDPR Article 5 and 32; India DPDP Act 2023."),
+  P("Full extracts and the positioning caution are stored in the references folder of the repository.")
+];
+
 // ============================================================ PROGRESS REPORT
 const PROGRESS = [
   T("Vector - Progress Report"),
@@ -634,6 +733,7 @@ const outDir = path.join(__dirname, "..", "docs");
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
 const docs = [
+  ["Vector-Market-Analysis.docx", MARKET],
   ["Vector-Features.docx", FEATURES],
   ["Vector-Pipeline.docx", PIPELINE],
   ["Vector-Architecture.docx", ARCHITECTURE],

@@ -1,4 +1,4 @@
-# VECTOR Ã¢â‚¬â€ Complete Build & Usage Manual
+# VECTOR ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Complete Build & Usage Manual
 
 Pre-Generation Security Diagnosis of Cloud Infrastructure Prompts Using NLP
 (AWS-only). This document lets anyone recreate the entire project from a clean
@@ -50,42 +50,44 @@ Java + Android SDK come with Android Studio.
 
 ```
 project_NLP/
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ manifest.json            Chrome/Edge MV3 manifest (v0.5.7)
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ popup.html/.css/.js       extension toolbar popup
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ content.js/.css           in-page floating button
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ options.html/.js          settings, policy, history
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ taxonomy.js           78 AWS resources, 30 controls, risky patterns,
-Ã¢â€â€š   Ã¢â€â€š                         synonyms, paraphrase lexicon, tiers, non-AWS terms
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ analyzer.js           the rule engine (pipeline)
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ semantic.js           TF-IDF semantic relevance (advisory)
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ settings.js           shared chrome.storage helpers
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ui.js / ui.css        shared results renderer
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ llm.js                optional deep scan (on-device + hosted)
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ cli/vector-cli.js         command line interface
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ eval/
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ dataset.json          39 labelled prompts (tuning)
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ dataset2.json         59 labelled prompts (tuning)
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ heldout.json          14 labelled prompts
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ run-eval.js           precision/recall/F1 harness
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ downstream/           insecure vs secured Terraform demo
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ test/run-tests.js         42 unit tests
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tools/
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ make-icons.js         PNG icon generator
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ make-docx.js          Word doc generator
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ package.ps1           build the store zip
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ calibrate.js          semantic threshold calibration
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/                     Vector-Features.docx, Vector-Pipeline.docx, Vector-Architecture.docx
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ store/                    listing, privacy policy, publishing steps
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ references/               supporting literature
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile/                   Capacitor app (Android verified)
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ mobile-rn/                React Native (Expo) app (both bundles verified)
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ README.md
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ manifest.json            Chrome/Edge MV3 manifest (v0.5.7)
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ popup.html/.css/.js       extension toolbar popup
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ content.js/.css           in-page floating button
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ options.html/.js          settings, policy, history
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ src/
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ taxonomy.js           78 AWS resources, 30 controls, risky patterns,
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡                         synonyms, paraphrase lexicon, tiers, non-AWS terms
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ analyzer.js           the rule engine (pipeline)
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ semantic.js           TF-IDF semantic relevance (advisory)
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ settings.js           shared chrome.storage helpers
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ ui.js / ui.css        shared results renderer
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬ÂÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ llm.js                optional deep scan (on-device + hosted)
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ cli/vector-cli.js         command line interface
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ eval/
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ dataset.json          39 labelled prompts (tuning)
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ dataset2.json         59 labelled prompts (tuning)
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ heldout.json          14 labelled prompts
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ run-eval.js           precision/recall/F1 harness
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬ÂÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ downstream/           insecure vs secured Terraform demo
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ test/run-tests.js         42 unit tests
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ tools/
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ make-icons.js         PNG icon generator
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ make-docx.js          Word doc generator
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ package.ps1           build the store zip
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬Å¡   ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬ÂÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ calibrate.js          semantic threshold calibration
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ docs/                     Vector-Market-Analysis.docx, Vector-Architecture.docx,
+│                           Vector-Features.docx, Vector-Pipeline.docx,
+│                           Vector-Progress-Report.docx
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ store/                    listing, privacy policy, publishing steps
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ references/               supporting literature
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ mobile/                   Capacitor app (Android verified)
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ mobile-rn/                React Native (Expo) app (both bundles verified)
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬ÂÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ README.md
 ```
 
 ---
 
-## 3. Recreate from scratch Ã¢â‚¬â€ the 10-minute path
+## 3. Recreate from scratch ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the 10-minute path
 
 ```powershell
 git clone https://github.com/Ejajaka/vector.git
@@ -101,18 +103,18 @@ Expected:
 - `Overall worst F1 across sets: 1.000`
 - `Summary: 6 -> 0 issues.`
 
-No `npm install` is needed for the core Ã¢â‚¬â€ the engine has zero dependencies.
+No `npm install` is needed for the core ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the engine has zero dependencies.
 
 ---
 
-## 4. Part A Ã¢â‚¬â€ The engine
+## 4. Part A ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â The engine
 
 ### 4.1 Files
-- `src/taxonomy.js` Ã¢â‚¬â€ the knowledge base.
-- `src/analyzer.js` Ã¢â‚¬â€ the pipeline.
-- `src/semantic.js` Ã¢â‚¬â€ TF-IDF relevance (advisory only).
-- `src/ui.js` + `src/ui.css` Ã¢â‚¬â€ DOM renderer (browser/extension).
-- `src/tfcheck.js` Ã¢â‚¬â€ post-generation Terraform verifier (used by `vector verify`).
+- `src/taxonomy.js` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the knowledge base.
+- `src/analyzer.js` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the pipeline.
+- `src/semantic.js` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â TF-IDF relevance (advisory only).
+- `src/ui.js` + `src/ui.css` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â DOM renderer (browser/extension).
+- `src/tfcheck.js` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â post-generation Terraform verifier (used by `vector verify`).
 
 ### 4.2 The pipeline (in `analyzer.js`)
 
@@ -141,7 +143,7 @@ No `npm install` is needed for the core Ã¢â‚¬â€ the engine has zero d
 - **Controls** (30): e.g. `encryption_at_rest`, `public_access_block`,
   `network_restricted`, `audit_logging`, `secrets_management`, `backup_recovery`.
 - **Resources** (78): S3, EC2, RDS, Lambda, IAM, EKS, DynamoDB, CloudFront, KMS,
-  SQS, SNS, Redshift, OpenSearch, SageMaker, Ã¢â‚¬Â¦
+  SQS, SNS, Redshift, OpenSearch, SageMaker, ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦
 - **Risky patterns** (9): `open_ssh`, `public_bucket`, `wildcard_iam`,
   `no_encryption`, `hardcoded_secret`, `disabled_logging`, `weak_auth`,
   `public_database`, `no_backup`.
@@ -169,7 +171,7 @@ node -e "const {analyze}=require('./src/analyzer'); console.log(analyze('Create 
 
 ---
 
-## 5. Part B Ã¢â‚¬â€ CLI
+## 5. Part B ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â CLI
 
 `cli/vector-cli.js`:
 
@@ -186,15 +188,15 @@ npm shortcuts: `npm run analyze`, `npm run improved`.
 
 ---
 
-## 6. Part C Ã¢â‚¬â€ The browser extension
+## 6. Part C ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â The browser extension
 
 ### 6.1 Load it locally (fastest way to test)
 1. Open `chrome://extensions` (or `edge://extensions`).
 2. Enable **Developer mode**.
-3. **Load unpacked** Ã¢â€ â€™ select the project folder.
+3. **Load unpacked** ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ select the project folder.
 
 ### 6.2 Use it
-- Toolbar icon Ã¢â€ â€™ paste a prompt Ã¢â€ â€™ **Analyze**.
+- Toolbar icon ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ paste a prompt ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ **Analyze**.
 - Or **Sample**; then **+ Add clause**; **Copy** the improved prompt.
 - `content.js` adds a floating **V** on chatgpt.com / claude.ai / gemini.google.com.
 
@@ -205,28 +207,28 @@ npm run package
 ```
 
 Produces `dist/vector-extension.zip` (only runtime files; manifest at zip root).
-The version comes from `manifest.json` Ã¢â‚¬â€ **bump it before every upload** (Edge
+The version comes from `manifest.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â **bump it before every upload** (Edge
 rejects a re-upload with the same version).
 
 ---
 
-## 7. Part D Ã¢â‚¬â€ Publishing to Microsoft Edge Add-ons
+## 7. Part D ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Publishing to Microsoft Edge Add-ons
 
 Full detail in `store/edge-submission.md`. Summary:
 
 1. Register a **free** developer account at
    https://partner.microsoft.com/dashboard/microsoftedge/public/login
    (choose **Individual**; no fee for Edge).
-2. Create extension Ã¢â€ â€™ upload `dist/vector-extension.zip`.
-3. Availability Ã¢â€ â€™ Public. Properties Ã¢â€ â€™ Category **Developer tools**.
-4. Privacy tab Ã¢â€ â€™ paste from `store/permissions-and-privacy.md`:
+2. Create extension ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ upload `dist/vector-extension.zip`.
+3. Availability ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Public. Properties ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Category **Developer tools**.
+4. Privacy tab ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ paste from `store/permissions-and-privacy.md`:
    - Single purpose, permission justifications, remote code = **No**,
      data usage = **Website content**, privacy policy URL.
-5. Store listing Ã¢â€ â€™ description from `store/listing.md`, logo
+5. Store listing ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ description from `store/listing.md`, logo
    `media/store-logo-300.png`.
-6. Notes for certification Ã¢â€ â€™ see the prepared text in
+6. Notes for certification ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ see the prepared text in
    `store/edge-submission.md`.
-7. Publish Ã¢â€ â€™ review (up to ~7 business days).
+7. Publish ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ review (up to ~7 business days).
 
 Privacy policy must be hosted publicly. This repo enables GitHub Pages:
 `https://ejajaka.github.io/vector/store/privacy-policy.html`.
@@ -237,7 +239,7 @@ Chrome Web Store: same zip, but **US$5 one-time** registration.
 
 ---
 
-## 8. Part E Ã¢â‚¬â€ Mobile app (Capacitor) Ã¢â‚¬â€ Android verified
+## 8. Part E ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Mobile app (Capacitor) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Android verified
 
 ```powershell
 cd mobile
@@ -264,7 +266,7 @@ iOS with Capacitor requires a Mac + Xcode.
 
 ---
 
-## 9. Part F Ã¢â‚¬â€ Mobile app (React Native / Expo) Ã¢â‚¬â€ iOS + Android bundles verified
+## 9. Part F ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Mobile app (React Native / Expo) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â iOS + Android bundles verified
 
 ```powershell
 cd mobile-rn
@@ -304,7 +306,7 @@ app + `npx expo start`.
 
 > No Mac, no Xcode and no Apple Developer account are needed for Expo Go.
 > For a standalone installable iOS build (App Store / TestFlight) you need EAS
-> Build plus the $99/year Apple Developer Program Ã¢â‚¬â€ see below.
+> Build plus the $99/year Apple Developer Program ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â see below.
 
 Compile check (verified in this repo):
 ```powershell
@@ -326,7 +328,7 @@ eas submit -p android
 
 ---
 
-## 10. Part G Ã¢â‚¬â€ Evaluation and tools
+## 10. Part G ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Evaluation and tools
 
 ```powershell
 npm run eval          # precision / recall / F1 + negation traps
@@ -349,12 +351,12 @@ result. State it that way.
 
 ---
 
-## 11. Part H Ã¢â‚¬â€ Deep scan (optional AI)
+## 11. Part H ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Deep scan (optional AI)
 
 Off by default. Two tiers:
-1. **On-device** (Chrome's built-in model) Ã¢â‚¬â€ no key, no network. Not available in
+1. **On-device** (Chrome's built-in model) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no key, no network. Not available in
    Edge; availability varies.
-2. **Hosted** Ã¢â‚¬â€ any OpenAI-compatible endpoint using the user's own key.
+2. **Hosted** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â any OpenAI-compatible endpoint using the user's own key.
 
 Set the key in the extension **Options** page. Never commit an API key; the
 extension and repo ship with none.
@@ -434,10 +436,10 @@ Notes:
 
 ## 14. Reproduce-everything checklist
 
-- [ ] `git clone` Ã¢â€ â€™ `npm test` (42 pass)
+- [ ] `git clone` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `npm test` (42 pass)
 - [ ] `npm run eval` (F1 1.000)
-- [ ] `npm run downstream` (6 Ã¢â€ â€™ 0)
-- [ ] `npm run package` Ã¢â€ â€™ `dist/vector-extension.zip`
+- [ ] `npm run downstream` (6 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 0)
+- [ ] `npm run package` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `dist/vector-extension.zip`
 - [ ] Load unpacked in Edge/Chrome and analyze the Sample prompt
 - [ ] `cd mobile && npm install && npm run add:android && gradlew assembleDebug`
 - [ ] `cd mobile-rn && npm install && npx expo export --platform ios`
