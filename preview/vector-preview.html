@@ -6,241 +6,357 @@
 <meta name="theme-color" content="#6366f1" />
 <title>Vector - preview</title>
 <style>
-/* Web / Capacitor client chrome. Result styling comes from the shared ui.css.
-   This file makes the surrounding app look like a polished product page. */
-:root {
-  --v-accent: #6366f1;
-  --m-bg: #f6f7fb;
-  --m-panel: #ffffff;
-  --m-line: #e6e8ef;
-  --m-ink: #0f172a;
-  --m-soft: #64748b;
-}
+/* Web client chrome, laid out like a document-scanning tool (GPTZero style):
+   document on the left, analysis panel on the right. Result card styling comes
+   from the shared ui.css; this file owns the surrounding shell. */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --m-bg: #0b1020;
-    --m-panel: #131a2c;
-    --m-line: #24304a;
-    --m-ink: #e8edf7;
-    --m-soft: #93a1bb;
-  }
+:root {
+  --gz-bg: #ffffff;
+  --gz-ink: #111827;
+  --gz-soft: #6b7280;
+  --gz-line: #e5e7eb;
+  --gz-panel: #fafafa;
+  --gz-accent: #16a34a;
+  --gz-dark: #111827;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   margin: 0;
-  padding: 0;
-  min-height: 100%;
-  background: var(--m-bg);
-  color: var(--m-ink);
+  height: 100%;
+  background: var(--gz-bg);
+  color: var(--gz-ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-body {
-  background:
-    radial-gradient(1100px 520px at 10% -10%, rgba(99,102,241,.18), transparent 60%),
-    radial-gradient(900px 480px at 110% 0%, rgba(14,165,233,.16), transparent 55%),
-    var(--m-bg);
-  background-attachment: fixed;
+  font-size: 14px;
+  overflow: hidden;
 }
 
 .hidden { display: none !important; }
+.gz-muted { color: var(--gz-soft); }
 
-/* ---------------- header ---------------- */
-.m-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: color-mix(in srgb, var(--m-panel) 88%, transparent);
-  backdrop-filter: saturate(140%) blur(10px);
-  border-bottom: 1px solid var(--m-line);
-  padding-top: calc(14px + env(safe-area-inset-top));
-}
-
-.m-logo {
-  width: 38px; height: 38px; border-radius: 11px;
-  display: grid; place-items: center;
-  color: #fff; font-weight: 800; font-size: 17px;
-  background: linear-gradient(135deg, #6366f1, #0ea5e9);
-  box-shadow: 0 6px 18px rgba(99,102,241,.4);
-}
-
-.m-title { flex: 1; min-width: 0; }
-.m-title h1 { font-size: 17px; margin: 0; line-height: 1.1; letter-spacing: -.2px; }
-.m-title p { margin: 2px 0 0; font-size: 11.5px; color: var(--m-soft); }
-
-.m-version {
-  font-size: 11px; font-weight: 700; color: #fff;
-  background: rgba(99,102,241,.85);
-  border-radius: 999px; padding: 3px 9px;
-}
-
-.m-icon {
-  border: 1px solid var(--m-line);
-  background: var(--m-panel);
-  color: var(--m-ink);
-  border-radius: 10px;
-  width: 40px; height: 40px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: transform .1s ease, box-shadow .12s ease;
-}
-.m-icon:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); transform: translateY(-1px); }
-
-/* ---------------- layout ---------------- */
-.m-main { padding: 22px 20px 60px; max-width: 1240px; margin: 0 auto; }
-
-.m-settings {
-  border: 1px solid var(--m-line);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 18px;
-  background: var(--m-panel);
-  box-shadow: 0 10px 30px rgba(15,23,42,.06);
-}
-
-.m-field { display: block; margin-bottom: 12px; }
-.m-field span { display: block; font-size: 12px; color: var(--m-soft); margin-bottom: 5px; font-weight: 600; }
-.m-field input {
-  width: 100%;
-  padding: 11px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--m-line);
-  background: var(--m-bg);
-  color: var(--m-ink);
-  font-size: 14px;
-}
-.m-field input:focus { outline: 2px solid var(--v-accent); outline-offset: -1px; }
-
-.m-label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 13.5px; letter-spacing: -.1px; }
-
-textarea {
-  width: 100%;
-  min-height: 190px;
-  padding: 15px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--m-line);
-  background: var(--m-panel);
-  color: var(--m-ink);
-  font-size: 14.5px;
-  line-height: 1.65;
-  resize: vertical;
-  box-shadow: 0 10px 30px rgba(15,23,42,.05);
-  transition: box-shadow .15s ease, border-color .15s ease;
-}
-textarea:focus {
-  outline: none;
-  border-color: var(--v-accent);
-  box-shadow: 0 0 0 4px rgba(99,102,241,.16), 0 10px 30px rgba(15,23,42,.06);
-}
-
-.m-row {
+/* ---------------- top bar ---------------- */
+.gz-topbar {
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
-  font-size: 12px;
-  flex-wrap: wrap;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--gz-line);
+  background: var(--gz-bg);
 }
 
-.m-actions { display: flex; gap: 10px; }
+.gz-brand { display: flex; align-items: center; gap: 10px; }
+.gz-logo {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 13px;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+}
+.gz-brandname { font-weight: 600; font-size: 14px; }
+.gz-saved {
+  font-size: 11px; color: #16a34a; background: #ecfdf5;
+  border-radius: 999px; padding: 2px 9px; font-weight: 600;
+}
 
-/* buttons in the web client are a touch larger than the popup */
-.v-btn { padding: 11px 18px; font-size: 13.5px; border-radius: 11px; }
+.gz-topright { display: flex; align-items: center; gap: 12px; }
+.gz-pill {
+  font-size: 11.5px; font-weight: 600;
+  border: 1px solid var(--gz-line); border-radius: 999px;
+  padding: 5px 12px; color: var(--gz-soft);
+}
+.gz-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  border: 1px solid var(--gz-line); background: var(--gz-bg);
+  cursor: pointer; font-size: 16px; color: var(--gz-ink);
+}
 
-#results { margin-top: 0; }
+/* ---------------- settings drawer ---------------- */
+.gz-settings {
+  position: absolute; top: 58px; right: 18px; z-index: 30;
+  width: 340px; padding: 14px;
+  background: var(--gz-bg);
+  border: 1px solid var(--gz-line);
+  border-radius: 12px;
+  box-shadow: 0 18px 44px rgba(15,23,42,.16);
+}
+.gz-field { display: block; margin-bottom: 10px; }
+.gz-field span { display: block; font-size: 11.5px; color: var(--gz-soft); margin-bottom: 4px; font-weight: 600; }
+.gz-field input {
+  width: 100%; padding: 9px 10px; font-size: 13px;
+  border: 1px solid var(--gz-line); border-radius: 8px;
+  background: var(--gz-bg); color: var(--gz-ink);
+}
+.gz-settings-row { display: flex; align-items: center; justify-content: space-between; }
 
-/* one column of cards inside each pane on this client */
-.v-grid { grid-template-columns: 1fr; }
-.v-clause code { word-break: break-word; }
+/* ---------------- buttons ---------------- */
+.gz-btn {
+  font: inherit; font-size: 13px; font-weight: 600;
+  border-radius: 9px; padding: 9px 16px; cursor: pointer;
+  border: 1px solid var(--gz-line); background: var(--gz-bg); color: var(--gz-ink);
+  transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
+}
+.gz-btn:hover { background: #f3f4f6; }
+.gz-btn:active { transform: translateY(1px); }
+.gz-btn.dark {
+  background: var(--gz-dark); color: #fff; border-color: var(--gz-dark);
+}
+.gz-btn.dark:hover { background: #1f2937; }
+.gz-btn.outline { background: transparent; }
+.gz-btn.outline:hover { background: #f3f4f6; }
 
-/* ---------------- split pane ---------------- */
-.v-split {
+/* ---------------- split body ---------------- */
+.gz-body {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.2fr);
-  gap: 22px;
-  align-items: start;
+  grid-template-columns: 1fr 460px;
+  height: calc(100vh - 52px);
+  position: relative;
 }
-.v-pane-left, .v-pane-right { min-width: 0; }
-@media (max-width: 860px) {
-  .v-split { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .gz-body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; height: auto; }
+  html, body { overflow: auto; }
 }
 
-/* verdict column card look */
-.v-pane-right > #results,
-.v-pane-right {
-  font-size: 13px;
+/* ---------------- left: the document ---------------- */
+.gz-left {
+  border-right: 1px solid var(--gz-line);
+  overflow-y: auto;
+  background: var(--gz-bg);
+  min-width: 0;
 }
+.gz-doc { max-width: 720px; margin: 0 auto; padding: 40px 48px; min-height: 100%; }
+#prompt {
+  width: 100%;
+  min-height: 60vh;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--gz-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.85;
+}
+#prompt::placeholder { color: #9ca3af; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; }
+
+/* ---------------- right: the analysis panel ---------------- */
+.gz-right {
+  display: flex;
+  flex-direction: column;
+  background: var(--gz-bg);
+  min-width: 0;
+}
+
+.gz-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--gz-line);
+  padding: 0 8px;
+}
+.gz-tab {
+  flex: 1;
+  font: inherit; font-size: 12px;
+  padding: 13px 6px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--gz-soft);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.gz-tab.active { color: var(--gz-ink); font-weight: 700; border-bottom-color: var(--gz-ink); }
+.gz-tab:disabled { opacity: .45; cursor: default; }
+
+.gz-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--gz-panel);
+  padding: 20px;
+  min-height: 0;
+}
+
+/* empty state */
+.gz-empty { text-align: center; padding: 48px 18px; color: var(--gz-soft); }
+.gz-empty p { font-size: 13px; line-height: 1.6; margin: 14px 0 18px; }
+.gz-empty-ring {
+  width: 96px; height: 96px; margin: 0 auto;
+  border-radius: 50%; border: 7px solid var(--gz-line);
+  display: grid; place-items: center;
+  font-size: 30px; font-weight: 800; color: #cbd5e1;
+}
+
+/* verdict */
+.gz-verdict { display: flex; align-items: center; gap: 18px; }
+.gz-dial {
+  width: 96px; height: 96px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 7px solid var(--gz-accent);
+  background: var(--gz-bg);
+  flex-shrink: 0;
+  position: relative;
+  line-height: 1;
+}
+.gz-dial span { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+.gz-dial small { position: absolute; bottom: 20px; font-size: 10px; color: var(--gz-soft); }
+
+.gz-verdict-text { min-width: 0; }
+.gz-verdict-line { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.gz-verdict-line .ok { color: var(--gz-accent); }
+.gz-verdict-line .bad { color: #dc2626; }
+
+/* chance chips */
+.gz-chances { margin-top: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gz-chances-label { font-size: 12px; color: var(--gz-soft); }
+.gz-chip {
+  font-size: 12px; font-weight: 600;
+  border: 1px solid var(--gz-line); border-radius: 999px;
+  padding: 5px 12px; background: var(--gz-bg);
+}
+
+/* wide action row */
+.gz-wide {
+  margin-top: 16px; width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 13px 14px; cursor: pointer;
+  background: var(--gz-bg);
+  border: 1px solid var(--gz-line); border-radius: 10px;
+}
+.gz-wide:hover { background: #f3f4f6; }
+
+/* findings (rendered by the shared ui.js) */
+#findings { margin-top: 18px; }
+#findings .v-section { background: var(--gz-bg); }
+
+/* improved prompt */
+.gz-improved { margin-top: 18px; border: 1px solid var(--gz-line); border-radius: 10px; overflow: hidden; background: var(--gz-bg); }
+.gz-improved-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 13px; border-bottom: 1px solid var(--gz-line); font-weight: 700; font-size: 13px;
+}
+.gz-improved pre {
+  margin: 0; padding: 14px; white-space: pre-wrap;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px; line-height: 1.6;
+}
+
+/* footer */
+.gz-footer {
+  border-top: 1px solid var(--gz-line);
+  padding: 12px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--gz-bg);
+}
+.gz-footer-actions { display: flex; gap: 10px; }
+
+/* toast */
+.gz-toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  background: #111827; color: #fff; padding: 9px 16px; border-radius: 8px;
+  font-size: 12.5px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50;
+}
+.gz-toast.show { opacity: 1; }
 
 </style>
 </head>
 <body>
 
-  <header class="m-header">
-    <span class="m-logo">V</span>
-    <div class="m-title">
-      <h1>Vector</h1>
-      <p>Find the security gaps in an AWS prompt before code is generated</p>
+  <!-- top bar -->
+  <header class="gz-topbar">
+    <div class="gz-brand">
+      <span class="gz-logo">V</span>
+      <span class="gz-brandname">Vector - Security Diagnosis</span>
+      <span class="gz-saved">&#10003; Saved</span>
     </div>
-    <span class="m-version">v0.6.0</span>
-    <button id="btn-settings" class="m-icon" type="button" aria-label="Settings">&#9881;</button>
+    <div class="gz-topright">
+      <span class="gz-pill">Free &middot; offline</span>
+      <button id="btn-settings" class="gz-icon" type="button" title="Settings">&#9881;</button>
+    </div>
   </header>
 
-  <main class="m-main">
-    <div id="settings" class="m-settings hidden">
-      <label class="m-field">
-        <span>Deep scan API key (optional)</span>
-        <input id="set-key" type="password" placeholder="AIza..." autocomplete="off" />
-      </label>
-      <label class="m-field">
-        <span>Base URL</span>
-        <input id="set-url" type="text" placeholder="https://generativelanguage.googleapis.com/v1beta/openai" />
-      </label>
-      <label class="m-field">
-        <span>Model</span>
-        <input id="set-model" type="text" placeholder="gemini-2.5-flash" />
-      </label>
-      <div class="m-row">
-        <span id="set-status" class="v-muted"></span>
-        <button id="btn-save" class="v-btn primary" type="button">Save</button>
-      </div>
+  <!-- settings drawer -->
+  <div id="settings" class="gz-settings hidden">
+    <label class="gz-field"><span>Deep scan API key (optional)</span>
+      <input id="set-key" type="password" placeholder="AIza..." autocomplete="off" /></label>
+    <label class="gz-field"><span>Base URL</span>
+      <input id="set-url" type="text" placeholder="https://generativelanguage.googleapis.com/v1beta/openai" /></label>
+    <label class="gz-field"><span>Model</span>
+      <input id="set-model" type="text" placeholder="gemini-2.5-flash" /></label>
+    <div class="gz-settings-row">
+      <span id="set-status" class="gz-muted"></span>
+      <button id="btn-save" class="gz-btn dark" type="button">Save</button>
     </div>
+  </div>
 
-    <div class="v-split">
-      <div class="v-pane-left">
-        <label class="m-label" for="prompt">AWS infrastructure prompt</label>
+  <!-- split body -->
+  <div class="gz-body">
+    <!-- LEFT: the document / prompt -->
+    <section class="gz-left">
+      <div class="gz-doc">
         <textarea id="prompt" spellcheck="false"
-          placeholder="e.g. Create an S3 bucket for user documents and an EC2 instance running a web server."></textarea>
-        <div class="m-row">
-          <span id="hint" class="v-muted">Runs offline. Nothing leaves your browser.</span>
-          <div class="m-actions">
-            <button id="btn-sample" class="v-btn" type="button">Sample</button>
-            <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
-            <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
+          placeholder="Paste or type the AWS infrastructure prompt you are about to send to an LLM..."></textarea>
+      </div>
+    </section>
+
+    <!-- RIGHT: the analysis panel -->
+    <aside class="gz-right">
+      <div class="gz-tabs">
+        <button class="gz-tab active" type="button">Basic Scan</button>
+        <button class="gz-tab" type="button" disabled>Deep Scan</button>
+        <button class="gz-tab" type="button" disabled>Coverage</button>
+        <button class="gz-tab" type="button" disabled>Fix</button>
+      </div>
+
+      <div class="gz-panel">
+        <!-- empty state -->
+        <div id="empty" class="gz-empty">
+          <div class="gz-empty-ring"><span>?</span></div>
+          <p>Paste a prompt on the left and press <strong>Analyze</strong> to see the security diagnosis.</p>
+          <button id="btn-sample" class="gz-btn outline" type="button">Load a sample prompt</button>
+        </div>
+
+        <!-- result -->
+        <div id="result" class="hidden">
+          <div class="gz-verdict">
+            <div id="dial" class="gz-dial"><span id="dial-num">0</span><small>/100</small></div>
+            <div class="gz-verdict-text">
+              <div id="verdict-line" class="gz-verdict-line"></div>
+              <div id="verdict-sub" class="gz-muted"></div>
+            </div>
           </div>
+
+          <div class="gz-chances">
+            <span class="gz-chances-label">This prompt is&hellip;</span>
+            <span id="chip-risk" class="gz-chip">risk &ndash;</span>
+            <span id="chip-cov" class="gz-chip">coverage &ndash;</span>
+            <span id="chip-conf" class="gz-chip">confidence &ndash;</span>
+          </div>
+
+          <button id="btn-highlight" class="gz-wide" type="button">
+            <span>&#9776; See what is missing and why</span><span>&rsaquo;</span>
+          </button>
+
+          <div id="findings"></div>
+
+          <section id="improved-wrap" class="gz-improved hidden">
+            <div class="gz-improved-head">
+              <span>Improved prompt</span>
+              <button id="btn-copy" class="gz-btn outline" type="button">Copy</button>
+            </div>
+            <pre id="improved"></pre>
+          </section>
         </div>
       </div>
 
-      <div class="v-pane-right">
-        <section id="results" class="hidden"></section>
-
-        <section id="improved-wrap" class="v-improved hidden">
-          <div class="v-improved-head">
-            <label>Improved prompt</label>
-            <button id="btn-copy" class="v-btn" type="button">Copy</button>
-          </div>
-          <pre id="improved" class="v-improved-body"></pre>
-        </section>
+      <div class="gz-footer">
+        <div>
+          <div id="foot-meta" class="gz-muted">No prompt yet</div>
+          <div class="gz-muted" id="foot-chars"></div>
+        </div>
+        <div class="gz-footer-actions">
+          <button id="btn-deep" class="gz-btn outline" type="button">Deep scan</button>
+          <button id="btn-analyze" class="gz-btn dark" type="button">Analyze</button>
+        </div>
       </div>
-    </div>
-  </main>
+    </aside>
+  </div>
 
   
   
@@ -2858,7 +2974,8 @@ if (typeof chrome === "undefined") {
 /* ---- app ---- */
 "use strict";
 
-// Vector mobile app logic. Reuses the shared engine (analyzer/ui/semantic/llm).
+/* Web client logic. Layout is GPTZero-style: document left, analysis right.
+   All analysis is done by the shared engine in src/. */
 (function () {
   const el = {
     prompt: document.getElementById("prompt"),
@@ -2872,11 +2989,22 @@ if (typeof chrome === "undefined") {
     model: document.getElementById("set-model"),
     save: document.getElementById("btn-save"),
     status: document.getElementById("set-status"),
-    hint: document.getElementById("hint"),
-    results: document.getElementById("results"),
+    empty: document.getElementById("empty"),
+    result: document.getElementById("result"),
+    dial: document.getElementById("dial"),
+    dialNum: document.getElementById("dial-num"),
+    verdictLine: document.getElementById("verdict-line"),
+    verdictSub: document.getElementById("verdict-sub"),
+    chipRisk: document.getElementById("chip-risk"),
+    chipCov: document.getElementById("chip-cov"),
+    chipConf: document.getElementById("chip-conf"),
+    highlight: document.getElementById("btn-highlight"),
+    findings: document.getElementById("findings"),
     improvedWrap: document.getElementById("improved-wrap"),
     improved: document.getElementById("improved"),
-    copy: document.getElementById("btn-copy")
+    copy: document.getElementById("btn-copy"),
+    footMeta: document.getElementById("foot-meta"),
+    footChars: document.getElementById("foot-chars")
   };
 
   const DEFAULTS = {
@@ -2889,88 +3017,118 @@ if (typeof chrome === "undefined") {
     "Create an S3 bucket to store user documents and an EC2 instance running a web server " +
     "with a security group that allows SSH from 0.0.0.0/0. Give the instance an IAM role with admin access.";
 
-  let settings = DEFAULTS;
+  let settings = Object.assign({}, DEFAULTS);
   let report = null;
   let state = { accepted: {} };
 
-  function loadSettings() {
-    try {
-      settings = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem("vectorSettings") || "{}"));
-    } catch (e) {
-      settings = Object.assign({}, DEFAULTS);
-    }
-  }
+  try {
+    settings = Object.assign(settings, JSON.parse(localStorage.getItem("vectorSettings") || "{}"));
+  } catch (e) { /* ignore */ }
+
   function saveSettings() {
-    try { localStorage.setItem("vectorSettings", JSON.stringify(settings)); } catch (e) {}
+    try { localStorage.setItem("vectorSettings", JSON.stringify(settings)); } catch (e) { /* ignore */ }
   }
 
   function toast(msg) {
-    let t = document.querySelector(".m-toast");
+    let t = document.querySelector(".gz-toast");
     if (!t) {
       t = document.createElement("div");
-      t.className = "vp-toast m-toast";
+      t.className = "gz-toast";
       document.body.appendChild(t);
     }
     t.textContent = msg;
     t.classList.add("show");
-    setTimeout(function () { t.classList.remove("show"); }, 1500);
+    setTimeout(function () { t.classList.remove("show"); }, 1600);
+  }
+
+  function updateChars() {
+    const v = el.prompt.value || "";
+    el.footChars.textContent = v.length + " characters";
+  }
+
+  function renderFindings() {
+    if (!report) return;
+    VectorUI.renderInto(el.findings, report, state, {
+      onToggle: function (id) { state.accepted[id] = !state.accepted[id]; renderFindings(); },
+      onAcceptAll: function () {
+        report.missing.forEach(function (m) { state.accepted[m.id] = true; });
+        report.riskyFindings.forEach(function (f) { state.accepted[f.id] = true; });
+        renderFindings();
+      },
+      onClearAll: function () { state.accepted = {}; renderFindings(); },
+      onHarden: hardenNow
+    }, {});
+    updateImproved();
   }
 
   function updateImproved() {
-    if (!report) return;
-    if (report.outOfScope) {
-      el.improvedWrap.classList.add("hidden");
-      return;
-    }
+    if (!report || report.outOfScope) { el.improvedWrap.classList.add("hidden"); return; }
     const clauses = VectorUI.acceptedClauses(report, state);
     el.improved.textContent = VectorUI.buildImprovedPrompt(report.prompt, clauses);
     el.improvedWrap.classList.remove("hidden");
   }
 
-  function render(opts) {
-    VectorUI.renderInto(el.results, report, state, {
-      onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
-      onAcceptAll: function () {
-        report.missing.forEach(function (m) { state.accepted[m.id] = true; });
-        report.riskyFindings.forEach(function (f) { state.accepted[f.id] = true; });
-        render();
-      },
-      onClearAll: function () { state.accepted = {}; render(); }
-    }, opts || {});
-    updateImproved();
+  function paintSummary() {
+    const cov = VectorUI.coverage(report, state);
+    const color = report.riskColor || "#16a34a";
+    el.dial.style.borderColor = color;
+    el.dialNum.style.color = color;
+    el.dialNum.textContent = report.riskScore;
+
+    if (report.outOfScope) {
+      el.verdictLine.innerHTML = "Not an AWS infrastructure prompt";
+      el.verdictSub.textContent = "Nothing to diagnose.";
+    } else if (report.aiClean && !report.missing.length && !report.riskyFindings.length) {
+      el.verdictLine.innerHTML = '<span class="ok">No issues found</span>';
+      el.verdictSub.textContent = "This prompt already covers the required AWS security controls.";
+    } else {
+      el.verdictLine.innerHTML =
+        'We found <span class="bad">' + report.missing.length + " missing control" +
+        (report.missing.length === 1 ? "" : "s") + "</span>" +
+        (report.riskyFindings.length ? " and " + report.riskyFindings.length + " risky statement(s)." : ".");
+      el.verdictSub.textContent = "Scan the prompt before it is turned into infrastructure code.";
+    }
+
+    el.chipRisk.textContent = "risk " + report.riskLevel;
+    el.chipCov.textContent = "coverage " + cov.before + "%" + (cov.after > cov.before ? " \u2192 " + cov.after + "%" : "");
+    el.chipConf.textContent = "confidence " + report.confidenceScore + "%";
+
+    const t = report.tierCounts || { core: 0, clarify: 0, harden: 0 };
+    el.footMeta.textContent = report.outOfScope
+      ? "Not an AWS prompt"
+      : report.riskLevel + " \u00b7 " + t.core + " confirmed \u00b7 " + t.clarify + " clarify \u00b7 " + t.harden + " optional";
   }
 
-  function setHint() {
-    const t = report.tierCounts || { core: 0, clarify: 0, harden: 0 };
-    el.hint.textContent =
-      report.riskLevel + " " + report.riskScore + "/100 · coverage " + report.coverageScore +
-      "% · " + t.core + " confirmed";
+  function showResult() {
+    el.empty.classList.add("hidden");
+    el.result.classList.remove("hidden");
+    paintSummary();
+    renderFindings();
   }
 
   function analyzeNow() {
     const prompt = el.prompt.value.trim();
-    if (!prompt) { el.hint.textContent = "Enter a prompt first"; return; }
+    if (!prompt) { toast("Enter a prompt first"); return; }
     report = VectorAnalyzer.analyze(prompt, { strictMode: false });
     state.accepted = {};
-    el.results.classList.remove("hidden");
-    render();
-    setHint();
-    if (report.needsDeepScan && settings.apiKey) deepScanNow();
+    showResult();
+    if (report.needsDeepScan && settings.apiKey && settings.autoDeepScan) deepScanNow();
   }
 
   async function deepScanNow() {
     const prompt = el.prompt.value.trim();
-    if (!prompt) return;
+    if (!prompt) { toast("Enter a prompt first"); return; }
     if (!settings.apiKey) {
       el.settings.classList.remove("hidden");
       el.status.textContent = "Add an API key for deep scan.";
       return;
     }
-    el.deep.disabled = true;
-    el.deep.textContent = "Scanning...";
     if (!report) report = VectorAnalyzer.analyze(prompt, { strictMode: false });
     const base = report;
-    render({ busy: "Reviewing this prompt with AI..." });
+
+    el.deep.disabled = true;
+    el.deep.textContent = "Scanning...";
+    paintSummary();
     try {
       const result = await VectorLLM.deepScan(prompt, settings);
       let merged = VectorAnalyzer.mergeFindings(base, result.findings);
@@ -2978,19 +3136,17 @@ if (typeof chrome === "undefined") {
         try {
           const review = await VectorLLM.reviewFindings(prompt, merged.missing, settings);
           merged = VectorAnalyzer.mergeFindings(merged, {}, review);
-        } catch (e) { /* review is best effort */ }
+        } catch (e) { /* best effort */ }
       }
       report = merged;
-      render();
-      setHint();
+      showResult();
       toast(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");
     } catch (err) {
       report = base;
-      render();
-      setHint();
+      showResult();
       const m = String((err && err.message) || "");
       if (/failed to fetch|network|load failed/i.test(m)) {
-        toast("Deep scan is blocked by the browser (CORS). Use the extension or the mobile app for deep scan.");
+        toast("Deep scan is blocked by the browser (CORS). Use the extension or mobile app.");
       } else {
         toast(m || "Deep scan failed");
       }
@@ -3000,45 +3156,56 @@ if (typeof chrome === "undefined") {
     }
   }
 
-  function copyImproved() {
-    const text = el.improved.textContent || "";
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { toast("Copied"); }, function () { toast("Copy failed"); });
-    } else {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand("copy"); toast("Copied"); } catch (e) { toast("Copy failed"); }
-      document.body.removeChild(ta);
-    }
+  function hardenNow() {
+    if (!report) return;
+    const h = VectorAnalyzer.harden(report.prompt);
+    report = h.report;
+    state.accepted = {};
+    showResult();
+    toast("Hardened \u00b7 risk " + report.riskScore + " \u00b7 coverage " + report.coverageScore + "%");
   }
 
+  function copyImproved() {
+    const text = el.improved.textContent || "";
+    navigator.clipboard.writeText(text).then(
+      function () { toast("Copied"); },
+      function () { toast("Copy failed"); }
+    );
+  }
+
+  // ---- events ----
   el.analyze.addEventListener("click", analyzeNow);
   el.deep.addEventListener("click", deepScanNow);
   el.copy.addEventListener("click", copyImproved);
+  el.prompt.addEventListener("input", updateChars);
+  el.prompt.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") analyzeNow();
+  });
   if (el.sample) {
-    el.sample.addEventListener("click", function () {
-      el.prompt.value = SAMPLE;
-      analyzeNow();
-    });
+    el.sample.addEventListener("click", function () { el.prompt.value = SAMPLE; updateChars(); analyzeNow(); });
   }
+  el.highlight.addEventListener("click", function () {
+    const first = el.findings.querySelector("details");
+    if (first) first.setAttribute("open", "");
+  });
   el.settingsBtn.addEventListener("click", function () { el.settings.classList.toggle("hidden"); });
   el.save.addEventListener("click", function () {
     settings = {
       apiKey: el.key.value.trim(),
       baseUrl: el.url.value.trim() || DEFAULTS.baseUrl,
-      model: el.model.value.trim() || DEFAULTS.model
+      model: el.model.value.trim() || DEFAULTS.model,
+      autoDeepScan: settings.autoDeepScan,
+      reviewFindings: settings.reviewFindings !== false
     };
     saveSettings();
     el.status.textContent = "Saved.";
     setTimeout(function () { el.status.textContent = ""; }, 1500);
   });
 
-  loadSettings();
   el.key.value = settings.apiKey || "";
   el.url.value = settings.baseUrl || "";
   el.model.value = settings.model || "";
+  updateChars();
 })();
 
 
