@@ -13,16 +13,16 @@
     <span class="m-logo">V</span>
     <div class="m-title">
       <h1>Vector</h1>
-      <p>Pre-generation security diagnosis (AWS)</p>
+      <p>Find the security gaps in an AWS prompt before code is generated</p>
     </div>
-    <span class="m-version" style="font-size:11px;color:#6b7280;">v0.5.7</span>
+    <span class="m-version">v0.6.0</span>
     <button id="btn-settings" class="m-icon" type="button" aria-label="Settings">&#9881;</button>
   </header>
 
   <main class="m-main">
     <div id="settings" class="m-settings hidden">
       <label class="m-field">
-        <span>Deep scan API key (optional, Gemini free tier by default)</span>
+        <span>Deep scan API key (optional)</span>
         <input id="set-key" type="password" placeholder="AIza..." autocomplete="off" />
       </label>
       <label class="m-field">
@@ -31,7 +31,7 @@
       </label>
       <label class="m-field">
         <span>Model</span>
-        <input id="set-model" type="text" placeholder="gemini-2.0-flash" />
+        <input id="set-model" type="text" placeholder="gemini-2.5-flash" />
       </label>
       <div class="m-row">
         <span id="set-status" class="v-muted"></span>
@@ -45,8 +45,9 @@
         <textarea id="prompt" spellcheck="false"
           placeholder="e.g. Create an S3 bucket for user documents and an EC2 instance running a web server."></textarea>
         <div class="m-row">
-          <span id="hint" class="v-muted">Runs offline</span>
+          <span id="hint" class="v-muted">Runs offline. Nothing leaves your browser.</span>
           <div class="m-actions">
+            <button id="btn-sample" class="v-btn" type="button">Sample</button>
             <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
             <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
           </div>

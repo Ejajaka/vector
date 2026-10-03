@@ -5,6 +5,7 @@
   const el = {
     prompt: document.getElementById("prompt"),
     analyze: document.getElementById("btn-analyze"),
+    sample: document.getElementById("btn-sample"),
     deep: document.getElementById("btn-deep"),
     settingsBtn: document.getElementById("btn-settings"),
     settings: document.getElementById("settings"),
@@ -25,6 +26,10 @@
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     model: "gemini-2.5-flash"
   };
+
+  const SAMPLE =
+    "Create an S3 bucket to store user documents and an EC2 instance running a web server " +
+    "with a security group that allows SSH from 0.0.0.0/0. Give the instance an IAM role with admin access.";
 
   let settings = DEFAULTS;
   let report = null;
@@ -154,6 +159,12 @@
   el.analyze.addEventListener("click", analyzeNow);
   el.deep.addEventListener("click", deepScanNow);
   el.copy.addEventListener("click", copyImproved);
+  if (el.sample) {
+    el.sample.addEventListener("click", function () {
+      el.prompt.value = SAMPLE;
+      analyzeNow();
+    });
+  }
   el.settingsBtn.addEventListener("click", function () { el.settings.classList.toggle("hidden"); });
   el.save.addEventListener("click", function () {
     settings = {
