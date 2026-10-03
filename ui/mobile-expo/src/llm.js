@@ -146,14 +146,102 @@
     throw new Error("Deep scan needs the on-device model or an API key.");
   }
 
+  // ---- Second opinion: review the rule engine's own findings ----------------
+
+  const REVIEW_PROMPT =
+    "You are reviewing a list of security controls that an automated rule engine " +
+    "says are MISSING from an AWS infrastructure prompt. For each item decide " +
+    "whether it is genuinely required for THIS prompt. Be conservative: if unsure, " +
+    "keep it. Reply with STRICT JSON only: " +
+    '{"drop":[{"id":"","reason":""}]}. Use the exact id given. ' +
+    "Never drop an item whose tier is core.";
+
+  function parseReview(text) {
+    const match = String(text || "").match(/\{[\s\S]*\}/);
+    if (!match) return { drop: [] };
+    let data;
+    try {
+      data = JSON.parse(match[0]);
+    } catch (e) {
+      return { drop: [] };
+    }
+    const drop = (Array.isArray(data.drop) ? data.drop : [])
+      .filter((d) => d && d.id)
+      .map((d) => ({ id: String(d.id), reason: String(d.reason || "Not required for this prompt.") }));
+    return { drop: drop };
+  }
+
+  function reviewUserMessage(prompt, findings) {
+    const list = findings.map((f) => ({ id: f.id, label: f.label, tier: f.tier, severity: f.severity }));
+    return (
+      "Infrastructure prompt:\n\n" + String(prompt || "") +
+      "\n\nRule engine findings:\n" + JSON.stringify(list)
+    );
+  }
+
+  async function hostedReview(prompt, findings, settings) {
+    const apiKey = settings && settings.apiKey;
+    if (!apiKey) throw new Error("No API key set.");
+    const baseUrl = ((settings && settings.baseUrl) || "https://api.openai.com/v1").replace(/\/+$/, "");
+    const model = (settings && settings.model) || "gemini-2.5-flash";
+
+    const res = await fetch(baseUrl + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
+      body: JSON.stringify({
+        model: model,
+        temperature: 0,
+        messages: [
+          { role: "system", content: REVIEW_PROMPT },
+          { role: "user", content: reviewUserMessage(prompt, findings) }
+        ]
+      })
+    });
+    if (!res.ok) throw new Error("AI review failed (" + res.status + ")");
+    const data = await res.json();
+    const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    return parseReview(text);
+  }
+
+  /**
+   * Ask the model to review the rule-based findings and suggest dismissals.
+   * Only clarify/harden items are eligible; core items are always kept.
+   * Resolves to { drop, via }.
+   */
+  async function reviewFindings(prompt, findings, settings) {
+    const eligible = (findings || []).filter((f) => (f.tier || "clarify") !== "core");
+    if (!eligible.length) return { drop: [], via: "none" };
+
+    if (localAvailable()) {
+      try {
+        // on-device path reuses the same session shape
+        const LM = localModel();
+        const session = await LM.create({ systemPrompt: REVIEW_PROMPT });
+        const text = await session.prompt(reviewUserMessage(prompt, eligible));
+        if (session.destroy) session.destroy();
+        return { drop: parseReview(text).drop, via: "on-device" };
+      } catch (e) {
+        /* fall through */
+      }
+    }
+    if (settings && settings.apiKey) {
+      const r = await hostedReview(prompt, eligible, settings);
+      return { drop: r.drop, via: "api" };
+    }
+    return { drop: [], via: "none" };
+  }
+
   root.VectorLLM = {
     deepScan: deepScan,
     localDeepScan: localDeepScan,
     localAvailable: localAvailable,
     hostedDeepScan: hostedDeepScan,
+    reviewFindings: reviewFindings,
+    parseReview: parseReview,
     parseFindings: parseFindings,
     normSeverity: normSeverity,
-    SYSTEM_PROMPT: SYSTEM_PROMPT
+    SYSTEM_PROMPT: SYSTEM_PROMPT,
+    REVIEW_PROMPT: REVIEW_PROMPT
   };
   if (typeof module !== "undefined" && module.exports) module.exports = root.VectorLLM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

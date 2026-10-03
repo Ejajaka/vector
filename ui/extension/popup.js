@@ -47,8 +47,8 @@
     el.improvedWrap.classList.remove("hidden");
   }
 
-  function render() {
-    VectorUI.render(el.results, report, state, {
+  function render(opts) {
+    VectorUI.renderInto(el.results, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
         report.missing.forEach(function (m) { state.accepted[m.id] = true; });
@@ -57,7 +57,7 @@
       },
       onClearAll: function () { state.accepted = {}; render(); },
       onHarden: hardenNow
-    });
+    }, opts || {});
     updateImproved();
   }
 
@@ -117,15 +117,26 @@
 
     el.deep.disabled = true;
     el.deep.textContent = "Scanning...";
-    // Hide the rule-based answer and the improved prompt while the AI runs, so
-    // the two results never appear side by side. Everything shows together after.
-    el.results.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
-    el.improvedWrap.classList.add("hidden");
+    // Keep the rule numbers visible; show a small working note. The AI result
+    // replaces the whole pane in one transition when it arrives.
+    render({ busy: "Reviewing this prompt with AI..." });
     el.hint.textContent = "Deep scan in progress...";
 
     try {
       const result = await VectorLLM.deepScan(prompt, settings);
-      report = VectorAnalyzer.mergeFindings(base, result.findings);
+      let merged = VectorAnalyzer.mergeFindings(base, result.findings);
+
+      // Second opinion: ask the AI which rule findings are not actually required.
+      if (settings.reviewFindings && merged.missing.length) {
+        try {
+          const review = await VectorLLM.reviewFindings(prompt, merged.missing, settings);
+          merged = VectorAnalyzer.mergeFindings(merged, {}, review);
+        } catch (e) {
+          /* review is best-effort; keep the merged result */
+        }
+      }
+
+      report = merged;
       render();
       setHint();
       toast(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");

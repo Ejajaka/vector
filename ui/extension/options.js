@@ -5,6 +5,7 @@
     strict: document.getElementById("strict"),
     policy: document.getElementById("policy"),
     auto: document.getElementById("auto"),
+    review: document.getElementById("review"),
     key: document.getElementById("key"),
     url: document.getElementById("url"),
     model: document.getElementById("model"),
@@ -30,6 +31,7 @@
   function fill(s) {
     el.strict.checked = !!s.strictMode;
     el.auto.checked = !!s.autoDeepScan;
+    el.review.checked = s.reviewFindings !== false;
     el.key.value = s.apiKey || "";
     el.url.value = s.baseUrl || "";
     el.model.value = s.model || "";
@@ -40,6 +42,7 @@
     return {
       strictMode: el.strict.checked,
       autoDeepScan: el.auto.checked,
+      reviewFindings: el.review.checked,
       apiKey: el.key.value.trim(),
       baseUrl: el.url.value.trim() || "https://generativelanguage.googleapis.com/v1beta/openai",
       model: el.model.value.trim() || "gemini-2.5-flash",

@@ -188,61 +188,82 @@
     );
   }
 
+  /** one collapsible section: <details> with a clickable summary */
+  function section(key, label, count, bodyHtml, open) {
+    return (
+      '<details class="v-section"' + (open ? " open" : "") + ' data-section="' + key + '">' +
+      '<summary class="v-group"><span class="v-group-label">' + escapeHtml(label) + "</span>" +
+      '<span class="v-count">' + count + "</span></summary>" +
+      '<div class="v-grid">' + bodyHtml + "</div></details>"
+    );
+  }
+
   function missingHtml(r, accepted) {
     if (!r.missing.length) {
-      return '<h2>Missing security constraints</h2><p class="v-muted">None detected. &#10003;</p>';
+      return section("missing", "Missing security constraints", 0,
+        '<p class="v-muted">None detected. &#10003;</p>', true);
     }
     let html =
-      '<h2>Missing security constraints <span class="v-count">' + r.missing.length + "</span></h2>" +
-      '<div class="v-header-actions v-bulk">' +
+      '<div class="v-bulk v-bulk-row">' +
       '<button class="v-btn primary" data-action="harden">Harden prompt</button>' +
       '<button class="v-btn ghost" data-action="accept-all">Accept all</button>' +
       '<button class="v-btn ghost" data-action="clear-all">Clear</button></div>';
 
     const groups = [
-      { key: "core", label: "Confirmed gaps" },
-      { key: "clarify", label: "Needs clarification" },
-      { key: "harden", label: "Optional hardening" }
+      { key: "core", label: "Confirmed gaps", open: true },
+      { key: "clarify", label: "Needs clarification", open: false },
+      { key: "harden", label: "Optional hardening", open: false }
     ];
     for (const g of groups) {
       const items = r.missing.filter((m) => (m.tier || "clarify") === g.key);
       if (!items.length) continue;
-      html +=
-        '<h3 class="v-group">' + g.label + ' <span class="v-count">' + items.length + "</span></h3>" +
-        '<div class="v-grid">' + items.map((m) => missingCard(m, accepted)).join("") + "</div>";
+      html += section(g.key, g.label, items.length, items.map((m) => missingCard(m, accepted)).join(""), g.open);
     }
     return html;
   }
 
+  /** findings the AI second opinion set aside - always visible, restorable */
+  function dismissedHtml(r, accepted) {
+    const items = r.dismissed || [];
+    if (!items.length) return "";
+    const body = items
+      .map((m) =>
+        '<div class="v-card dismissed">' +
+        '<div class="v-card-head"><span class="v-tag ai">AI</span>' +
+        '<span class="v-dim">' + escapeHtml(m.label) + "</span></div>" +
+        (m.dismissalReason ? '<p class="v-applies">Reason: ' + escapeHtml(m.dismissalReason) + "</p>" : "") +
+        '<div class="v-clause"><code>' + escapeHtml(m.clause || "") + "</code></div>" +
+        '<div class="v-card-actions">' +
+        '<button class="v-btn ' + (accepted[m.id] ? "accepted" : "primary") + '" data-toggle="' + escapeHtml(m.id) + '">' +
+        (accepted[m.id] ? "Added &#10003;" : "Restore clause") + "</button></div></div>"
+      )
+      .join("");
+    return section("dismissed", "Dismissed by AI review", items.length, body, false);
+  }
+
   /**
-   * Render a full report into a container.
-   * @param {HTMLElement} container
-   * @param {object} report
-   * @param {object} state  { accepted: {id:boolean} }
-   * @param {object} handlers { onToggle, onAcceptAll, onClearAll }
+   * Build the inner HTML for a report (used by render and by clients that want
+   * to swap the whole pane in one transition).
    */
-  function render(container, report, state, handlers) {
-    handlers = handlers || {};
+  function reportHtml(report, state) {
     const accepted = (state && state.accepted) || {};
 
-    // Out of scope: not an infrastructure prompt, so nothing to diagnose.
     if (report && report.outOfScope) {
-      container.innerHTML =
+      return (
         '<div class="v-banner warn">' +
         escapeHtml((report.feedback && report.feedback[0]) || "Not an AWS infrastructure prompt.") +
-        "</div>";
-      return;
+        "</div>"
+      );
     }
 
-    // Deep scan reported nothing further to flag, and no risky statements.
     if (report && report.aiClean && !report.missing.length && !report.riskyFindings.length) {
-      container.innerHTML =
+      return (
         '<div class="v-banner ok">No issues found. This prompt already covers the required AWS security controls for the recognised resources.</div>' +
-        disclaimerHtml(report);
-      return;
+        disclaimerHtml(report)
+      );
     }
 
-    container.innerHTML =
+    return (
       bannerHtml(report) +
       riskHtml(report, coverage(report, state)) +
       feedbackHtml(report) +
@@ -250,8 +271,13 @@
       detectedHtml(report) +
       findingsHtml(report, accepted) +
       missingHtml(report, accepted) +
-      disclaimerHtml(report);
+      dismissedHtml(report, accepted) +
+      disclaimerHtml(report)
+    );
+  }
 
+  function wire(container, handlers) {
+    handlers = handlers || {};
     container.querySelectorAll("[data-toggle]").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (handlers.onToggle) handlers.onToggle(btn.getAttribute("data-toggle"));
@@ -265,8 +291,35 @@
     if (hb) hb.addEventListener("click", () => handlers.onHarden && handlers.onHarden());
   }
 
+  /**
+   * Render a full report into a container.
+   * @param {HTMLElement} container
+   * @param {object} report
+   * @param {object} state  { accepted: {id:boolean} }
+   * @param {object} handlers { onToggle, onAcceptAll, onClearAll, onHarden }
+   * @param {object} [opts]   { busy: string|null }  busy shows a working note
+   */
+  function render(container, report, state, handlers, opts) {
+    opts = opts || {};
+    const busy = opts.busy
+      ? '<div class="v-busy">' + escapeHtml(opts.busy) + "</div>"
+      : "";
+    container.innerHTML = busy + reportHtml(report, state);
+    wire(container, handlers);
+  }
+
+  /** Swap the whole verdict pane in one transition (no rule/AI results side by side). */
+  function renderInto(container, report, state, handlers, opts) {
+    render(container, report, state, handlers, opts);
+    container.classList.remove("v-swap");
+    void container.offsetWidth; // force reflow so the animation replays
+    container.classList.add("v-swap");
+  }
+
   const VectorUI = {
     render: render,
+    renderInto: renderInto,
+    reportHtml: reportHtml,
     buildImprovedPrompt: buildImprovedPrompt,
     acceptedClauses: acceptedClauses,
     escapeHtml: escapeHtml,
@@ -276,7 +329,8 @@
     // html builders exposed for testing
     riskHtml: riskHtml,
     findingsHtml: findingsHtml,
-    missingHtml: missingHtml
+    missingHtml: missingHtml,
+    dismissedHtml: dismissedHtml
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = VectorUI;

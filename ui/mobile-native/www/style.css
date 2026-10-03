@@ -104,3 +104,15 @@ textarea {
 .v-grid { grid-template-columns: 1fr; }
 
 .v-clause code { word-break: break-word; }
+
+/* ---- split pane for the web / Capacitor client ---- */
+.v-split {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+.v-pane-left, .v-pane-right { min-width: 0; }
+@media (max-width: 719px) {
+  .v-split { grid-template-columns: 1fr; }
+}

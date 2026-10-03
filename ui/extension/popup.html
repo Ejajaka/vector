@@ -22,28 +22,34 @@
   </header>
 
   <main class="vp-main">
-    <label class="vp-label" for="prompt">AWS infrastructure prompt</label>
-    <textarea id="prompt" spellcheck="false"
-      placeholder="e.g. Create an S3 bucket to store user documents and an EC2 instance running a web server."></textarea>
-    <div class="vp-row">
-      <span id="hint" class="v-muted">Runs offline. No data leaves your browser.</span>
-      <div class="v-header-actions">
-        <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
-        <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
-      </div>
-    </div>
-
-    <section id="results" class="vp-results hidden"></section>
-
-    <section id="improved-wrap" class="v-improved hidden">
-      <div class="v-improved-head">
-        <label>Improved prompt</label>
-        <div class="v-header-actions">
-          <button id="btn-copy" class="v-btn" type="button">Copy</button>
+    <div class="v-split">
+      <div class="v-pane-left">
+        <label class="vp-label" for="prompt">AWS infrastructure prompt</label>
+        <textarea id="prompt" spellcheck="false"
+          placeholder="e.g. Create an S3 bucket to store user documents and an EC2 instance running a web server."></textarea>
+        <div class="vp-row">
+          <span id="hint" class="v-muted">Runs offline. No data leaves your browser.</span>
+          <div class="v-header-actions">
+            <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
+            <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
+          </div>
         </div>
       </div>
-      <pre id="improved" class="v-improved-body"></pre>
-    </section>
+
+      <div class="v-pane-right">
+        <section id="results" class="vp-results hidden"></section>
+
+        <section id="improved-wrap" class="v-improved hidden">
+          <div class="v-improved-head">
+            <label>Improved prompt</label>
+            <div class="v-header-actions">
+              <button id="btn-copy" class="v-btn" type="button">Copy</button>
+            </div>
+          </div>
+          <pre id="improved" class="v-improved-body"></pre>
+        </section>
+      </div>
+    </div>
   </main>
 
   <script src="src/taxonomy.js"></script>

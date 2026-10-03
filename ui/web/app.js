@@ -64,8 +64,8 @@
     el.improvedWrap.classList.remove("hidden");
   }
 
-  function render() {
-    VectorUI.render(el.results, report, state, {
+  function render(opts) {
+    VectorUI.renderInto(el.results, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
         report.missing.forEach(function (m) { state.accepted[m.id] = true; });
@@ -73,7 +73,7 @@
         render();
       },
       onClearAll: function () { state.accepted = {}; render(); }
-    });
+    }, opts || {});
     updateImproved();
   }
 
@@ -107,11 +107,17 @@
     el.deep.textContent = "Scanning...";
     if (!report) report = VectorAnalyzer.analyze(prompt, { strictMode: false });
     const base = report;
-    el.results.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
-    el.improvedWrap.classList.add("hidden");
+    render({ busy: "Reviewing this prompt with AI..." });
     try {
       const result = await VectorLLM.deepScan(prompt, settings);
-      report = VectorAnalyzer.mergeFindings(base, result.findings);
+      let merged = VectorAnalyzer.mergeFindings(base, result.findings);
+      if (settings.reviewFindings && merged.missing.length) {
+        try {
+          const review = await VectorLLM.reviewFindings(prompt, merged.missing, settings);
+          merged = VectorAnalyzer.mergeFindings(merged, {}, review);
+        } catch (e) { /* review is best effort */ }
+      }
+      report = merged;
       render();
       setHint();
       toast(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");

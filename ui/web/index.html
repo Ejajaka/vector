@@ -39,33 +39,39 @@
       </div>
     </div>
 
-    <label class="m-label" for="prompt">AWS infrastructure prompt</label>
-    <textarea id="prompt" spellcheck="false"
-      placeholder="e.g. Create an S3 bucket for user documents and an EC2 instance running a web server."></textarea>
-    <div class="m-row">
-      <span id="hint" class="v-muted">Runs offline</span>
-      <div class="m-actions">
-        <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
-        <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
+    <div class="v-split">
+      <div class="v-pane-left">
+        <label class="m-label" for="prompt">AWS infrastructure prompt</label>
+        <textarea id="prompt" spellcheck="false"
+          placeholder="e.g. Create an S3 bucket for user documents and an EC2 instance running a web server."></textarea>
+        <div class="m-row">
+          <span id="hint" class="v-muted">Runs offline</span>
+          <div class="m-actions">
+            <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
+            <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="v-pane-right">
+        <section id="results" class="hidden"></section>
+
+        <section id="improved-wrap" class="v-improved hidden">
+          <div class="v-improved-head">
+            <label>Improved prompt</label>
+            <button id="btn-copy" class="v-btn" type="button">Copy</button>
+          </div>
+          <pre id="improved" class="v-improved-body"></pre>
+        </section>
       </div>
     </div>
-
-    <section id="results" class="hidden"></section>
-
-    <section id="improved-wrap" class="v-improved hidden">
-      <div class="v-improved-head">
-        <label>Improved prompt</label>
-        <button id="btn-copy" class="v-btn" type="button">Copy</button>
-      </div>
-      <pre id="improved" class="v-improved-body"></pre>
-    </section>
   </main>
 
-  <script src="src/taxonomy.js?v=0.5.7"></script>
-  <script src="src/semantic.js?v=0.5.7"></script>
-  <script src="src/analyzer.js?v=0.5.7"></script>
-  <script src="src/ui.js?v=0.5.7"></script>
-  <script src="src/llm.js?v=0.5.7"></script>
-  <script src="app.js?v=0.5.7"></script>
+  <script src="src/taxonomy.js?v=0.6.0"></script>
+  <script src="src/semantic.js?v=0.6.0"></script>
+  <script src="src/analyzer.js?v=0.6.0"></script>
+  <script src="src/ui.js?v=0.6.0"></script>
+  <script src="src/llm.js?v=0.6.0"></script>
+  <script src="app.js?v=0.6.0"></script>
 </body>
 </html>
