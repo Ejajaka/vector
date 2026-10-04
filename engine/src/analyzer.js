@@ -960,9 +960,45 @@ function snapshot(report) {
     missing: ids(report.missing),
     riskyFindings: ids(report.riskyFindings),
     resources: ids(report.resources),
-    skipped: !!(report.outOfScope)
+    skipped: !!report.outOfScope
   };
 }
+
+/**
+ * Delta against the PROJECTED state: the current prompt plus the clauses the
+ * user has accepted so far. This is what makes "What changed" react the moment
+ * a clause is added, instead of only after a re-analysis.
+ *
+ * @param {object|null} previous  the earlier stored snapshot
+ * @param {object} report         the current analysis
+ * @param {object} accepted       map of id -> true for accepted clauses
+ */
+function projectDelta(previous, report, accepted) {
+  if (!previous || !report || report.outOfScope) return null;
+  accepted = accepted || {};
+
+  // Promote accepted controls from "missing" to "mentioned" in a projected copy.
+  const mentioned = report.mentioned.slice();
+  const missing = [];
+  for (const m of report.missing) {
+    if (accepted[m.id]) mentioned.push(m);
+    else missing.push(m);
+  }
+  const riskyFindings = report.riskyFindings.filter((f) => !accepted[f.id]);
+
+  const projected = Object.assign({}, report, {
+    mentioned: mentioned,
+    missing: missing,
+    riskyFindings: riskyFindings
+  });
+  // projected scores reflect the accepted clauses
+  const p = project(projected, {});
+  projected.riskScore = p.riskScore;
+  projected.coverageScore = p.coverageScore;
+
+  return computeDelta(previous, projected);
+}
+
 
 const VectorAnalyzer = {
   analyze,
@@ -970,6 +1006,7 @@ const VectorAnalyzer = {
   project,
   harden,
   computeDelta,
+  projectDelta,
   snapshot,
   buildImprovedPrompt,
   normalize,

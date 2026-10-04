@@ -58,7 +58,6 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [showClarify, setShowClarify] = useState(false);
   const [showHarden, setShowHarden] = useState(false);
-  const [delta, setDelta] = useState(null);
   const [prevReport, setPrevReport] = useState(null);
   const [showDelta, setShowDelta] = useState(false);
 
@@ -115,9 +114,10 @@ export default function App() {
     setShowDelta(true);
 
     // Security Delta against the last comparable snapshot kept on the device.
+    // The delta itself is derived at render time (see `liveDelta`) so it also
+    // reflects any clauses the user has accepted.
     const prev = findComparable(rep);
     setPrevReport(prev);
-    setDelta(prev ? VectorAnalyzer.computeDelta(prev, rep) : null);
     addHistory(rep);
 
     setStatus("");
@@ -149,7 +149,7 @@ export default function App() {
     setAccepted((prev) => {
       const next = Object.assign({}, prev, { [id]: !prev[id] });
       const proj = report ? project(report, next) : null;
-      if (proj && next[id]) flash(label + " added · coverage " + proj.coverageScore + "%");
+      if (proj && next[id]) flash(label + " added Â· coverage " + proj.coverageScore + "%");
       return next;
     });
   }
@@ -165,11 +165,17 @@ export default function App() {
     setAccepted({});
     setShowClarify(false);
     setShowHarden(false);
-    flash("Hardened · risk " + h.report.riskScore + " · coverage " + h.report.coverageScore + "%");
+    flash("Hardened Â· risk " + h.report.riskScore + " Â· coverage " + h.report.coverageScore + "%");
   }
 
   const improved = report ? buildImproved(report.prompt, acceptedClauses(report, accepted)) : "";
   const proj = report ? project(report, accepted) : null;
+
+  // Delta is derived from the projected state so accepting a clause updates it
+  // immediately, without needing another analysis.
+  const liveDelta = (report && prevReport)
+    ? VectorAnalyzer.projectDelta(prevReport, report, accepted)
+    : null;
 
   const core = report ? report.missing.filter((m) => (m.tier || "clarify") === "core") : [];
   const clarify = report ? report.missing.filter((m) => (m.tier || "clarify") === "clarify") : [];
@@ -186,12 +192,12 @@ export default function App() {
             <Text style={styles.h1}>Vector</Text>
             <Text style={styles.sub}>
               {report
-                ? report.riskLevel + " " + proj.riskScore + "  ·  coverage " + proj.coverageScore + "%"
+                ? report.riskLevel + " " + proj.riskScore + "  Â·  coverage " + proj.coverageScore + "%"
                 : "AWS prompt security"}
             </Text>
           </View>
           <Pressable style={styles.iconBtn} onPress={() => setShowSettings((s) => !s)}>
-            <Text style={styles.iconText}>⚙</Text>
+            <Text style={styles.iconText}>âš™</Text>
           </Pressable>
         </View>
 
@@ -262,7 +268,7 @@ export default function App() {
           {scanning ? (
             <View style={styles.results}>
               <View style={styles.warn}>
-                <Text style={styles.warnText}>Running deep scan on this prompt…</Text>
+                <Text style={styles.warnText}>Running deep scan on this promptâ€¦</Text>
               </View>
             </View>
           ) : report && report.outOfScope ? (
@@ -298,7 +304,7 @@ export default function App() {
                       {report.riskLevel} RISK
                     </Text>
                     <Text style={styles.riskMeta}>
-                      started {report.riskScore} · coverage {report.coverageScore}% → {proj.coverageScore}%
+                      started {report.riskScore} Â· coverage {report.coverageScore}% â†’ {proj.coverageScore}%
                     </Text>
                   </View>
                 </View>
@@ -311,50 +317,50 @@ export default function App() {
                   <Text style={[styles.tierChip, { color: "#60a5fa" }]}>{harden.length} optional</Text>
                 </View>
                 <Pressable style={styles.acceptTop} onPress={hardenNow}>
-                  <Text style={styles.acceptTopText}>Harden prompt → risk 0</Text>
+                  <Text style={styles.acceptTopText}>Harden prompt â†’ risk 0</Text>
                 </Pressable>
                 {report.needsDeepScan ? (
                   <Text style={styles.note}>
                     {settings.apiKey
-                      ? "Low confidence" + (busy ? " — running Deep scan…" : " — Deep scan applied/available")
-                      : "Low confidence — add an API key in ⚙ to run Deep scan automatically."}
+                      ? "Low confidence" + (busy ? " â€” running Deep scanâ€¦" : " â€” Deep scan applied/available")
+                      : "Low confidence â€” add an API key in âš™ to run Deep scan automatically."}
                   </Text>
                 ) : null}
               </View>
 
-              {delta ? (
+              {liveDelta ? (
                 <View>
                   <Pressable style={styles.toggle} onPress={() => setShowDelta((s) => !s)}>
                     <Text style={styles.toggleText}>
-                      {showDelta ? "- Hide" : "+ Show"} Security Delta ({delta.verdict})
+                      {showDelta ? "- Hide" : "+ Show"} Security Delta ({liveDelta.verdict})
                     </Text>
                   </Pressable>
                   {showDelta ? (
                     <View style={styles.deltaCard}>
                       <View style={styles.deltaScores}>
                         <Text style={styles.deltaScore}>
-                          Risk {delta.risk.from} → {delta.risk.to}{" "}
-                          <Text style={{ color: delta.risk.direction === "down" ? "#4ade80" : delta.risk.direction === "up" ? "#f87171" : "#94a3b8" }}>
-                            {delta.risk.direction === "down" ? "▼" : delta.risk.direction === "up" ? "▲" : "–"} {Math.abs(delta.risk.delta)}
+                          Risk {liveDelta.risk.from} â†’ {liveDelta.risk.to}{" "}
+                          <Text style={{ color: liveDelta.risk.direction === "down" ? "#4ade80" : liveDelta.risk.direction === "up" ? "#f87171" : "#94a3b8" }}>
+                            {liveDelta.risk.direction === "down" ? "â–¼" : liveDelta.risk.direction === "up" ? "â–²" : "â€“"} {Math.abs(liveDelta.risk.delta)}
                           </Text>
                         </Text>
                         <Text style={styles.deltaScore}>
-                          Coverage {delta.coverage.from}% → {delta.coverage.to}%{" "}
-                          <Text style={{ color: delta.coverage.direction === "up" ? "#4ade80" : delta.coverage.direction === "down" ? "#f87171" : "#94a3b8" }}>
-                            {delta.coverage.direction === "up" ? "▲" : delta.coverage.direction === "down" ? "▼" : "–"} {Math.abs(delta.coverage.delta)}%
+                          Coverage {liveDelta.coverage.from}% â†’ {liveDelta.coverage.to}%{" "}
+                          <Text style={{ color: liveDelta.coverage.direction === "up" ? "#4ade80" : liveDelta.coverage.direction === "down" ? "#f87171" : "#94a3b8" }}>
+                            {liveDelta.coverage.direction === "up" ? "â–²" : liveDelta.coverage.direction === "down" ? "â–¼" : "â€“"} {Math.abs(liveDelta.coverage.delta)}%
                           </Text>
                         </Text>
                       </View>
                       <Text style={styles.deltaLabel}>Added</Text>
-                      <Text style={styles.deltaItems}>{delta.added.length ? delta.added.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaItems}>{liveDelta.added.length ? liveDelta.added.map((a) => a.label).join(", ") : "None"}</Text>
                       <Text style={styles.deltaLabel}>Still missing</Text>
-                      <Text style={styles.deltaItems}>{delta.stillMissing.length ? delta.stillMissing.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaItems}>{liveDelta.stillMissing.length ? liveDelta.stillMissing.map((a) => a.label).join(", ") : "None"}</Text>
                       <Text style={styles.deltaLabel}>Newly missing</Text>
-                      <Text style={styles.deltaItems}>{delta.newlyMissing.length ? delta.newlyMissing.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaItems}>{liveDelta.newlyMissing.length ? liveDelta.newlyMissing.map((a) => a.label).join(", ") : "None"}</Text>
                       <Text style={styles.deltaLabel}>New risks</Text>
-                      <Text style={styles.deltaItems}>{delta.newRisks.length ? delta.newRisks.map((a) => a.label).join(", ") : "None"}</Text>
-                      {delta.resources.changed ? (
-                        <Text style={styles.deltaWarn}>Resource set changed ({delta.resources.from} → {delta.resources.to}); scores are not directly comparable.</Text>
+                      <Text style={styles.deltaItems}>{liveDelta.newRisks.length ? liveDelta.newRisks.map((a) => a.label).join(", ") : "None"}</Text>
+                      {liveDelta.resources.changed ? (
+                        <Text style={styles.deltaWarn}>Resource set changed ({liveDelta.resources.from} â†’ {liveDelta.resources.to}); scores are not directly comparable.</Text>
                       ) : null}
                     </View>
                   ) : null}
@@ -372,11 +378,11 @@ export default function App() {
               ) : null}
 
               <Text style={styles.h2}>Confirmed gaps ({core.length})</Text>
-              {core.length === 0 ? <Text style={styles.none}>None. ✓</Text> : null}
+              {core.length === 0 ? <Text style={styles.none}>None. âœ“</Text> : null}
               {core.map((m) => (
                 <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
                   color={SEV_COLOR[m.severity] || "#fbbf24"}
-                  badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                  badge={m.severity + (m.source === "ai" ? " Â· AI" : "")}
                   title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
               ))}
 
@@ -384,14 +390,14 @@ export default function App() {
                 <View>
                   <Pressable style={styles.toggle} onPress={() => setShowClarify((s) => !s)}>
                     <Text style={styles.toggleText}>
-                      {showClarify ? "− Hide" : "+ Show"} clarification ({clarify.length})
+                      {showClarify ? "âˆ’ Hide" : "+ Show"} clarification ({clarify.length})
                     </Text>
                   </Pressable>
                   {showClarify
                     ? clarify.map((m) => (
                         <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
                           color={SEV_COLOR[m.severity] || "#fbbf24"}
-                          badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                          badge={m.severity + (m.source === "ai" ? " Â· AI" : "")}
                           title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
                       ))
                     : null}
@@ -402,14 +408,14 @@ export default function App() {
                 <View>
                   <Pressable style={styles.toggle} onPress={() => setShowHarden((s) => !s)}>
                     <Text style={styles.toggleText}>
-                      {showHarden ? "− Hide" : "+ Show"} optional hardening ({harden.length})
+                      {showHarden ? "âˆ’ Hide" : "+ Show"} optional hardening ({harden.length})
                     </Text>
                   </Pressable>
                   {showHarden
                     ? harden.map((m) => (
                         <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
                           color={SEV_COLOR[m.severity] || "#4ade80"}
-                          badge={m.severity + (m.source === "ai" ? " · AI" : "")}
+                          badge={m.severity + (m.source === "ai" ? " Â· AI" : "")}
                           title={m.label} desc={m.description} clause={m.clause} tf={m.tf} />
                       ))
                     : null}
@@ -453,7 +459,7 @@ function Card({ id, accepted, onToggle, color, badge, title, desc, clause, tf })
       {tf ? <Text style={styles.tf}>Terraform: {tf}</Text> : null}
       <Pressable style={[styles.smallBtn, on && styles.smallBtnOn]} onPress={() => onToggle(id, title)}>
         <Text style={[styles.smallBtnText, on && styles.smallBtnTextOn]}>
-          {on ? "Added ✓" : "+ Add clause"}
+          {on ? "Added âœ“" : "+ Add clause"}
         </Text>
       </Pressable>
     </View>

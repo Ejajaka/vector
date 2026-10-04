@@ -29,7 +29,6 @@
   let settings = DEFAULTS;
   let report = null;
   let state = { accepted: {} };
-  let delta = null;
   let prevReport = null;
   let hadHistory = false;
 
@@ -90,6 +89,11 @@
   }
 
   function render() {
+    // Recompute the delta live so accepting a clause updates "What changed"
+    // immediately (projected state), not only after a fresh analysis.
+    const liveDelta = prevReport
+      ? VectorAnalyzer.projectDelta(prevReport, report, state.accepted)
+      : null;
     VectorUI.render(el.results, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
@@ -98,15 +102,15 @@
         render();
       },
       onClearAll: function () { state.accepted = {}; render(); }
-    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
+    }, { delta: liveDelta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 
   function setHint() {
     const t = report.tierCounts || { core: 0, clarify: 0, harden: 0 };
     el.hint.textContent =
-      report.riskLevel + " " + report.riskScore + "/100 · coverage " + report.coverageScore +
-      "% · " + t.core + " confirmed";
+      report.riskLevel + " " + report.riskScore + "/100 Â· coverage " + report.coverageScore +
+      "% Â· " + t.core + " confirmed";
   }
 
   function analyzeNow() {
@@ -114,10 +118,10 @@
     if (!prompt) { el.hint.textContent = "Enter a prompt first"; return; }
     report = VectorAnalyzer.analyze(prompt, { strictMode: false });
     state.accepted = {};
-    // Security Delta against the last comparable local snapshot.
+    // Security Delta against the last comparable local snapshot. The delta is
+    // recomputed in render() so it also reflects accepted clauses.
     prevReport = findComparable(report);
     hadHistory = !!prevReport;
-    delta = prevReport ? VectorAnalyzer.computeDelta(prevReport, report) : null;
     addHistory(report);
     el.results.classList.remove("hidden");
     render();

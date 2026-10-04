@@ -312,6 +312,19 @@ test("delta: a snapshot can be compared back to a report", () => {
   assert.ok(d.added.length > 0);
 });
 
+test("projectDelta: accepting a clause updates the delta immediately", () => {
+  const v1 = analyze("Create an S3 bucket for user documents.");
+  const s1 = snapshot(v1);
+  const v2 = analyze("Create an S3 bucket for user documents.");
+  const before = require("../src/analyzer").projectDelta(s1, v2, {});
+  const acc = {};
+  v2.missing.slice(0, 2).forEach((m) => (acc[m.id] = true));
+  const after = require("../src/analyzer").projectDelta(s1, v2, acc);
+  assert.ok(after.added.length > before.added.length, "accepting clauses should add controls");
+  assert.ok(after.stillMissing.length < before.stillMissing.length, "still-missing should shrink");
+  assert.ok(after.risk.to < before.risk.to, "projected risk should fall");
+});
+
 test("UI: deltaHtml renders the added / still-missing / risk sections", () => {
   const v1 = analyze("Create an S3 bucket for user documents.");
   const v2 = analyze("Create a private, encrypted S3 bucket for user documents with KMS.");

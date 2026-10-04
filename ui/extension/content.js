@@ -11,7 +11,6 @@
   let improvedEl = null;
   let report = null;
   let state = { accepted: {} };
-  let delta = null;
   let prevReport = null;
   let hadHistory = false;
   let settings = Object.assign({}, VectorSettings.DEFAULTS);
@@ -78,6 +77,7 @@
   }
 
   function render() {
+    const liveDelta = prevReport ? VectorAnalyzer.projectDelta(prevReport, report, state.accepted) : null;
     VectorUI.render(resultsEl, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
@@ -93,7 +93,7 @@
         state.accepted = {};
         render();
       }
-    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
+    }, { delta: liveDelta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 

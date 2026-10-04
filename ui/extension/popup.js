@@ -22,7 +22,6 @@
   let settings = Object.assign({}, VectorSettings.DEFAULTS);
   let report = null;
   let state = { accepted: {} };
-  let delta = null;          // last computed Security Delta
   let prevReport = null;     // the snapshot it was computed against
   let hadHistory = false;    // whether any comparable history existed
 
@@ -51,6 +50,11 @@
   }
 
   function render() {
+    // Recompute the delta live so accepting a clause updates "What changed"
+    // immediately (projected state), not only after a fresh analysis.
+    const liveDelta = prevReport
+      ? VectorAnalyzer.projectDelta(prevReport, report, state.accepted)
+      : null;
     VectorUI.render(el.results, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
@@ -60,7 +64,7 @@
       },
       onClearAll: function () { state.accepted = {}; render(); },
       onHarden: hardenNow
-    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
+    }, { delta: liveDelta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 
@@ -71,7 +75,7 @@
     state.accepted = {};
     render();
     setHint();
-    toast("Hardened · risk " + report.riskScore + " · coverage " + report.coverageScore + "%");
+    toast("Hardened Â· risk " + report.riskScore + " Â· coverage " + report.coverageScore + "%");
   }
 
   function setHint() {
