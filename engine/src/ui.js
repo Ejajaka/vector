@@ -246,13 +246,63 @@
       when = mins < 1 ? "moments ago" : mins === 1 ? "1 minute ago" : mins + " minutes ago";
     }
 
+    // A one-line plain-language headline that names what actually changed.
+    let headline;
+    if (delta.verdict === "unchanged") {
+      headline = "No change since the previous version.";
+    } else {
+      const bits = [];
+      if (delta.added.length) bits.push("+" + delta.added.length + " control" + (delta.added.length === 1 ? "" : "s") + " added");
+      if (delta.newRisks.length) bits.push("+" + delta.newRisks.length + " new risk" + (delta.newRisks.length === 1 ? "" : "s"));
+      if (delta.newlyMissing.length) bits.push(delta.newlyMissing.length + " control" + (delta.newlyMissing.length === 1 ? "" : "s") + " regressed");
+      if (delta.risk.delta) bits.push("risk " + (delta.risk.delta < 0 ? "down" : "up") + " " + Math.abs(delta.risk.delta));
+      headline = bits.join(" \u00b7 ") || "Scores changed.";
+    }
+
     let html =
       '<details class="v-section v-delta" open>' +
-      '<summary class="v-group"><span class="v-group-label">Security Delta' +
+      '<summary class="v-group"><span class="v-group-label">What changed' +
       (when ? ' <span class="v-muted">(vs ' + escapeHtml(when) + ")</span>" : "") +
       '</span><span class="v-delta-verdict ' + verdictCls + '">' + escapeHtml(verdictText) + "</span></summary>" +
-      '<div class="v-delta-body">';
+      '<div class="v-delta-body">' +
+      '<p class="v-delta-headline">' + escapeHtml(headline) + "</p>";
 
+    // Improvements first - what the user achieved.
+    html +=
+      '<div class="v-delta-block good">' +
+      '<div class="v-delta-block-title"><span class="v-delta-ico">\u2713</span> Added / now stated</div>' +
+      line(delta.added, "ok", "Nothing new was added.") +
+      "</div>";
+
+    if (delta.fixedRisks.length) {
+      html +=
+        '<div class="v-delta-block good">' +
+        '<div class="v-delta-block-title"><span class="v-delta-ico">\u2713</span> Risks fixed</div>' +
+        line(delta.fixedRisks, "ok", "") +
+        "</div>";
+    }
+
+    // Regressions next - the most important negative signal.
+    html +=
+      '<div class="v-delta-block bad">' +
+      '<div class="v-delta-block-title"><span class="v-delta-ico">!</span> New risks introduced</div>' +
+      line(delta.newRisks, "bad", "None - no new risks appeared.") +
+      "</div>";
+
+    html +=
+      '<div class="v-delta-block bad">' +
+      '<div class="v-delta-block-title"><span class="v-delta-ico">!</span> Controls regressed (were stated, now missing)</div>' +
+      line(delta.newlyMissing, "bad", "None - nothing was lost.") +
+      "</div>";
+
+    // What still needs attention.
+    html +=
+      '<div class="v-delta-block warn">' +
+      '<div class="v-delta-block-title"><span class="v-delta-ico">\u26A0</span> Still missing (' + delta.stillMissing.length + ")</div>" +
+      line(delta.stillMissing, "warn", "Nothing - all required controls are stated.") +
+      "</div>";
+
+    // Scores last, compact.
     html +=
       '<div class="v-delta-scores">' +
       '<div class="v-delta-score"><span class="v-muted">Risk</span> ' +
@@ -264,16 +314,6 @@
       '<span class="' + (delta.coverage.direction === "up" ? "ok" : delta.coverage.direction === "down" ? "bad" : "") + '">' +
       arrow(delta.coverage.direction) + " " + Math.abs(delta.coverage.delta) + "%</span></div>" +
       "</div>";
-
-    html += '<h4 class="v-delta-h">Controls added</h4>' + line(delta.added, "ok", "None added.");
-    if (delta.fixedRisks.length) {
-      html += '<h4 class="v-delta-h">Risks fixed</h4>' + line(delta.fixedRisks, "ok", "");
-    }
-    html += '<h4 class="v-delta-h">Still missing</h4>' + line(delta.stillMissing, "warn", "Nothing - all required controls stated.");
-    html += '<h4 class="v-delta-h">Newly missing</h4>' +
-      line(delta.newlyMissing, "bad", "None - no controls were regressed.");
-    html += '<h4 class="v-delta-h">New risks introduced</h4>' +
-      line(delta.newRisks, "bad", "None - no new risks were introduced.");
 
     if (delta.resources.changed) {
       html +=

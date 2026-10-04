@@ -317,11 +317,18 @@ test("UI: deltaHtml renders the added / still-missing / risk sections", () => {
   const v2 = analyze("Create a private, encrypted S3 bucket for user documents with KMS.");
   const d = computeDelta(v1, v2);
   const html = VectorUI.deltaHtml(d, { ts: Date.now() - 60000 });
-  assert.ok(html.indexOf("Security Delta") !== -1);
-  assert.ok(html.indexOf("Controls added") !== -1);
+  assert.ok(html.indexOf("What changed") !== -1, "expected the delta panel title");
+  assert.ok(html.indexOf("Added / now stated") !== -1);
   assert.ok(html.indexOf("Still missing") !== -1);
   assert.ok(html.indexOf("New risks introduced") !== -1);
   assert.ok(html.indexOf("v-delta-scores") !== -1);
+});
+
+test("resources: KMS as an encryption setting is not counted as a resource", () => {
+  const asSetting = analyze("Create a private S3 bucket encrypted with KMS.");
+  assert.ok(!asSetting.resources.some((r) => r.id === "kms"), "KMS modifier should not be a resource");
+  const asResource = analyze("Create a KMS key for the application.");
+  assert.ok(asResource.resources.some((r) => r.id === "kms"), "an explicit KMS key is a resource");
 });
 
 // ---- Coverage score ----

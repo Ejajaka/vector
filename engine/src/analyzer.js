@@ -192,7 +192,39 @@ function detectResources(haystack) {
     const hit = res.aliases.find((a) => aliasMatches(haystack, a));
     if (hit) found.push({ id: res.id, label: res.label, matched: hit });
   }
-  return found;
+  return pruneModifierResources(haystack, found);
+}
+
+/**
+ * Some "resources" are usually mentioned as a SETTING rather than as something
+ * to provision. "a private bucket encrypted with KMS" describes encryption;
+ * it is not a request for a standalone KMS key. Counting it as a resource both
+ * inflates the required-control set (hurting coverage) and makes prompt
+ * evolution non-comparable.
+ *
+ * A resource is dropped only when its alias appears purely as a modifier
+ * ("with/using/via KMS", "KMS encryption") AND there is no provisioning verb
+ * or explicit key/customer-managed-key wording nearby.
+ */
+const MODIFIER_ONLY = ["kms", "secrets"];
+
+function pruneModifierResources(haystack, found) {
+  return found.filter(function (r) {
+    if (MODIFIER_ONLY.indexOf(r.id) === -1) return true;
+    const alias = r.matched;
+    // explicit provisioning: "create a kms key", "using customer managed key"
+    const provisioning = new RegExp(
+      "\\b(create|provision|generate|make|set up|new|dedicated|standalone|separate)\\b[^.\\n,;]{0,30}\\b" +
+        "(" + alias + "|kms key|cmk|customer[- ]managed key|secret store|secret manager)\\b",
+      "i"
+    ).test(haystack);
+    if (provisioning) return true;
+    // a plain "KMS key" / "customer managed key" phrase is itself a resource ask
+    const keyPhrase = /\b(kms key|customer[- ]managed key|\bcmk\b)/i.test(haystack);
+    if (keyPhrase) return true;
+    // otherwise it is a modifier ("encrypted with KMS") -> not a resource
+    return false;
+  });
 }
 
 /**
