@@ -661,10 +661,9 @@ function analyze(prompt, options) {
  * @param {object} report
  * @param {{missing?:Array, risky?:Array}} external
  * @param {boolean} [external.clean]  the model reported no remaining issues
- * @param {{drop?:Array<{id:string,reason:string}>}} [review]  AI second-opinion dismissals
  */
-function mergeFindings(report, external, review) {
-  if (!external) external = {};
+function mergeFindings(report, external) {
+  if (!external) return report;
   const missing = report.missing.slice();
   const riskyFindings = report.riskyFindings.slice();
   const seenMissing = new Set(missing.map((m) => (m.label || "").toLowerCase()));
@@ -738,52 +737,6 @@ function mergeFindings(report, external, review) {
   if (merged.aiClean) {
     merged.feedback = merged.feedback.concat(["Deep scan found no additional issues."]);
   }
-
-  // ---- AI second opinion: demote rule findings the model says are not needed.
-  // Safety: a dismissed finding is NEVER deleted - it moves to dismissed[] so the
-  // user can see it and restore it. core-tier findings cannot be dismissed.
-  if (review && Array.isArray(review.drop) && review.drop.length) {
-    const reasons = new Map();
-    for (const d of review.drop) if (d && d.id) reasons.set(String(d.id), String(d.reason || "Not required for this prompt."));
-
-    const kept = [];
-    const dismissed = [];
-    for (const m of merged.missing) {
-      const tier = m.tier || "clarify";
-      if (reasons.has(m.id) && tier !== "core") {
-        dismissed.push(Object.assign({}, m, {
-          dismissalReason: reasons.get(m.id),
-          dismissedBy: "ai"
-        }));
-      } else {
-        kept.push(m);
-      }
-    }
-    merged.missing = kept;
-    merged.dismissed = dismissed;
-
-    if (dismissed.length) {
-      merged.tierCounts = { core: 0, clarify: 0, harden: 0 };
-      for (const m of kept) merged.tierCounts[m.tier || "clarify"]++;
-      merged.stats = {
-        resources: report.stats.resources,
-        mentioned: report.stats.mentioned,
-        missing: kept.length,
-        risky: merged.riskyFindings.length
-      };
-      const droppedWeight = dismissed.reduce((a, m) => a + (m.weight || 0), 0);
-      merged.totalWeight = Math.max(1, (merged.totalWeight || report.totalWeight) - droppedWeight);
-      merged.riskScore = project(merged, {}).riskScore;
-      const meta2 = riskLevelFromScore(merged.riskScore);
-      merged.riskLevel = meta2.level;
-      merged.riskColor = meta2.color;
-      merged.feedback = merged.feedback.concat([
-        "AI review set aside " + dismissed.length + " finding(s) it judged not required; see the dismissed list and restore any you disagree with."
-      ]);
-    }
-  }
-  if (!merged.dismissed) merged.dismissed = [];
-
   return merged;
 }
 

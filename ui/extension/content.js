@@ -74,8 +74,8 @@
     panel.querySelector("#vector-improved-wrap").classList.remove("hidden");
   }
 
-  function render(opts) {
-    VectorUI.renderInto(resultsEl, report, state, {
+  function render() {
+    VectorUI.render(resultsEl, report, state, {
       onToggle: function (id) { state.accepted[id] = !state.accepted[id]; render(); },
       onAcceptAll: function () {
         report.missing.forEach(function (m) { state.accepted[m.id] = true; });
@@ -90,7 +90,7 @@
         state.accepted = {};
         render();
       }
-    }, opts || {});
+    });
     updateImproved();
   }
 
@@ -114,17 +114,11 @@
     const btn = panel.querySelector("#vector-deep");
     btn.disabled = true;
     btn.textContent = "Scanning...";
-    render({ busy: "Reviewing this prompt with AI..." });
+    resultsEl.innerHTML = '<div class="v-busy">Running deep scan on this prompt&hellip;</div>';
+    panel.querySelector("#vector-improved-wrap").classList.add("hidden");
     try {
       const result = await VectorLLM.deepScan(base.prompt, settings);
-      let merged = VectorAnalyzer.mergeFindings(base, result.findings);
-      if (settings.reviewFindings && merged.missing.length) {
-        try {
-          const review = await VectorLLM.reviewFindings(base.prompt, merged.missing, settings);
-          merged = VectorAnalyzer.mergeFindings(merged, {}, review);
-        } catch (e) { /* best effort */ }
-      }
-      report = merged;
+      report = VectorAnalyzer.mergeFindings(base, result.findings);
       render();
     } catch (e) {
       report = base;

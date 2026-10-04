@@ -3,117 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#6366f1" />
   <title>Vector - AWS Prompt Security</title>
   <link rel="stylesheet" href="src/ui.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- top bar -->
-  <header class="gz-topbar">
-    <div class="gz-brand">
-      <span class="gz-logo">V</span>
-      <span class="gz-brandname">Vector - Security Diagnosis</span>
-      <span class="gz-saved">&#10003; Saved</span>
+  <header class="m-header">
+    <span class="m-logo">V</span>
+    <div class="m-title">
+      <h1>Vector</h1>
+      <p>Pre-generation security diagnosis (AWS)</p>
     </div>
-    <div class="gz-topright">
-      <span class="gz-pill">Free &middot; offline</span>
-      <button id="btn-settings" class="gz-icon" type="button" title="Settings">&#9881;</button>
-    </div>
+    <span class="m-version" style="font-size:11px;color:#6b7280;">v0.5.7</span>
+    <button id="btn-settings" class="m-icon" type="button" aria-label="Settings">&#9881;</button>
   </header>
 
-  <!-- settings drawer -->
-  <div id="settings" class="gz-settings hidden">
-    <label class="gz-field"><span>Deep scan API key (optional)</span>
-      <input id="set-key" type="password" placeholder="AIza..." autocomplete="off" /></label>
-    <label class="gz-field"><span>Base URL</span>
-      <input id="set-url" type="text" placeholder="https://generativelanguage.googleapis.com/v1beta/openai" /></label>
-    <label class="gz-field"><span>Model</span>
-      <input id="set-model" type="text" placeholder="gemini-2.5-flash" /></label>
-    <div class="gz-settings-row">
-      <span id="set-status" class="gz-muted"></span>
-      <button id="btn-save" class="gz-btn dark" type="button">Save</button>
+  <main class="m-main">
+    <div id="settings" class="m-settings hidden">
+      <label class="m-field">
+        <span>Deep scan API key (optional, Gemini free tier by default)</span>
+        <input id="set-key" type="password" placeholder="AIza..." autocomplete="off" />
+      </label>
+      <label class="m-field">
+        <span>Base URL</span>
+        <input id="set-url" type="text" placeholder="https://generativelanguage.googleapis.com/v1beta/openai" />
+      </label>
+      <label class="m-field">
+        <span>Model</span>
+        <input id="set-model" type="text" placeholder="gemini-2.0-flash" />
+      </label>
+      <div class="m-row">
+        <span id="set-status" class="v-muted"></span>
+        <button id="btn-save" class="v-btn primary" type="button">Save</button>
+      </div>
     </div>
-  </div>
 
-  <!-- split body -->
-  <div class="gz-body">
-    <!-- LEFT: the document / prompt -->
-    <section class="gz-left">
-      <div class="gz-doc">
-        <textarea id="prompt" spellcheck="false"
-          placeholder="Paste or type the AWS infrastructure prompt you are about to send to an LLM..."></textarea>
+    <label class="m-label" for="prompt">AWS infrastructure prompt</label>
+    <textarea id="prompt" spellcheck="false"
+      placeholder="e.g. Create an S3 bucket for user documents and an EC2 instance running a web server."></textarea>
+    <div class="m-row">
+      <span id="hint" class="v-muted">Runs offline</span>
+      <div class="m-actions">
+        <button id="btn-deep" class="v-btn" type="button">Deep scan</button>
+        <button id="btn-analyze" class="v-btn primary" type="button">Analyze</button>
       </div>
+    </div>
+
+    <section id="results" class="hidden"></section>
+
+    <section id="improved-wrap" class="v-improved hidden">
+      <div class="v-improved-head">
+        <label>Improved prompt</label>
+        <button id="btn-copy" class="v-btn" type="button">Copy</button>
+      </div>
+      <pre id="improved" class="v-improved-body"></pre>
     </section>
+  </main>
 
-    <!-- RIGHT: the analysis panel -->
-    <aside class="gz-right">
-      <div class="gz-tabs">
-        <button class="gz-tab active" type="button">Basic Scan</button>
-        <button class="gz-tab" type="button" disabled>Deep Scan</button>
-        <button class="gz-tab" type="button" disabled>Coverage</button>
-        <button class="gz-tab" type="button" disabled>Fix</button>
-      </div>
-
-      <div class="gz-panel">
-        <!-- empty state -->
-        <div id="empty" class="gz-empty">
-          <div class="gz-empty-ring"><span>?</span></div>
-          <p>Paste a prompt on the left and press <strong>Analyze</strong> to see the security diagnosis.</p>
-          <button id="btn-sample" class="gz-btn outline" type="button">Load a sample prompt</button>
-        </div>
-
-        <!-- result -->
-        <div id="result" class="hidden">
-          <div class="gz-verdict">
-            <div id="dial" class="gz-dial"><span id="dial-num">0</span><small>/100</small></div>
-            <div class="gz-verdict-text">
-              <div id="verdict-line" class="gz-verdict-line"></div>
-              <div id="verdict-sub" class="gz-muted"></div>
-            </div>
-          </div>
-
-          <div class="gz-chances">
-            <span class="gz-chances-label">This prompt is&hellip;</span>
-            <span id="chip-risk" class="gz-chip">risk &ndash;</span>
-            <span id="chip-cov" class="gz-chip">coverage &ndash;</span>
-            <span id="chip-conf" class="gz-chip">confidence &ndash;</span>
-          </div>
-
-          <button id="btn-highlight" class="gz-wide" type="button">
-            <span>&#9776; See what is missing and why</span><span>&rsaquo;</span>
-          </button>
-
-          <div id="findings"></div>
-
-          <section id="improved-wrap" class="gz-improved hidden">
-            <div class="gz-improved-head">
-              <span>Improved prompt</span>
-              <button id="btn-copy" class="gz-btn outline" type="button">Copy</button>
-            </div>
-            <pre id="improved"></pre>
-          </section>
-        </div>
-      </div>
-
-      <div class="gz-footer">
-        <div>
-          <div id="foot-meta" class="gz-muted">No prompt yet</div>
-          <div class="gz-muted" id="foot-chars"></div>
-        </div>
-        <div class="gz-footer-actions">
-          <button id="btn-deep" class="gz-btn outline" type="button">Deep scan</button>
-          <button id="btn-analyze" class="gz-btn dark" type="button">Analyze</button>
-        </div>
-      </div>
-    </aside>
-  </div>
-
-  <script src="src/taxonomy.js?v=0.6.0"></script>
-  <script src="src/semantic.js?v=0.6.0"></script>
-  <script src="src/analyzer.js?v=0.6.0"></script>
-  <script src="src/ui.js?v=0.6.0"></script>
-  <script src="src/llm.js?v=0.6.0"></script>
-  <script src="app.js?v=0.6.0"></script>
+  <script src="src/taxonomy.js?v=0.5.7"></script>
+  <script src="src/semantic.js?v=0.5.7"></script>
+  <script src="src/analyzer.js?v=0.5.7"></script>
+  <script src="src/ui.js?v=0.5.7"></script>
+  <script src="src/llm.js?v=0.5.7"></script>
+  <script src="app.js?v=0.5.7"></script>
 </body>
 </html>

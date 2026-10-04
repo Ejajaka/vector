@@ -514,69 +514,6 @@ test("mergeFindings: an AI finding is labelled ai", () => {
   assert.ok(merged.missing.some((m) => m.source === "ai"));
 });
 
-// ---- AI second-opinion review (dismissals) ----
-test("review: a clarify finding can be dismissed and moves to dismissed[]", () => {
-  const r = analyze("Create an S3 bucket for user documents.");
-  const target = r.missing.find((m) => (m.tier || "clarify") === "clarify");
-  assert.ok(target, "expected a clarify finding");
-  const merged = require("../src/analyzer").mergeFindings(r, {}, {
-    drop: [{ id: target.id, reason: "Not applicable." }]
-  });
-  assert.ok(!merged.missing.some((m) => m.id === target.id), "dismissed item removed from missing");
-  assert.ok(merged.dismissed.some((m) => m.id === target.id), "dismissed item present in dismissed[]");
-  assert.strictEqual(merged.dismissed[0].dismissalReason, "Not applicable.");
-});
-
-test("review: a core finding can never be dismissed", () => {
-  const r = analyze("Create an S3 bucket.");
-  const core = r.missing.find((m) => (m.tier || "clarify") === "core");
-  assert.ok(core, "expected a core finding");
-  const merged = require("../src/analyzer").mergeFindings(r, {}, {
-    drop: [{ id: core.id, reason: "trying to drop a core gap" }]
-  });
-  assert.ok(merged.missing.some((m) => m.id === core.id), "core finding must remain");
-  assert.strictEqual(merged.dismissed.length, 0);
-});
-
-test("review: dismissing lowers risk and raises coverage", () => {
-  const r = analyze("Create an S3 bucket for user documents.");
-  const before = require("../src/analyzer").project(r, {});
-  const merge = require("../src/analyzer").mergeFindings;
-  const all = r.missing.map((m) => ({ id: m.id, reason: "x" }));
-  const merged = merge(r, {}, { drop: all });
-  assert.ok(merged.missing.length < r.missing.length);
-});
-
-test("review: parseReview tolerates prose and empty results", () => {
-  const L = require("../src/llm");
-  const out = L.parseReview('here: {"drop":[{"id":"x","reason":"y"}]} done');
-  assert.strictEqual(out.drop.length, 1);
-  const none = L.parseReview("no json here");
-  assert.strictEqual(none.drop.length, 0);
-});
-
-test("UI: reportHtml renders collapsible details sections", () => {
-  const r = analyze("Create an S3 bucket for user documents.");
-  const html = VectorUI.reportHtml(r, { accepted: {} });
-  assert.ok(html.includes("<details"), "expected <details> sections");
-  assert.ok(html.includes("Confirmed gaps"), "expected tier group");
-});
-
-test("UI: dismissed section appears in the report html", () => {
-  const r = analyze("Create an S3 bucket for user documents.");
-  const target = r.missing.find((m) => (m.tier || "clarify") === "clarify");
-  const merged = require("../src/analyzer").mergeFindings(r, {}, { drop: [{ id: target.id, reason: "n/a" }] });
-  const html = VectorUI.reportHtml(merged, { accepted: {} });
-  assert.ok(html.includes("Dismissed by AI review"), "expected dismissed section");
-});
-
-test("UI: renderInto exists and renders a busy note", () => {
-  assert.strictEqual(typeof VectorUI.renderInto, "function");
-  const r = analyze("Create an S3 bucket.");
-  const html = VectorUI.reportHtml(r, { accepted: {} });
-  assert.ok(html.length > 0);
-});
-
 (async function run() {
   for (const t of queue) {
     try {

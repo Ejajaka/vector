@@ -58,7 +58,6 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [showClarify, setShowClarify] = useState(false);
   const [showHarden, setShowHarden] = useState(false);
-  const [showDismissed, setShowDismissed] = useState(false);
 
   function flash(msg) {
     setToast(msg);
@@ -101,26 +100,15 @@ export default function App() {
       return;
     }
     setBusy(true);
-    setScanning(true); // keep the rule numbers visible with a working chip
-    const base = target;
     try {
-      const result = await VectorLLM.deepScan(base.prompt, settings);
-      let merged = VectorAnalyzer.mergeFindings(base, result.findings);
-      if (settings.reviewFindings && merged.missing.length) {
-        try {
-          const review = await VectorLLM.reviewFindings(base.prompt, merged.missing, settings);
-          merged = VectorAnalyzer.mergeFindings(merged, {}, review);
-        } catch (e) { /* best effort */ }
-      }
-      setReport(merged);
+      const result = await VectorLLM.deepScan(target.prompt, settings);
+      setReport(VectorAnalyzer.mergeFindings(target, result.findings));
       setStatus("");
-      flash(result.findings.clean ? "Deep scan: no additional issues" : "Deep scan merged (" + result.via + ")");
+      flash("Deep scan merged (" + result.via + ")");
     } catch (e) {
-      setReport(base);
       setStatus(e.message || "Deep scan failed");
     } finally {
       setBusy(false);
-      setScanning(false);
     }
   }
 
@@ -238,13 +226,13 @@ export default function App() {
 
           {status ? <Text style={styles.status}>{status}</Text> : null}
 
-          {report && !report.outOfScope && scanning ? (
-            <View style={styles.chip}>
-              <Text style={styles.chipText}>Reviewing this prompt with AI... the numbers below update when it finishes.</Text>
+          {scanning ? (
+            <View style={styles.results}>
+              <View style={styles.warn}>
+                <Text style={styles.warnText}>Running deep scan on this prompt…</Text>
+              </View>
             </View>
-          ) : null}
-
-          {report && report.outOfScope ? (
+          ) : report && report.outOfScope ? (
             <View style={styles.results}>
               <View style={styles.warn}>
                 <Text style={styles.warnText}>{report.feedback[0]}</Text>
@@ -356,26 +344,6 @@ export default function App() {
                 </View>
               ) : null}
 
-              {report.dismissed && report.dismissed.length ? (
-                <View>
-                  <Pressable style={styles.toggle} onPress={() => setShowDismissed((s) => !s)}>
-                    <Text style={styles.toggleText}>
-                      {showDismissed ? "− Hide" : "+ Show"} dismissed by AI review ({report.dismissed.length})
-                    </Text>
-                  </Pressable>
-                  {showDismissed
-                    ? report.dismissed.map((m) => (
-                        <Card key={m.id} id={m.id} accepted={accepted} onToggle={toggle}
-                          color="#94a3b8"
-                          badge={"AI"}
-                          title={m.label}
-                          desc={"Reason: " + (m.dismissalReason || "Not required for this prompt.")}
-                          clause={m.clause} tf={m.tf} />
-                      ))
-                    : null}
-                </View>
-              ) : null}
-
               <View style={styles.rowBetween}>
                 <Text style={styles.h2}>Improved prompt</Text>
                 <Pressable onPress={() => Share.share({ message: improved })}>
@@ -450,8 +418,6 @@ const styles = StyleSheet.create({
   warnText: { color: "#fde68a", fontSize: 12 },
   ok: { backgroundColor: "#052e16", borderWidth: 1, borderColor: "#16a34a", borderRadius: 10, padding: 12, marginBottom: 12 },
   okText: { color: "#4ade80", fontSize: 12.5 },
-  chip: { backgroundColor: "#1e293b", borderWidth: 1, borderColor: "#334155", borderRadius: 8, padding: 10, marginBottom: 12 },
-  chipText: { color: "#a5b4fc", fontSize: 11.5 },
 
   riskCard: { borderWidth: 1, borderColor: "#1f2937", borderLeftWidth: 5, borderRadius: 12, padding: 14, backgroundColor: "#111827" },
   riskTop: { flexDirection: "row", alignItems: "center" },

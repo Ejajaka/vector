@@ -11,7 +11,6 @@
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     model: "gemini-2.5-flash",
     autoDeepScan: false,
-    reviewFindings: true,
     strictMode: false,
     policyText: ""
   };
