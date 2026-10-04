@@ -176,6 +176,27 @@ project_NLP/                     <- open THIS in VS Code
 | 16 | Semantic relevance | TF-IDF top matches (advisory only) |
 | 17 | Report | single object consumed by every surface |
 | 18 | Render | UI cards, clauses, Terraform hints, one-click actions |
+| 19 | Security Delta | compare this report to the previous version of the same resource set and report what changed |
+
+### Step 19 - Security Delta Analysis (prompt evolution tracking)
+
+An additive, stateless stage. `VectorAnalyzer.computeDelta(previous, current)`
+compares two reports of the same prompt and returns:
+
+- **added** - controls stated now that were missing before (the improvement)
+- **newlyMissing** - controls that were stated before and are now missing (a regression)
+- **stillMissing** - controls absent in both versions
+- **newRisks / fixedRisks** - risky statements introduced or removed
+- **risk** and **coverage** - from/to, signed delta, and direction
+- **resources.changed** - flags when the resource set changed, so scores are not
+  presented as directly comparable
+- **verdict** - improved / regressed / mixed / unchanged
+
+`VectorAnalyzer.snapshot(report)` stores the id lists a later comparison needs.
+`VectorSettings.getComparable(report)` returns the most recent stored snapshot
+that targets the same resource set, and legacy history entries (which stored only
+a count) are skipped rather than mis-compared. The delta is rendered by the shared
+`VectorUI.deltaHtml()` as a collapsible panel on every surface.
 
 ---
 

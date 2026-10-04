@@ -803,11 +803,142 @@ function harden(prompt, maxIterations) {
   return { prompt: current, clauses: clauses, report: analyze(current) };
 }
 
+/**
+ * Security Delta Analysis (prompt evolution tracking).
+ *
+ * Compares two reports of the SAME prompt over time and reports what changed:
+ * added controls, controls still missing, controls newly missing (a regression),
+ * new risks, fixed risks, and the movement of the risk and coverage scores.
+ *
+ * Pure function: it never mutates the reports it is given and holds no state.
+ *
+ * @param {object|null} previous  earlier report (or a stored history entry)
+ * @param {object} current        latest report
+ * @returns {object|null} delta, or null when a delta cannot be computed
+ */
+function computeDelta(previous, current) {
+  if (!previous || !current) return null;
+  // A comparable previous entry must carry the control id lists. Older history
+  // entries stored only a count, so they are skipped rather than mis-compared.
+  if (!Array.isArray(previous.missing) || !Array.isArray(previous.mentioned)) return null;
+
+  const idSet = (arr) => new Set((arr || []).map((x) => (typeof x === "string" ? x : x && x.id)).filter(Boolean));
+  const idsOf = (arr) => (arr || []).map((x) => (typeof x === "string" ? x : x && x.id)).filter(Boolean);
+
+  const prevMentioned = idSet(previous.mentioned);
+  const curMentioned = idSet(current.mentioned || []);
+  const prevMissing = idSet(previous.missing);
+  const curMissing = idSet(current.missing || []);
+  const prevRisky = idSet(previous.riskyFindings);
+  const curRisky = idSet(current.riskyFindings || []);
+  const prevResources = idSet(previous.resources);
+  const curResources = idSet(current.resources);
+
+  const labelOf = (list, id) => {
+    const hit = (list || []).find((x) => (typeof x === "string" ? x : x.id) === id);
+    return hit && typeof hit === "object" ? hit : { id: id, label: id, severity: "", tier: "" };
+  };
+
+  // controls the user added: now stated, was missing
+  const added = idsOf(current.mentioned)
+    .filter((id) => !prevMentioned.has(id))
+    .map((id) => labelOf(current.mentioned, id));
+
+  // controls the user removed: was stated, now missing (a regression)
+  const newlyMissing = idsOf(current.missing)
+    .filter((id) => prevMentioned.has(id))
+    .map((id) => labelOf(current.missing, id));
+
+  // still absent across both versions
+  const stillMissing = idsOf(current.missing)
+    .filter((id) => prevMissing.has(id))
+    .map((id) => labelOf(current.missing, id));
+
+  // risky statements introduced / removed
+  const newRisks = idsOf(current.riskyFindings)
+    .filter((id) => !prevRisky.has(id))
+    .map((id) => labelOf(current.riskyFindings, id));
+  const fixedRisks = idsOf(previous.riskyFindings)
+    .filter((id) => !curRisky.has(id))
+    .map((id) => labelOf(previous.riskyFindings, id));
+
+  const riskFrom = typeof previous.riskScore === "number" ? previous.riskScore : 0;
+  const riskTo = typeof current.riskScore === "number" ? current.riskScore : 0;
+  const covFrom = typeof previous.coverageScore === "number" ? previous.coverageScore : 0;
+  const covTo = typeof current.coverageScore === "number" ? current.coverageScore : 0;
+
+  const dir = (from, to, lowerIsBetter) => {
+    if (to === from) return "same";
+    if (lowerIsBetter) return to < from ? "down" : "up";
+    return to > from ? "up" : "down";
+  };
+
+  const resources = {
+    from: prevResources.size,
+    to: curResources.size,
+    changed: prevResources.size !== curResources.size ||
+      idsOf(current.resources).some((id) => !prevResources.has(id))
+  };
+
+  // Classify the overall movement. Coverage dropping or a new risk/were-removed
+  // control makes it "mixed" or "regressed" even if the risk score improved.
+  let verdict;
+  const riskDown = riskTo < riskFrom;
+  const riskUp = riskTo > riskFrom;
+  const covUp = covTo > covFrom;
+  const covDown = covTo < covFrom;
+  const regressed = newlyMissing.length > 0 || newRisks.length > 0 || riskUp;
+
+  if (regressed && (riskDown || covUp)) verdict = "mixed";
+  else if (regressed) verdict = "regressed";
+  else if (riskFrom === riskTo && covFrom === covTo && !added.length && !fixedRisks.length) verdict = "unchanged";
+  else if (riskDown || covUp || added.length || fixedRisks.length) verdict = "improved";
+  else verdict = "mixed";
+
+  return {
+    hasPrevious: true,
+    added: added,
+    newlyMissing: newlyMissing,
+    stillMissing: stillMissing,
+    newRisks: newRisks,
+    fixedRisks: fixedRisks,
+    risk: { from: riskFrom, to: riskTo, delta: riskTo - riskFrom, direction: dir(riskFrom, riskTo, true) },
+    coverage: { from: covFrom, to: covTo, delta: covTo - covFrom, direction: dir(covFrom, covTo, false) },
+    resources: resources,
+    improved: added.length + fixedRisks.length,
+    regressedCount: newlyMissing.length + newRisks.length,
+    verdict: verdict
+  };
+}
+
+/**
+ * Build a compact, storable snapshot of a report for later delta comparison.
+ * Keeps only the ids of each list so it fits comfortably in local storage.
+ */
+function snapshot(report) {
+  if (!report) return null;
+  const ids = (arr) => (arr || []).map((x) => (typeof x === "string" ? x : x && x.id)).filter(Boolean);
+  return {
+    ts: Date.now(),
+    prompt: report.prompt,
+    riskScore: report.riskScore,
+    riskLevel: report.riskLevel,
+    coverageScore: report.coverageScore,
+    mentioned: ids(report.mentioned),
+    missing: ids(report.missing),
+    riskyFindings: ids(report.riskyFindings),
+    resources: ids(report.resources),
+    skipped: !!(report.outOfScope)
+  };
+}
+
 const VectorAnalyzer = {
   analyze,
   mergeFindings,
   project,
   harden,
+  computeDelta,
+  snapshot,
   buildImprovedPrompt,
   normalize,
   tokenize,

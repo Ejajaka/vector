@@ -11,6 +11,9 @@
   let improvedEl = null;
   let report = null;
   let state = { accepted: {} };
+  let delta = null;
+  let prevReport = null;
+  let hadHistory = false;
   let settings = Object.assign({}, VectorSettings.DEFAULTS);
 
   function visible(el) {
@@ -90,7 +93,7 @@
         state.accepted = {};
         render();
       }
-    });
+    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 
@@ -104,6 +107,14 @@
     panel.querySelector("#vector-empty").classList.add("hidden");
     report = VectorSettings.analyze(text, settings);
     state.accepted = {};
+    // Security Delta against the last comparable snapshot.
+    VectorSettings.getComparable(report).then(function (prev) {
+      prevReport = prev;
+      hadHistory = !!prev;
+      delta = prev ? VectorAnalyzer.computeDelta(prev, report) : null;
+      VectorSettings.addHistory(report);
+      render();
+    });
     render();
   }
 

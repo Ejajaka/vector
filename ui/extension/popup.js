@@ -22,6 +22,9 @@
   let settings = Object.assign({}, VectorSettings.DEFAULTS);
   let report = null;
   let state = { accepted: {} };
+  let delta = null;          // last computed Security Delta
+  let prevReport = null;     // the snapshot it was computed against
+  let hadHistory = false;    // whether any comparable history existed
 
   function toast(msg) {
     let t = document.querySelector(".vp-toast");
@@ -57,7 +60,7 @@
       },
       onClearAll: function () { state.accepted = {}; render(); },
       onHarden: hardenNow
-    });
+    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 
@@ -95,13 +98,20 @@
     if (!prompt) { el.hint.textContent = "Enter a prompt first"; return; }
     report = VectorSettings.analyze(prompt, settings);
     state.accepted = {};
+
+    // Security Delta: compare against the last comparable stored snapshot,
+    // then store this one for the next comparison.
+    VectorSettings.getComparable(report).then(function (prev) {
+      prevReport = prev;
+      hadHistory = !!prev;
+      delta = prev ? VectorAnalyzer.computeDelta(prev, report) : null;
+      VectorSettings.addHistory(report);
+      render();
+    });
+
     el.results.classList.remove("hidden");
     render();
     setHint();
-    VectorSettings.addHistory({
-      ts: Date.now(), prompt: prompt, riskLevel: report.riskLevel,
-      riskScore: report.riskScore, missing: report.stats.missing
-    });
     if (report.needsDeepScan && settings.autoDeepScan) deepScanNow();
   }
 

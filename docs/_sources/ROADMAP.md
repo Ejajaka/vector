@@ -504,6 +504,23 @@ npm run docx    # report documents -> Word
 
 This part is the most useful for reimplementation: it is the list of traps.
 
+## F0. Security Delta Analysis (v0.7.0) - feature added, not a bug
+
+**What:** `computeDelta(previous, current)` compares two reports of the same
+prompt and reports added controls, still-missing controls, newly-missing
+(regressed) controls, new/fixed risks, and the risk/coverage movement.
+
+**Why it needed care:**
+1. **Legacy history stored a count, not ids.** Older entries had
+   `missing: 4` (a number), so a delta against them would be nonsense. The
+   function returns `null` unless both sides carry id lists.
+2. **Different resource sets are not comparable.** An S3 prompt and an
+   "S3 + RDS" prompt have different required control sets. The delta flags
+   `resources.changed` and the UI warns rather than showing a misleading number.
+3. **The sync script copied the wrong way.** `tools/sync-engine.ps1` used to
+   copy `ui/mobile-native/www` into `ui/web`, which overwrote web edits. Fixed:
+   the **web client is now the source of truth** and Capacitor mirrors it.
+
 ## F1. Regex aliases were never matching
 **Symptom:** ECR, ALB, EMR, Transfer, Organizations were never detected.
 **Cause:** aliases like `"\\becr\\b"` were passed through `escapeRegExp()`, so the

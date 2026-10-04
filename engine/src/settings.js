@@ -60,12 +60,43 @@
     });
   }
 
+  /**
+   * Store a snapshot of a report so a later analysis can be compared to it.
+   * Uses VectorAnalyzer.snapshot() when available (id lists), otherwise falls
+   * back to the passed entry as-is.
+   */
   function addHistory(entry) {
     if (!hasStorage()) return;
+    const snap = (root.VectorAnalyzer && root.VectorAnalyzer.snapshot && entry && entry.prompt)
+      ? root.VectorAnalyzer.snapshot(entry)
+      : entry;
     chrome.storage.local.get(["vectorHistory"], function (data) {
       const list = data.vectorHistory || [];
-      list.unshift(entry);
+      list.unshift(snap);
       chrome.storage.local.set({ vectorHistory: list.slice(0, 20) });
+    });
+  }
+
+  /**
+   * The most recent stored snapshot that is comparable to the given report:
+   * same resource set (or a superset) and carrying id lists. Returns null when
+   * there is nothing sensible to compare against.
+   */
+  function getComparable(report) {
+    return new Promise(function (resolve) {
+      if (!hasStorage() || !report || report.outOfScope) return resolve(null);
+      getHistory().then(function (list) {
+        const cur = new Set((report.resources || []).map(function (r) { return r.id; }));
+        const hit = list.find(function (h) {
+          if (!h || !Array.isArray(h.missing) || !Array.isArray(h.mentioned)) return false;
+          if (h.skipped) return false;
+          const prev = new Set(h.resources || []);
+          if (cur.size === 0 && prev.size === 0) return true;
+          // comparable when the earlier version targeted the same resources
+          return prev.size === cur.size && Array.from(prev).every(function (id) { return cur.has(id); });
+        });
+        resolve(hit || null);
+      });
     });
   }
 
@@ -76,7 +107,8 @@
     parsePolicy: parsePolicy,
     analyze: analyze,
     getHistory: getHistory,
-    addHistory: addHistory
+    addHistory: addHistory,
+    getComparable: getComparable
   };
   if (typeof module !== "undefined" && module.exports) module.exports = root.VectorSettings;
 })(typeof globalThis !== "undefined" ? globalThis : this);

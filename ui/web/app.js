@@ -29,6 +29,9 @@
   let settings = DEFAULTS;
   let report = null;
   let state = { accepted: {} };
+  let delta = null;
+  let prevReport = null;
+  let hadHistory = false;
 
   function loadSettings() {
     try {
@@ -39,6 +42,28 @@
   }
   function saveSettings() {
     try { localStorage.setItem("vectorSettings", JSON.stringify(settings)); } catch (e) {}
+  }
+
+  // --- local history + Security Delta (web/mobile have no chrome.storage) ---
+  function readHistory() {
+    try { return JSON.parse(localStorage.getItem("vectorHistory") || "[]"); } catch (e) { return []; }
+  }
+  function addHistory(rep) {
+    try {
+      const list = readHistory();
+      list.unshift(VectorAnalyzer.snapshot(rep));
+      localStorage.setItem("vectorHistory", JSON.stringify(list.slice(0, 20)));
+    } catch (e) { /* ignore quota errors */ }
+  }
+  function findComparable(rep) {
+    if (!rep || rep.outOfScope) return null;
+    const cur = new Set((rep.resources || []).map((r) => r.id));
+    return readHistory().find((h) => {
+      if (!h || !Array.isArray(h.missing) || !Array.isArray(h.mentioned) || h.skipped) return false;
+      const prev = new Set(h.resources || []);
+      if (cur.size === 0 && prev.size === 0) return true;
+      return prev.size === cur.size && Array.from(prev).every((id) => cur.has(id));
+    }) || null;
   }
 
   function toast(msg) {
@@ -73,7 +98,7 @@
         render();
       },
       onClearAll: function () { state.accepted = {}; render(); }
-    });
+    }, { delta: delta, prevReport: prevReport, hadHistory: hadHistory });
     updateImproved();
   }
 
@@ -89,6 +114,11 @@
     if (!prompt) { el.hint.textContent = "Enter a prompt first"; return; }
     report = VectorAnalyzer.analyze(prompt, { strictMode: false });
     state.accepted = {};
+    // Security Delta against the last comparable local snapshot.
+    prevReport = findComparable(report);
+    hadHistory = !!prevReport;
+    delta = prevReport ? VectorAnalyzer.computeDelta(prevReport, report) : null;
+    addHistory(report);
     el.results.classList.remove("hidden");
     render();
     setHint();

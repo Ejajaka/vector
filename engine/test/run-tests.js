@@ -235,6 +235,95 @@ test("analyzer exposes needsDeepScan for vague prompts", () => {
   assert.strictEqual(r.needsDeepScan, true);
 });
 
+// ---- Security Delta Analysis ----
+const { computeDelta, snapshot } = require("../src/analyzer");
+
+test("delta: added controls are detected and the verdict is improved", () => {
+  const v1 = analyze("Create an AWS S3 bucket for storing customer documents.");
+  const v2 = analyze("Create a private AWS S3 bucket for storing customer documents with KMS encryption enabled.");
+  const d = computeDelta(v1, v2);
+  const added = d.added.map((a) => a.id);
+  assert.ok(added.includes("encryption_at_rest"), "encryption should be added");
+  assert.ok(added.includes("public_access_block"), "private access should be added");
+  assert.strictEqual(d.verdict, "improved");
+  assert.strictEqual(d.risk.direction, "down");
+  assert.strictEqual(d.coverage.direction, "up");
+});
+
+test("delta: controls still missing are carried across both versions", () => {
+  const v1 = analyze("Create an AWS S3 bucket for storing customer documents.");
+  const v2 = analyze("Create a private AWS S3 bucket with KMS encryption enabled.");
+  const d = computeDelta(v1, v2);
+  assert.ok(d.stillMissing.some((m) => m.id === "audit_logging"), "audit logging still missing");
+});
+
+test("delta: a regressed control is reported as newly missing", () => {
+  const v1 = analyze("Create an S3 bucket encrypted at rest with KMS.");
+  const v2 = analyze("Create an S3 bucket.");                    // encryption dropped
+  const d = computeDelta(v1, v2);
+  assert.ok(d.newlyMissing.some((m) => m.id === "encryption_at_rest"), "encryption regression detected");
+  assert.notStrictEqual(d.verdict, "improved");
+});
+
+test("delta: a new risky statement is reported", () => {
+  const v1 = analyze("Create an S3 bucket for user documents.");
+  const v2 = analyze("Create an S3 bucket and make it public.");
+  const d = computeDelta(v1, v2);
+  assert.ok(d.newRisks.some((r) => r.id === "public_bucket"), "new public bucket risk detected");
+});
+
+test("delta: risk and coverage deltas are numeric and signed", () => {
+  const v1 = analyze("Create an S3 bucket for user documents.");
+  const v2 = analyze("Create a private, encrypted S3 bucket in eu-west-1 with KMS key rotation, block all public access, enable CloudTrail audit logging, versioning, backups, and least privilege IAM scoped to read-only.");
+  const d = computeDelta(v1, v2);
+  assert.strictEqual(typeof d.risk.delta, "number");
+  assert.ok(d.risk.delta < 0, "risk should fall");
+  assert.ok(d.coverage.delta > 0, "coverage should rise");
+});
+
+test("delta: the resource-set change is flagged as not comparable", () => {
+  const v1 = analyze("Create an S3 bucket.");
+  const v2 = analyze("Create an S3 bucket and an RDS database.");
+  const d = computeDelta(v1, v2);
+  assert.strictEqual(d.resources.changed, true);
+});
+
+test("delta: returns null for a legacy history entry without id lists", () => {
+  const legacy = { ts: Date.now(), prompt: "x", riskScore: 50, missing: 4 };  // missing is a COUNT
+  assert.strictEqual(computeDelta(legacy, analyze("Create an S3 bucket.")), null);
+});
+
+test("delta: returns null when there is no previous report", () => {
+  assert.strictEqual(computeDelta(null, analyze("Create an S3 bucket.")), null);
+});
+
+test("snapshot: keeps the id lists the delta needs", () => {
+  const s = snapshot(analyze("Create an S3 bucket for user documents."));
+  assert.ok(Array.isArray(s.missing) && Array.isArray(s.mentioned) && Array.isArray(s.resources));
+  assert.ok(s.missing.length > 0 && s.missing[0].indexOf("_") !== -1);
+});
+
+test("delta: a snapshot can be compared back to a report", () => {
+  const v1 = analyze("Create an S3 bucket for user documents.");
+  const s1 = snapshot(v1);
+  const v2 = analyze("Create a private encrypted S3 bucket for user documents.");
+  const d = computeDelta(s1, v2);
+  assert.ok(d, "delta against a snapshot should work");
+  assert.ok(d.added.length > 0);
+});
+
+test("UI: deltaHtml renders the added / still-missing / risk sections", () => {
+  const v1 = analyze("Create an S3 bucket for user documents.");
+  const v2 = analyze("Create a private, encrypted S3 bucket for user documents with KMS.");
+  const d = computeDelta(v1, v2);
+  const html = VectorUI.deltaHtml(d, { ts: Date.now() - 60000 });
+  assert.ok(html.indexOf("Security Delta") !== -1);
+  assert.ok(html.indexOf("Controls added") !== -1);
+  assert.ok(html.indexOf("Still missing") !== -1);
+  assert.ok(html.indexOf("New risks introduced") !== -1);
+  assert.ok(html.indexOf("v-delta-scores") !== -1);
+});
+
 // ---- Coverage score ----
 test("coverage: a bare prompt has low coverage, a detailed one high", () => {
   const low = analyze("Create an S3 bucket.");

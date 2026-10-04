@@ -215,14 +215,102 @@
   }
 
   /**
+   * Security Delta panel: what changed since the previous version of this
+   * prompt. Renders as a collapsible section above the risk card.
+   * @param {object} delta  result of VectorAnalyzer.computeDelta
+   * @param {object} prev   the previous stored snapshot (for wording)
+   */
+  function deltaHtml(delta, prev) {
+    if (!delta) return "";
+    const chip = (cls, txt) => '<span class="v-chip ' + cls + '">' + escapeHtml(txt) + "</span>";
+    const line = (items, cls, emptyText) => {
+      if (!items.length) return '<p class="v-delta-line v-muted">' + escapeHtml(emptyText) + "</p>";
+      return (
+        '<div class="v-delta-chips">' +
+        items.map((m) => chip(cls, "\u2022 " + (m.label || m.id))).join("") +
+        "</div>"
+      );
+    };
+
+    const verdictCls = delta.verdict === "improved" ? "ok"
+      : delta.verdict === "regressed" ? "bad"
+      : delta.verdict === "unchanged" ? "same" : "mixed";
+    const verdictText = delta.verdict.charAt(0).toUpperCase() + delta.verdict.slice(1);
+
+    const arrow = (d) =>
+      d === "down" ? "\u25BC" : d === "up" ? "\u25B2" : "\u2013";
+
+    let when = "";
+    if (prev && prev.ts) {
+      const mins = Math.max(0, Math.round((Date.now() - prev.ts) / 60000));
+      when = mins < 1 ? "moments ago" : mins === 1 ? "1 minute ago" : mins + " minutes ago";
+    }
+
+    let html =
+      '<details class="v-section v-delta" open>' +
+      '<summary class="v-group"><span class="v-group-label">Security Delta' +
+      (when ? ' <span class="v-muted">(vs ' + escapeHtml(when) + ")</span>" : "") +
+      '</span><span class="v-delta-verdict ' + verdictCls + '">' + escapeHtml(verdictText) + "</span></summary>" +
+      '<div class="v-delta-body">';
+
+    html +=
+      '<div class="v-delta-scores">' +
+      '<div class="v-delta-score"><span class="v-muted">Risk</span> ' +
+      delta.risk.from + " \u2192 " + delta.risk.to + " " +
+      '<span class="' + (delta.risk.direction === "down" ? "ok" : delta.risk.direction === "up" ? "bad" : "") + '">' +
+      arrow(delta.risk.direction) + " " + Math.abs(delta.risk.delta) + "</span></div>" +
+      '<div class="v-delta-score"><span class="v-muted">Coverage</span> ' +
+      delta.coverage.from + "% \u2192 " + delta.coverage.to + "% " +
+      '<span class="' + (delta.coverage.direction === "up" ? "ok" : delta.coverage.direction === "down" ? "bad" : "") + '">' +
+      arrow(delta.coverage.direction) + " " + Math.abs(delta.coverage.delta) + "%</span></div>" +
+      "</div>";
+
+    html += '<h4 class="v-delta-h">Controls added</h4>' + line(delta.added, "ok", "None added.");
+    if (delta.fixedRisks.length) {
+      html += '<h4 class="v-delta-h">Risks fixed</h4>' + line(delta.fixedRisks, "ok", "");
+    }
+    html += '<h4 class="v-delta-h">Still missing</h4>' + line(delta.stillMissing, "warn", "Nothing - all required controls stated.");
+    html += '<h4 class="v-delta-h">Newly missing</h4>' +
+      line(delta.newlyMissing, "bad", "None - no controls were regressed.");
+    html += '<h4 class="v-delta-h">New risks introduced</h4>' +
+      line(delta.newRisks, "bad", "None - no new risks were introduced.");
+
+    if (delta.resources.changed) {
+      html +=
+        '<p class="v-delta-warn">The resource set changed between versions (' +
+        delta.resources.from + " \u2192 " + delta.resources.to +
+        "), so the scores are not directly comparable.</p>";
+    }
+
+    html += "</div></details>";
+    return html;
+  }
+
+  /** Shown when there is no comparable previous version. */
+  function deltaEmptyHtml(hadHistory) {
+    return (
+      '<details class="v-section v-delta">' +
+      '<summary class="v-group"><span class="v-group-label">Security Delta</span>' +
+      '<span class="v-count">new</span></summary>' +
+      '<div class="v-delta-body"><p class="v-muted">' +
+      (hadHistory
+        ? "No earlier version of this resource set to compare against."
+        : "First analysis of this prompt - run it again after editing to see what changed.") +
+      "</p></div></details>"
+    );
+  }
+
+  /**
    * Render a full report into a container.
    * @param {HTMLElement} container
    * @param {object} report
    * @param {object} state  { accepted: {id:boolean} }
-   * @param {object} handlers { onToggle, onAcceptAll, onClearAll }
+   * @param {object} handlers { onToggle, onAcceptAll, onClearAll, onHarden }
+   * @param {object} [opts]  { delta, prevReport, hadHistory }
    */
-  function render(container, report, state, handlers) {
+  function render(container, report, state, handlers, opts) {
     handlers = handlers || {};
+    opts = opts || {};
     const accepted = (state && state.accepted) || {};
 
     // Out of scope: not an infrastructure prompt, so nothing to diagnose.
@@ -238,12 +326,18 @@
     if (report && report.aiClean && !report.missing.length && !report.riskyFindings.length) {
       container.innerHTML =
         '<div class="v-banner ok">No issues found. This prompt already covers the required AWS security controls for the recognised resources.</div>' +
+        deltaHtml(opts.delta, opts.prevReport) +
         disclaimerHtml(report);
       return;
     }
 
+    const deltaSection = opts.delta
+      ? deltaHtml(opts.delta, opts.prevReport)
+      : (opts.hadHistory ? deltaEmptyHtml(true) : "");
+
     container.innerHTML =
       bannerHtml(report) +
+      deltaSection +
       riskHtml(report, coverage(report, state)) +
       feedbackHtml(report) +
       relatedHtml(report) +
@@ -267,6 +361,7 @@
 
   const VectorUI = {
     render: render,
+    deltaHtml: deltaHtml,
     buildImprovedPrompt: buildImprovedPrompt,
     acceptedClauses: acceptedClauses,
     escapeHtml: escapeHtml,

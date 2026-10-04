@@ -58,6 +58,31 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [showClarify, setShowClarify] = useState(false);
   const [showHarden, setShowHarden] = useState(false);
+  const [delta, setDelta] = useState(null);
+  const [prevReport, setPrevReport] = useState(null);
+  const [showDelta, setShowDelta] = useState(false);
+
+  // --- on-device history + Security Delta (no chrome.storage here) ---
+  function readHistory() {
+    try { return JSON.parse(localStorage.getItem("vectorHistory") || "[]"); } catch (e) { return []; }
+  }
+  function addHistory(rep) {
+    try {
+      const list = readHistory();
+      list.unshift(VectorAnalyzer.snapshot(rep));
+      localStorage.setItem("vectorHistory", JSON.stringify(list.slice(0, 20)));
+    } catch (e) { /* ignore */ }
+  }
+  function findComparable(rep) {
+    if (!rep || rep.outOfScope) return null;
+    const cur = new Set((rep.resources || []).map((r) => r.id));
+    return readHistory().find((h) => {
+      if (!h || !Array.isArray(h.missing) || !Array.isArray(h.mentioned) || h.skipped) return false;
+      const prev = new Set(h.resources || []);
+      if (cur.size === 0 && prev.size === 0) return true;
+      return prev.size === cur.size && Array.from(prev).every((id) => cur.has(id));
+    }) || null;
+  }
 
   function flash(msg) {
     setToast(msg);
@@ -87,6 +112,14 @@ export default function App() {
     setAccepted({});
     setShowClarify(false);
     setShowHarden(false);
+    setShowDelta(true);
+
+    // Security Delta against the last comparable snapshot kept on the device.
+    const prev = findComparable(rep);
+    setPrevReport(prev);
+    setDelta(prev ? VectorAnalyzer.computeDelta(prev, rep) : null);
+    addHistory(rep);
+
     setStatus("");
     if (rep.needsDeepScan && settings.apiKey) runDeepScan(rep);
   }
@@ -289,6 +322,45 @@ export default function App() {
                 ) : null}
               </View>
 
+              {delta ? (
+                <View>
+                  <Pressable style={styles.toggle} onPress={() => setShowDelta((s) => !s)}>
+                    <Text style={styles.toggleText}>
+                      {showDelta ? "- Hide" : "+ Show"} Security Delta ({delta.verdict})
+                    </Text>
+                  </Pressable>
+                  {showDelta ? (
+                    <View style={styles.deltaCard}>
+                      <View style={styles.deltaScores}>
+                        <Text style={styles.deltaScore}>
+                          Risk {delta.risk.from} → {delta.risk.to}{" "}
+                          <Text style={{ color: delta.risk.direction === "down" ? "#4ade80" : delta.risk.direction === "up" ? "#f87171" : "#94a3b8" }}>
+                            {delta.risk.direction === "down" ? "▼" : delta.risk.direction === "up" ? "▲" : "–"} {Math.abs(delta.risk.delta)}
+                          </Text>
+                        </Text>
+                        <Text style={styles.deltaScore}>
+                          Coverage {delta.coverage.from}% → {delta.coverage.to}%{" "}
+                          <Text style={{ color: delta.coverage.direction === "up" ? "#4ade80" : delta.coverage.direction === "down" ? "#f87171" : "#94a3b8" }}>
+                            {delta.coverage.direction === "up" ? "▲" : delta.coverage.direction === "down" ? "▼" : "–"} {Math.abs(delta.coverage.delta)}%
+                          </Text>
+                        </Text>
+                      </View>
+                      <Text style={styles.deltaLabel}>Added</Text>
+                      <Text style={styles.deltaItems}>{delta.added.length ? delta.added.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaLabel}>Still missing</Text>
+                      <Text style={styles.deltaItems}>{delta.stillMissing.length ? delta.stillMissing.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaLabel}>Newly missing</Text>
+                      <Text style={styles.deltaItems}>{delta.newlyMissing.length ? delta.newlyMissing.map((a) => a.label).join(", ") : "None"}</Text>
+                      <Text style={styles.deltaLabel}>New risks</Text>
+                      <Text style={styles.deltaItems}>{delta.newRisks.length ? delta.newRisks.map((a) => a.label).join(", ") : "None"}</Text>
+                      {delta.resources.changed ? (
+                        <Text style={styles.deltaWarn}>Resource set changed ({delta.resources.from} → {delta.resources.to}); scores are not directly comparable.</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+
               {report.riskyFindings.length ? (
                 <View>
                   <Text style={styles.h2}>Risky ({report.riskyFindings.length})</Text>
@@ -431,6 +503,12 @@ const styles = StyleSheet.create({
   acceptTop: { marginTop: 12, borderWidth: 1, borderColor: "#6366f1", borderRadius: 9, paddingVertical: 9, alignItems: "center" },
   acceptTopText: { color: "#a5b4fc", fontWeight: "700", fontSize: 12 },
   note: { marginTop: 10, fontSize: 11, color: "#fbbf24" },
+  deltaCard: { borderWidth: 1, borderColor: "#334155", borderRadius: 12, padding: 12, marginBottom: 10, backgroundColor: "#0b1220" },
+  deltaScores: { flexDirection: "row", gap: 16, marginBottom: 8, flexWrap: "wrap" },
+  deltaScore: { fontSize: 13, fontWeight: "700", color: "#e2e8f0" },
+  deltaLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: "#94a3b8", marginTop: 8 },
+  deltaItems: { fontSize: 12, color: "#cbd5e1", marginTop: 2 },
+  deltaWarn: { marginTop: 10, fontSize: 11, color: "#fbbf24" },
 
   h2: { fontSize: 15, fontWeight: "800", marginTop: 20, color: "#f9fafb" },
   none: { color: "#4ade80", fontSize: 13, marginTop: 6 },
