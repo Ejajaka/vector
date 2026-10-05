@@ -1,10 +1,10 @@
-# Vector Ã¢â‚¬â€ Course Plan Mapping
+# Vector ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Course Plan Mapping
 
 **Pre-Generation Security Diagnosis of Cloud Infrastructure Prompts Using NLP**
 
 > Maps the project onto a standard **Natural Language Processing** course
 > syllabus. Adjust the module names on the left to match your official course
-> plan Ã¢â‚¬â€ the right-hand column is what Vector actually demonstrates.
+> plan ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the right-hand column is what Vector actually demonstrates.
 
 ---
 
@@ -18,14 +18,14 @@ deterministic and explainable.
 
 | Course area | Covered by Vector | Where in the code |
 |---|---|---|
-| Text preprocessing | tokenisation, normalisation, stopwords | `engine/src/analyzer.js` steps 1Ã¢â‚¬â€œ2 |
+| Text preprocessing | tokenisation, normalisation, stopwords | `engine/src/analyzer.js` steps 1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“2 |
 | Lexical resources | synonyms, paraphrase lexicon, negation lexicon | `engine/src/taxonomy.js` |
 | Morphology | light stemming in the IR pass | `engine/src/semantic.js` |
 | Information extraction | resource + control (entity/attribute) extraction | `engine/src/analyzer.js` steps 6, 10 |
 | Negation & scope | 3-guard negation algorithm | `engine/src/analyzer.js` `isNegatedBefore/After` |
 | Information retrieval | TF-IDF index, cosine similarity | `engine/src/semantic.js` |
-| Text classification | resource Ã¢â€ â€™ control-set mapping | `engine/src/taxonomy.js` `RESOURCES` |
-| Evaluation of NLP systems | precision, recall, F1, negation-trap rate, ÃŽÂº | `engine/eval/` |
+| Text classification | resource ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ control-set mapping | `engine/src/taxonomy.js` `RESOURCES` |
+| Evaluation of NLP systems | precision, recall, F1, negation-trap rate, ÃƒÅ½Ã‚Âº | `engine/eval/` |
 | Applications of NLP | applied security diagnosis tool | whole project |
 
 ---
@@ -34,63 +34,63 @@ deterministic and explainable.
 
 *(Rename the left column to your syllabus wording.)*
 
-### Module 1 Ã¢â‚¬â€ Introduction to NLP and text processing
+### Module 1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Introduction to NLP and text processing
 | Learning outcome | How Vector meets it |
 |---|---|
-| Explain the NLP pipeline | `ARCHITECTURE.md` Ã‚Â§4 documents an 18-step pipeline |
+| Explain the NLP pipeline | `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§4 documents an 18-step pipeline |
 | Perform basic text preprocessing | `normalize()` + `tokenize()` with a stopword list |
 | Handle noisy real-world text | negation-prefix fixup, punctuation stripping, whitespace collapse |
 
-### Module 2 Ã¢â‚¬â€ Lexical semantics and lexical resources
+### Module 2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Lexical semantics and lexical resources
 | Learning outcome | How Vector meets it |
 |---|---|
 | Build/use a lexical resource | `SYNONYMS` (19 entries), `PARAPHRASES` (13 control lexicons), `NEGATION_WORDS` (~40 cues) |
-| Handle synonymy | "website" Ã¢â€ â€™ ec2/load balancer; "scrambled on disk" Ã¢â€ â€™ encryption at rest |
-| Discuss limitations of hand-built lexicons | documented recall ceiling; negative TF-IDF result in `ARCHITECTURE.md` Ã‚Â§3 step 16 |
+| Handle synonymy | "website" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ec2/load balancer; "scrambled on disk" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ encryption at rest |
+| Discuss limitations of hand-built lexicons | documented recall ceiling; negative TF-IDF result in `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§3 step 16 |
 
-### Module 3 Ã¢â‚¬â€ Morphology
+### Module 3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Morphology
 | Learning outcome | How Vector meets it |
 |---|---|
 | Apply stemming/lemmatisation | light suffix stripping in `semantic.tokenize()` |
 | Explain stemming trade-offs | discussed in `tools/calibrate.js` analysis |
 
-### Module 4 Ã¢â‚¬â€ Part-of-speech, syntax, and *negation scope*
+### Module 4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Part-of-speech, syntax, and *negation scope*
 | Learning outcome | How Vector meets it |
 |---|---|
-| Handle negation correctly | the **three-guard** algorithm: `before` (odd-count negation in the clause), `after` ("logging disabled"), `notAfter` ("encryption in transit" Ã¢â€°Â  at rest) |
+| Handle negation correctly | the **three-guard** algorithm: `before` (odd-count negation in the clause), `after` ("logging disabled"), `notAfter` ("encryption in transit" ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â  at rest) |
 | Clause segmentation | split on punctuation **and** discourse cues: `and, but, or, except, unless, rather than, instead of` |
-| Explain why negation is hard | worked examples in `ARCHITECTURE.md` Ã‚Â§3 step 10 |
+| Explain why negation is hard | worked examples in `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§3 step 10 |
 
-### Module 5 Ã¢â‚¬â€ Information extraction
+### Module 5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Information extraction
 | Learning outcome | How Vector meets it |
 |---|---|
-| Extract entities | `detectResources()` Ã¢â‚¬â€ 78 AWS resources, phrase + regex aliases |
-| Extract attributes/relations | resource Ã¢â€ â€™ required-control mapping |
-| Design an extraction pattern set | `REQUIREMENTS[].patterns` (30 controls Ãƒâ€” multiple regex each) |
+| Extract entities | `detectResources()` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 78 AWS resources, phrase + regex aliases |
+| Extract attributes/relations | resource ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ required-control mapping |
+| Design an extraction pattern set | `REQUIREMENTS[].patterns` (30 controls ÃƒÆ’Ã¢â‚¬â€ multiple regex each) |
 
-### Module 6 Ã¢â‚¬â€ Text classification
+### Module 6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Text classification
 | Learning outcome | How Vector meets it |
 |---|---|
 | Rule-based classification | requirement *present / missing* decision |
 | Feature-based classification | severity + tier weighting feeding the risk score |
 | Evaluate a classifier | P/R/F1 in `engine/eval/run-eval.js` |
 
-### Module 7 Ã¢â‚¬â€ Information retrieval / vector space models
+### Module 7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Information retrieval / vector space models
 | Learning outcome | How Vector meets it |
 |---|---|
 | Build a TF-IDF index | `semantic.buildIndex()` over control documents |
 | Compute cosine similarity | `semantic.cosine()` |
 | Interpret and critique the model | **measured and reported**: cosine is polarity-blind, so it is restricted to advisory relevance, never compliance |
 
-### Module 8 Ã¢â‚¬â€ Evaluation of NLP systems
+### Module 8 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Evaluation of NLP systems
 | Learning outcome | How Vector meets it |
 |---|---|
 | Compute precision, recall, F1 | `engine/eval/run-eval.js` over 112 labelled prompts |
 | Design a labelled dataset | `dataset.json`, `dataset2.json`, `heldout.json` |
-| Measure annotator agreement | Cohen's ÃŽÂº in `engine/eval/kappa.js` |
+| Measure annotator agreement | Cohen's ÃƒÅ½Ã‚Âº in `engine/eval/kappa.js` |
 | Report limitations honestly | "all 112 prompts were seen during development" note |
 
-### Module 9 Ã¢â‚¬â€ Applications / project work
+### Module 9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Applications / project work
 | Learning outcome | How Vector meets it |
 |---|---|
 | Build an end-to-end NLP application | engine + extension + CLI + two mobile apps + web demo |
@@ -103,14 +103,14 @@ deterministic and explainable.
 
 | Typical requirement | Vector artefact |
 |---|---|
-| Problem statement & motivation | `MARKET-ANALYSIS.md` Ã‚Â§2 + benchmarks |
-| Literature / prior art | `MARKET-ANALYSIS.md` Ã‚Â§3, `docs/references/` |
-| System design | `ARCHITECTURE.md` Ã‚Â§1Ã¢â‚¬â€œÃ‚Â§7 |
-| Methodology | `ARCHITECTURE.md` Ã‚Â§4 (18-step pipeline) + Ã‚Â§5 (scoring) |
+| Problem statement & motivation | `MARKET-ANALYSIS.md` Ãƒâ€šÃ‚Â§2 + benchmarks |
+| Literature / prior art | `MARKET-ANALYSIS.md` Ãƒâ€šÃ‚Â§3, `docs/references/` |
+| System design | `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â§7 |
+| Methodology | `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§4 (18-step pipeline) + Ãƒâ€šÃ‚Â§5 (scoring) |
 | Implementation | `engine/src/`, `ui/extension/`, `engine/cli/`, `ui/mobile-expo/`, `ui/mobile-native/` |
-| Evaluation & results | `engine/eval/`, results table in Ã‚Â§4 below |
-| Novelty statement | "intervention point" framing Ã¢â‚¬â€ `MARKET-ANALYSIS.md` Ã‚Â§6 |
-| Limitations & future work | `ARCHITECTURE.md` Ã‚Â§10, `ROADMAP.md` risks |
+| Evaluation & results | `engine/eval/`, results table in Ãƒâ€šÃ‚Â§4 below |
+| Novelty statement | "intervention point" framing ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `MARKET-ANALYSIS.md` Ãƒâ€šÃ‚Â§6 |
+| Limitations & future work | `ARCHITECTURE.md` Ãƒâ€šÃ‚Â§10, `ROADMAP.md` risks |
 | Demo | web demo link + extension + Expo app |
 | Report | the four Word documents in `docs/` |
 
@@ -126,12 +126,12 @@ deterministic and explainable.
 | Risky-statement F1 | 1.000* | `npm run eval` |
 | Negation-trap failures | 0 | `npm run eval` |
 | Unit tests | 63 | `npm test` |
-| Downstream: insecure Ã¢â€ â€™ hardened Terraform | 6 Ã¢â€ â€™ 0 issues | `npm run downstream` |
+| Downstream: insecure ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hardened Terraform | 6 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 0 issues | `npm run downstream` |
 | Frozen held-out F1 | *run in Week 1* | `docs/eval-results.txt` |
-| LLM study: raw Ã¢â€ â€™ hardened | *run in Week 2* | `npm run study` |
-| Inter-annotator ÃŽÂº | *run in Week 2* | `npm run kappa` |
+| LLM study: raw ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hardened | *run in Week 2* | `npm run study` |
+| Inter-annotator ÃƒÅ½Ã‚Âº | *run in Week 2* | `npm run kappa` |
 
-\* indicative only Ã¢â‚¬â€ the sets were used during development. Replace with the
+\* indicative only ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the sets were used during development. Replace with the
 frozen number before submission, and report both.
 
 ---
@@ -143,7 +143,7 @@ frozen number before submission, and report both.
 | **Remember / Understand** | explains the NLP pipeline and why each stage exists |
 | **Apply** | applies preprocessing, extraction and IR to a new domain (cloud security) |
 | **Analyse** | decomposes prompts into resources and controls; isolates negation scope |
-| **Evaluate** | measures P/R/F1, negation traps, ÃŽÂº; reports a *negative* result about TF-IDF |
+| **Evaluate** | measures P/R/F1, negation traps, ÃƒÅ½Ã‚Âº; reports a *negative* result about TF-IDF |
 | **Create** | builds a deployed multi-surface NLP system with a novel metric and workflow |
 
 ---
